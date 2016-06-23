@@ -136,7 +136,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	  var that = this;
 	  devices.map(function(s, i, a) {
 		if (s.isVisible == "1" && s.object_id != null) {
-			console.log("1");
 			if (that.grouping == "room") {         	
 				if (s.object_id != currentRoomID) {
 					if (services.length != 0) {
@@ -150,10 +149,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				}
 			}
 			that.jeedomClient.getDeviceProperties(s.id).then(function (resultEqL){
-				console.log('EQLogic demande > '+JSON.stringify(resultEqL));
 				that.jeedomClient.getDeviceCmd(s.id).then(function (resultCMD){
-					console.log('CMDs demande > '+JSON.stringify(resultCMD));
-					console.log(that.jeedomClient.ParseGenericType(resultEqL,resultCMD));
 					AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL,resultCMD));
 				}).catch(function (err, response) {
 					that.log("Error getting data from Jeedom: " + err + " " + response);
@@ -163,7 +159,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			}); 
 			
 			function AccessoireCreateJeedom(_params){
-				console.log('type'+_params.type);
+				that.log('Accessoire trouvez // Name : '+_params.name+', Type : '+_params.type);
 				if (_params.type == "LIGHT")
 					service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
 				else if (_params.type == "LIGHTRGB") {
@@ -224,7 +220,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	}
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate();
-console.log("5");
 }
 JeedomPlatform.prototype.createAccessory = function(services, name, currentRoomID) {
 	var accessory = new JeedomBridgedAccessory(services);
@@ -248,7 +243,6 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	this.accessories[jeedomAccessory.UUID] = jeedomAccessory;
     this.log("Adding Accessory: " + jeedomAccessory.name);
 	this.api.registerPlatformAccessories("homebridge-jeedom", "Jeedom", [newAccessory]);
-	console.log("2");
 }
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	for (var s = 0; s < accessory.services.length; s++) {
