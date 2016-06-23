@@ -102,7 +102,8 @@ JeedomPlatform.prototype.addAccessories = function() {
     var that = this;
     this.jeedomClient.getRooms()
     	.then(function (rooms) {
-        	rooms.map(function(s, i, a) {
+        	console.log("pieces :"+JSON.stringify(rooms));
+		rooms.result.map(function(s, i, a) {
         		that.rooms[s.id] = s.name;
         	});
 		    that.log("Fetching Jeedom devices ...");
@@ -118,6 +119,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
     var foundAccessories = [];
 	if (devices != undefined) {
+	console.log(JSON.stringify(devices));
 	  // Order results by roomID
 	  devices.sort(function compare(a, b) {
 			if (a.object_id > b.object_id) {
@@ -134,7 +136,9 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	  var service = null;
 	  var that = this;
 	  devices.map(function(s, i, a) {
-		if (s.isVisible == true && s.object_id != null) {
+		//s.type = "ENERGY";
+		if (s.isVisible == "1" && s.object_id != null) {
+			console.log("1");
 			if (that.grouping == "room") {         	
 				if (s.object_id != currentRoomID) {
 					if (services.length != 0) {
@@ -147,6 +151,14 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					currentRoomID = s.object_id;
 				}
 			}
+			that.jeedomClient.getDeviceProperties(s.id).then(function (result){
+				console.log('EQLogic demande > '+JSON.stringify(result));
+			}).catch(function (err, response) {
+			that.log("Error getting data from Jeedom: " + err + " " + response);
+    			});
+			//var resultParse = that.jeedomClient.ParseGenericType(that.jeedomClient.getDeviceProperties(s.id),that.jeedomClient.getDeviceCmd(s.id)); 
+			s.type = resultParse.type;
+			console.log('type'+s.type);
 			if (s.type == "LIGHT")
 				service = {controlService: new Service.Lightbulb(s.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
 			else if (s.type == "LIGHTRGB") {
@@ -158,7 +170,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 			} else if (s.type == "FLAP")
 				service = {controlService: new Service.WindowCovering(s.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
-			else if (s.type == "ENERGY")
+			else if (s.type == "ENERGY2")
 				service = {controlService: new Service.Switch(s.name), characteristics: [Characteristic.On]};
 			else if (s.type == "PRESENCE")
 				service = {controlService: new Service.MotionSensor(s.name), characteristics: [Characteristic.MotionDetected]};
@@ -170,9 +182,11 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				service = {controlService: new Service.ContactSensor(s.name), characteristics: [Characteristic.ContactSensorState]};
 			else if (s.type == "BRIGHTNESS")
 				service = {controlService: new Service.LightSensor(s.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
-			else if (s.type == "ENERGY")
+			else if (s.type == "ENERGY"){
+				console.log("3");
 				service = {controlService: new Service.Outlet(s.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
-			else if (s.type == "LOCK")
+				console.log("4");
+			}else if (s.type == "LOCK")
 				service = {controlService: new Service.LockMechanism(s.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
 			else if (s.type == "THERMOSTAT")
 				service = {controlService: new Service.DanfossRadiatorThermostat(s.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TimeInterval]};
@@ -206,6 +220,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	}
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate();
+console.log("5");
 }
 JeedomPlatform.prototype.createAccessory = function(services, name, currentRoomID) {
 	var accessory = new JeedomBridgedAccessory(services);
@@ -229,6 +244,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	this.accessories[jeedomAccessory.UUID] = jeedomAccessory;
     this.log("Adding Accessory: " + jeedomAccessory.name);
 	this.api.registerPlatformAccessories("homebridge-jeedom", "Jeedom", [newAccessory]);
+	console.log("2");
 }
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	for (var s = 0; s < accessory.services.length; s++) {
