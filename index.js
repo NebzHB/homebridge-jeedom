@@ -341,8 +341,9 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 }
 JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
 	var that = this;
-	this.jeedomClient.getDeviceProperties(IDs[0])
+	this.jeedomClient.getDeviceCmd(IDs[0])
 		.then(function(properties) {
+			//console.log('recuperation valeur : '+JSON.stringify(properties));
 			if (characteristic.UUID == (new Characteristic.OutletInUse()).UUID) {
 				callback(undefined, parseFloat(properties.power) > 1.0 ? true : false);
 			} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
@@ -365,7 +366,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
 					callback(undefined, Math.round(hsv.v));
 				} else {
-					callback(undefined, parseFloat(properties.value));
+					properties.forEach(function(element, index, array){
+						if(element.generic_type == "LIGHT_STATE"){
+							console.log("valeur brightness "+element.currentValue);
+							callback(undefined, parseFloat(element.currentValue));
+						}
+					});
 				}
 			} else if (characteristic.UUID == (new Characteristic.PositionState()).UUID) {
 				callback(undefined, Characteristic.PositionState.STOPPED);
@@ -380,7 +386,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					callback("Error value window position", null);
 				}
 			} else if (returnBoolean) {
-				var v = properties.value;
+				var v = 0;
+				properties.forEach(function(element, index, array){
+						if(element.generic_type == "LIGHT_STATE" || element.generic_type == "ENERGY_STATE"){
+							v = element.currentValue;
+						}
+					});
+				console.log("valeur binary "+v);
+				//var v = properties.value;
 				if (v == "true" || v == "false") {
 					callback(undefined, (v == "false") ? false : true);
 				} else {
@@ -396,13 +409,27 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 }
 JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 	var that = this;
-	this.jeedomClient.executeDeviceAction(IDs[0], c, value)
+	this.jeedomClient.getDeviceCmd(IDs[0]).then(function (resultCMD){
+		var cmdId=0;
+		resultCMD.forEach(function(element, index, array){
+			if(value > 0 && element.generic_type == "LIGHT_SLIDER" ){
+				cmdId = element.id;
+			}else if((value == 255 || c == "turnOn") && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" )){
+				cmdId = element.id;
+			}else if((value == 0 || c == "turnOff") && (element.generic_type == "LIGHT_OFF" || element.generic_type == "ENERGY_OFF" )){
+				cmdId = element.id;
+			}
+		});
+		that.jeedomClient.executeDeviceAction(cmdId, c, value)
 		.then(function (response) {
 			that.log("Command: " + c + ((value != undefined) ? ", value: " + value : ""));
 		})
 		.catch(function (err, response) {
 			that.log("There was a problem sending command " + c + " to " + IDs[0]);
 		});
+	}).catch(function (err, response) {
+		that.log("Error getting data from Jeedom: " + err + " " + response);
+	});
 }
 JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
 	if (characteristic.UUID == (new Characteristic.PositionState()).UUID)
