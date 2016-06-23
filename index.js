@@ -154,62 +154,61 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				that.jeedomClient.getDeviceCmd(s.id).then(function (resultCMD){
 					console.log('CMDs demande > '+JSON.stringify(resultCMD));
 					console.log(that.jeedomClient.ParseGenericType(resultEqL,resultCMD));
+					AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL,resultCMD));
 				}).catch(function (err, response) {
 					that.log("Error getting data from Jeedom: " + err + " " + response);
 				});
 			}).catch(function (err, response) {
 				that.log("Error getting data from Jeedom: " + err + " " + response);
-			});
-
-			//var resultParse = that.jeedomClient.ParseGenericType(that.jeedomClient.getDeviceProperties(s.id),that.jeedomClient.getDeviceCmd(s.id)); 
-			s.type = resultParse.type;
-			console.log('type'+s.type);
-			if (s.type == "LIGHT")
-				service = {controlService: new Service.Lightbulb(s.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
-			else if (s.type == "LIGHTRGB") {
-				service = {controlService: new Service.Lightbulb(s.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
-				service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
-				service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
-				service.controlService.countColorCharacteristics = 0;
-				service.controlService.timeoutIdColorCharacteristics = 0;
-				service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-			} else if (s.type == "FLAP")
-				service = {controlService: new Service.WindowCovering(s.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
-			else if (s.type == "ENERGY2")
-				service = {controlService: new Service.Switch(s.name), characteristics: [Characteristic.On]};
-			else if (s.type == "PRESENCE")
-				service = {controlService: new Service.MotionSensor(s.name), characteristics: [Characteristic.MotionDetected]};
-			else if (s.type == "TEMPERATURE")
-				service = {controlService: new Service.TemperatureSensor(s.name), characteristics: [Characteristic.CurrentTemperature]};
-			else if (s.type == "HUMIDITY")
-				service = {controlService: new Service.HumiditySensor(s.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
-			else if (s.type == "OPENING")
-				service = {controlService: new Service.ContactSensor(s.name), characteristics: [Characteristic.ContactSensorState]};
-			else if (s.type == "BRIGHTNESS")
-				service = {controlService: new Service.LightSensor(s.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
-			else if (s.type == "ENERGY"){
-				console.log("3");
-				service = {controlService: new Service.Outlet(s.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
-				console.log("4");
-			}else if (s.type == "LOCK")
-				service = {controlService: new Service.LockMechanism(s.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
-			else if (s.type == "THERMOSTAT")
-				service = {controlService: new Service.DanfossRadiatorThermostat(s.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TimeInterval]};
-
-			if (service != null) {
-				if (service.controlService.subtype == undefined)
-					service.controlService.subtype = "";
-				service.controlService.subtype = s.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-				services.push(service);
-				service = null;
-			}
-			if (that.grouping == "none") {         	
-				if (services.length != 0) {
-					var a = that.createAccessory(services, s.name, s.roomID)
-					if (!that.accessories[a.uuid]) {
-						that.addAccessory(a);
+			}); 
+			
+			function AccessoireCreateJeedom(_params){
+				console.log('type'+_params.type);
+				if (_params.type == "LIGHT")
+					service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
+				else if (_params.type == "LIGHTRGB") {
+					service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
+					service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
+					service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
+					service.controlService.countColorCharacteristics = 0;
+					service.controlService.timeoutIdColorCharacteristics = 0;
+					service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+				} else if (_params.type == "FLAP")
+					service = {controlService: new Service.WindowCovering(_params.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
+				else if (_params.type == "ENERGY2")
+					service = {controlService: new Service.Switch(_params.name), characteristics: [Characteristic.On]};
+				else if (_params.type == "PRESENCE")
+					service = {controlService: new Service.MotionSensor(_params.name), characteristics: [Characteristic.MotionDetected]};
+				else if (_params.type == "TEMPERATURE")
+					service = {controlService: new Service.TemperatureSensor(_params.name), characteristics: [Characteristic.CurrentTemperature]};
+				else if (_params.type == "HUMIDITY")
+					service = {controlService: new Service.HumiditySensor(_params.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
+				else if (_params.type == "OPENING")
+					service = {controlService: new Service.ContactSensor(_params.name), characteristics: [Characteristic.ContactSensorState]};
+				else if (_params.type == "BRIGHTNESS")
+					service = {controlService: new Service.LightSensor(_params.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
+				else if (_params.type == "ENERGY"){
+					service = {controlService: new Service.Outlet(_params.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
+				}else if (_params.type == "LOCK")
+					service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
+				else if (_params.type == "THERMOSTAT")
+					service = {controlService: new Service.DanfossRadiatorThermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TimeInterval]};
+	
+				if (service != null) {
+					if (service.controlService.subtype == undefined)
+						service.controlService.subtype = "";
+					service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+					services.push(service);
+					service = null;
+				}
+				if (that.grouping == "none") {         	
+					if (services.length != 0) {
+						var a = that.createAccessory(services, _params.name, _params.object_id)
+						if (!that.accessories[a.uuid]) {
+							that.addAccessory(a);
+						}
+						services = [];
 					}
-					services = [];
 				}
 			}
 		}
