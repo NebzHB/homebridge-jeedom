@@ -102,7 +102,7 @@ JeedomPlatform.prototype.addAccessories = function() {
     var that = this;
     this.jeedomClient.getRooms()
     	.then(function (rooms) {
-        	console.log("pieces :"+JSON.stringify(rooms));
+        	//console.log("pieces :"+JSON.stringify(rooms));
 		rooms.result.map(function(s, i, a) {
         		that.rooms[s.id] = s.name;
         	});
@@ -119,7 +119,6 @@ JeedomPlatform.prototype.addAccessories = function() {
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
     var foundAccessories = [];
 	if (devices != undefined) {
-	console.log(JSON.stringify(devices));
 	  // Order results by roomID
 	  devices.sort(function compare(a, b) {
 			if (a.object_id > b.object_id) {
@@ -136,7 +135,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	  var service = null;
 	  var that = this;
 	  devices.map(function(s, i, a) {
-		//s.type = "ENERGY";
 		if (s.isVisible == "1" && s.object_id != null) {
 			console.log("1");
 			if (that.grouping == "room") {         	
@@ -151,11 +149,18 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					currentRoomID = s.object_id;
 				}
 			}
-			that.jeedomClient.getDeviceProperties(s.id).then(function (result){
-				console.log('EQLogic demande > '+JSON.stringify(result));
+			that.jeedomClient.getDeviceProperties(s.id).then(function (resultEqL){
+				console.log('EQLogic demande > '+JSON.stringify(resultEqL));
+				that.jeedomClient.getDeviceCmd(s.id).then(function (resultCMD){
+					console.log('CMDs demande > '+JSON.stringify(resultCMD));
+					console.log(that.jeedomClient.ParseGenericType(resultEqL,resultCMD));
+				}).catch(function (err, response) {
+					that.log("Error getting data from Jeedom: " + err + " " + response);
+				});
 			}).catch(function (err, response) {
-			that.log("Error getting data from Jeedom: " + err + " " + response);
-    			});
+				that.log("Error getting data from Jeedom: " + err + " " + response);
+			});
+
 			//var resultParse = that.jeedomClient.ParseGenericType(that.jeedomClient.getDeviceProperties(s.id),that.jeedomClient.getDeviceCmd(s.id)); 
 			s.type = resultParse.type;
 			console.log('type'+s.type);
