@@ -103,7 +103,7 @@ JeedomPlatform.prototype.addAccessories = function() {
     this.jeedomClient.getRooms()
     	.then(function (rooms) {
         	rooms.map(function(s, i, a) {
-        		that.rooms[s.result.id] = s.result.name;
+        		that.rooms[s.id] = s.name;
         	});
 		    that.log("Fetching Jeedom devices ...");
         	return that.jeedomClient.getDevices();
