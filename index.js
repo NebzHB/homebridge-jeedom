@@ -1,15 +1,16 @@
-// Fibaro Home Center 2 Platform plugin for HomeBridge
+// Jeedom Platform plugin for HomeBridge
 //
 // Remember to add platform to config.json. Example:
 // "platforms": [
 //     {
-//            "platform": "FibaroHC2",
-//            "name": "FibaroHC2",
-//            "host": "PUT IP ADDRESS OF YOUR HC2 HERE",
-//            "username": "PUT USERNAME OF YOUR HC2 HERE",
-//            "password": "PUT PASSWORD OF YOUR HC2 HERE",
-//            "grouping": "PUT none OR room",
-//            "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 100 INTERVAL IN SECONDS. 2 SECONDS IS THE DEFAULT"
+//             "platform": "Jeedom",
+//             "name": "Jeedom",
+//             "ip": "PUT IP ADDRESS OF YOUR JEEDOM HERE",
+//             "port": "PUT SERVER PORT OF YOUR JEEDOM HERE",
+//             "url": "PUT URL COMPLEMENT OF YOUR JEEDOM HERE",
+//             "apikey": "PUT APIKEY OF YOUR JEEDOM HERE",
+//             "grouping": "PUT none OR room",
+//             "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 100 INTERVAL IN SECONDS. 2 SECONDS IS THE DEFAULT"
 //     }
 // ],
 //
@@ -105,7 +106,7 @@ JeedomPlatform.prototype.addAccessories = function() {
         		that.rooms[s.result.id] = s.result.name;
         	});
 		    that.log("Fetching Jeedom devices ...");
-        	return that.fibaroClient.getDevices();
+        	return that.jeedomClient.getDevices();
     	})
     	.then(function (devices) {
 			that.JeedomDevices2HomeKitAccessories(devices.result);    		
@@ -146,55 +147,36 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					currentRoomID = s.object_id;
 				}
 			}
-			if (s.type == "com.fibaro.multilevelSwitch")
+			if (s.type == "LIGHT")
 				service = {controlService: new Service.Lightbulb(s.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
-			else if (s.type == "com.fibaro.FGRGBW441M" || s.type == "com.fibaro.colorController") {
+			else if (s.type == "LIGHTRGB") {
 				service = {controlService: new Service.Lightbulb(s.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
 				service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
 				service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
 				service.controlService.countColorCharacteristics = 0;
 				service.controlService.timeoutIdColorCharacteristics = 0;
 				service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-			} else if (s.type == "com.fibaro.FGRM222" || s.type == "com.fibaro.FGR221" || s.type == "com.fibaro.rollerShutter")
+			} else if (s.type == "FLAP")
 				service = {controlService: new Service.WindowCovering(s.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
-			else if (s.type == "com.fibaro.binarySwitch" || s.type == "com.fibaro.developer.bxs.virtualBinarySwitch")
+			else if (s.type == "ENERGY")
 				service = {controlService: new Service.Switch(s.name), characteristics: [Characteristic.On]};
-			else if (s.type.substring(0, 18) == "com.fibaro.FGMS001" || s.type == "com.fibaro.motionSensor")
+			else if (s.type == "PRESENCE")
 				service = {controlService: new Service.MotionSensor(s.name), characteristics: [Characteristic.MotionDetected]};
-			else if (s.type == "com.fibaro.temperatureSensor")
+			else if (s.type == "TEMPERATURE")
 				service = {controlService: new Service.TemperatureSensor(s.name), characteristics: [Characteristic.CurrentTemperature]};
-			else if (s.type == "com.fibaro.humiditySensor")
+			else if (s.type == "HUMIDITY")
 				service = {controlService: new Service.HumiditySensor(s.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
-			else if (s.type == "com.fibaro.doorSensor" || s.type == "com.fibaro.windowSensor")
+			else if (s.type == "OPENING")
 				service = {controlService: new Service.ContactSensor(s.name), characteristics: [Characteristic.ContactSensorState]};
-			else if (s.type == "com.fibaro.lightSensor")
+			else if (s.type == "BRIGHTNESS")
 				service = {controlService: new Service.LightSensor(s.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
-			else if (s.type == "com.fibaro.FGWP101")
+			else if (s.type == "ENERGY")
 				service = {controlService: new Service.Outlet(s.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
-			else if (s.type == "com.fibaro.doorLock")
+			else if (s.type == "LOCK")
 				service = {controlService: new Service.LockMechanism(s.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
-			else if (s.type == "com.fibaro.thermostatDanfoss" || s.type == "com.fibaro.thermostatHorstmann")
+			else if (s.type == "THERMOSTAT")
 				service = {controlService: new Service.DanfossRadiatorThermostat(s.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TimeInterval]};
-			else if (s.type == "virtual_device") {
-				var pushButtonServices = [];
-				var pushButtonService = null;
-				for (var r = 0; r < s.properties.rows.length; r++) {
-					if (s.properties.rows[r].type == "button") {
-						for (var e = 0; e < s.properties.rows[r].elements.length; e++) {
-							pushButtonService  = {
-								controlService: new Service.Switch(s.properties.rows[r].elements[e].caption),
-								characteristics: [Characteristic.On]
-							};
-							pushButtonService.controlService.subtype = s.id + "-" + s.properties.rows[r].elements[e].id; // For Virtual devices it is device_id + "-" + button_id
-							pushButtonServices.push(pushButtonService);
-						}
-					} 
-				}
-				var fa = that.createAccessory(pushButtonServices, s.name, s.roomID)
-				if (!that.accessories[fa.uuid]) {
-					that.addAccessory(fa);
-				}
-			}
+
 			if (service != null) {
 				if (service.controlService.subtype == undefined)
 					service.controlService.subtype = "";
@@ -225,30 +207,30 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate();
 }
-FibaroHC2Platform.prototype.createAccessory = function(services, name, currentRoomID) {
-	var accessory = new FibaroBridgedAccessory(services);
+JeedomPlatform.prototype.createAccessory = function(services, name, currentRoomID) {
+	var accessory = new JeedomBridgedAccessory(services);
 	accessory.platform 			= this;
 	accessory.name				= (name) ? name : this.rooms[currentRoomID] + "-Devices";
 	accessory.uuid 				= UUIDGen.generate(accessory.name + currentRoomID);
-	accessory.model				= "HomeCenterBridgedAccessory";
-	accessory.manufacturer		= "IlCato";
+	accessory.model				= "JeedomBridgedAccessory";
+	accessory.manufacturer		= "Jeedom";
 	accessory.serialNumber		= "<unknown>";
 	return accessory;
 }
-FibaroHC2Platform.prototype.addAccessory = function(fibaroAccessory) {
+JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 
-	if (!fibaroAccessory) {
+	if (!jeedomAccessory) {
 		return;
 	}
-  	var newAccessory = new Accessory(fibaroAccessory.name, fibaroAccessory.uuid);
-  	fibaroAccessory.initAccessory(newAccessory);
+  	var newAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.uuid);
+  	jeedomAccessory.initAccessory(newAccessory);
 	newAccessory.reachable = true;
 
-	this.accessories[fibaroAccessory.UUID] = fibaroAccessory;
-    this.log("Adding Accessory: " + fibaroAccessory.name);
-	this.api.registerPlatformAccessories("homebridge-fibaro-hc2", "FibaroHC2", [newAccessory]);
+	this.accessories[jeedomAccessory.UUID] = jeedomAccessory;
+    this.log("Adding Accessory: " + jeedomAccessory.name);
+	this.api.registerPlatformAccessories("homebridge-jeedom", "Jeedom", [newAccessory]);
 }
-FibaroHC2Platform.prototype.configureAccessory = function(accessory) {
+JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	for (var s = 0; s < accessory.services.length; s++) {
 		var service = accessory.services[s];
 		if (service.subtype != undefined) {
@@ -271,7 +253,7 @@ FibaroHC2Platform.prototype.configureAccessory = function(accessory) {
 	this.accessories[accessory.UUID] = accessory;
 	accessory.reachable = true;
 }
-FibaroHC2Platform.prototype.bindCharacteristicEvents = function(characteristic, service) {
+JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	var onOff = characteristic.props.format == "bool" ? true : false;
   	var readOnly = true;
   	for (var i = 0; i < characteristic.props.perms.length; i++)
@@ -287,7 +269,7 @@ FibaroHC2Platform.prototype.bindCharacteristicEvents = function(characteristic, 
 	}
 	if (!readOnly) {
     	characteristic.on('set', function(value, callback, context) {
-			if( context !== 'fromFibaro' && context !== 'fromSetValue') {
+			if( context !== 'fromJeedom' && context !== 'fromSetValue') {
 				if (characteristic.UUID == (new Characteristic.On()).UUID && service.isVirtual) {
 					// It's a virtual device so the command is pressButton and not turnOn or Off
 					this.command("pressButton", IDs[1], service, IDs);
@@ -343,9 +325,9 @@ FibaroHC2Platform.prototype.bindCharacteristicEvents = function(characteristic, 
 		}
     }.bind(this));
 }
-FibaroHC2Platform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
+JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
 	var that = this;
-	this.fibaroClient.getDeviceProperties(IDs[0])
+	this.jeedomClient.getDeviceProperties(IDs[0])
 		.then(function(properties) {
 			if (characteristic.UUID == (new Characteristic.OutletInUse()).UUID) {
 				callback(undefined, parseFloat(properties.power) > 1.0 ? true : false);
@@ -357,16 +339,16 @@ FibaroHC2Platform.prototype.getAccessoryValue = function(callback, returnBoolean
 			} else if (characteristic.UUID == (new Characteristic.TargetTemperature()).UUID) {
 				callback(undefined, parseFloat(properties.targetLevel));
 			} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
-				var hsv = that.updateHomeKitColorFromHomeCenter(properties.color, service);
+				var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
 				callback(undefined, Math.round(hsv.h));
 			} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
-				var hsv = that.updateHomeKitColorFromHomeCenter(properties.color, service);
+				var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
 				callback(undefined, Math.round(hsv.s));
 			} else if (characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
 				callback(undefined, properties.value == "true" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
 			} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
 				if (service.HSBValue != null) {
-					var hsv = that.updateHomeKitColorFromHomeCenter(properties.color, service);
+					var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
 					callback(undefined, Math.round(hsv.v));
 				} else {
 					callback(undefined, parseFloat(properties.value));
@@ -398,9 +380,9 @@ FibaroHC2Platform.prototype.getAccessoryValue = function(callback, returnBoolean
 			that.log("There was a problem getting value from" + IDs[0] + "-" + err);
 		});
 }
-FibaroHC2Platform.prototype.command = function(c,value, service, IDs) {
+JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 	var that = this;
-	this.fibaroClient.executeDeviceAction(IDs[0], c, value)
+	this.jeedomClient.executeDeviceAction(IDs[0], c, value)
 		.then(function (response) {
 			that.log("Command: " + c + ((value != undefined) ? ", value: " + value : ""));
 		})
@@ -408,21 +390,21 @@ FibaroHC2Platform.prototype.command = function(c,value, service, IDs) {
 			that.log("There was a problem sending command " + c + " to " + IDs[0]);
 		});
 }
-FibaroHC2Platform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
+JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
 	if (characteristic.UUID == (new Characteristic.PositionState()).UUID)
 		return;
 
 	var IDs = service.subtype.split("-"); // IDs[0] is always device ID; for virtual device IDs[1] is the button ID
   	this.updateSubscriptions.push({ 'id': IDs[0], 'service': service, 'characteristic': characteristic, 'onOff': onOff, "property": propertyChanged });
 }
-FibaroHC2Platform.prototype.startPollingUpdate = function() {
+JeedomPlatform.prototype.startPollingUpdate = function() {
 	if(this.pollingUpdateRunning ) {
     	return;
     }
   	this.pollingUpdateRunning = true;
   	
 	var that = this;
-  	this.fibaroClient.refreshStates(this.lastPoll)
+  	this.JeedomClient.refreshStates(this.lastPoll)
   		.then(function(updates) {
 			that.lastPoll = updates.last;
 			if (updates.changes != undefined) {
@@ -441,18 +423,18 @@ FibaroHC2Platform.prototype.startPollingUpdate = function() {
 								if (subscription.characteristic.UUID == (new Characteristic.TimeInterval()).UUID)
 									intervalValue = true;
 								if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID)
-									subscription.characteristic.setValue(value == true ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromFibaro');
+									subscription.characteristic.setValue(value == true ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID)
-									subscription.characteristic.setValue(value == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromFibaro');
+									subscription.characteristic.setValue(value == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || subscription.characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
 									if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
-										subscription.characteristic.setValue(value, undefined, 'fromFibaro');
+										subscription.characteristic.setValue(value, undefined, 'fromJeedom');
 								} else if (s.power != undefined && powerValue) {
-									subscription.characteristic.setValue(parseFloat(s.power) > 1.0 ? true : false, undefined, 'fromFibaro');
+									subscription.characteristic.setValue(parseFloat(s.power) > 1.0 ? true : false, undefined, 'fromJeedom');
 								} else if ((subscription.onOff && typeof(value) == "boolean") || !subscription.onOff) {
-									 subscription.characteristic.setValue(value, undefined, 'fromFibaro');
+									 subscription.characteristic.setValue(value, undefined, 'fromJeedom');
 								} else {
-									subscription.characteristic.setValue(value == 0 ? false : true, undefined, 'fromFibaro');
+									subscription.characteristic.setValue(value == 0 ? false : true, undefined, 'fromJeedom');
 								}
 							}
 						}
@@ -461,15 +443,15 @@ FibaroHC2Platform.prototype.startPollingUpdate = function() {
 						for (var i=0; i < that.updateSubscriptions.length; i++) {
 							var subscription = that.updateSubscriptions[i];
 							if (subscription.id == s.id && subscription.property == "color") {
-								var hsv = that.updateHomeKitColorFromHomeCenter(s.color, subscription.service);
+								var hsv = that.updateHomeKitColorFromJeedom(s.color, subscription.service);
 								if (subscription.characteristic.UUID == (new Characteristic.On()).UUID)
-									subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromFibaro');
+									subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.Hue()).UUID)
-									subscription.characteristic.setValue(Math.round(hsv.h), undefined, 'fromFibaro');
+									subscription.characteristic.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.Saturation()).UUID)
-									subscription.characteristic.setValue(Math.round(hsv.s), undefined, 'fromFibaro');
+									subscription.characteristic.setValue(Math.round(hsv.s), undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID)
-									subscription.characteristic.setValue(Math.round(hsv.v), undefined, 'fromFibaro');
+									subscription.characteristic.setValue(Math.round(hsv.v), undefined, 'fromJeedom');
 							}
 						}
 					} 
@@ -482,7 +464,7 @@ FibaroHC2Platform.prototype.startPollingUpdate = function() {
  			that.log("Error fetching updates: " + err);
   		});
 }
-FibaroHC2Platform.prototype.updateHomeCenterColorFromHomeKit = function(h, s, v, service) {
+JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
 	if (h != null)
 		service.HSBValue.hue = h;
 	if (s != null)
@@ -495,7 +477,7 @@ FibaroHC2Platform.prototype.updateHomeCenterColorFromHomeKit = function(h, s, v,
 	service.RGBValue.blue = rgb.b;
 	return rgb;  	
 }
-FibaroHC2Platform.prototype.updateHomeKitColorFromHomeCenter = function(color, service) {
+JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
 	var colors = color.split(",");
 	var r = parseInt(colors[0]);
 	var g = parseInt(colors[1]);
@@ -509,7 +491,7 @@ FibaroHC2Platform.prototype.updateHomeKitColorFromHomeCenter = function(color, s
 	service.HSBValue.brightness = hsv.v;
 	return hsv;  	
 }
-FibaroHC2Platform.prototype.syncColorCharacteristics = function(rgb, service, IDs) {
+JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) {
 	switch (--service.countColorCharacteristics) {
 		case -1:
 			service.countColorCharacteristics = 2;
@@ -536,10 +518,10 @@ FibaroHC2Platform.prototype.syncColorCharacteristics = function(rgb, service, ID
 	}
 }
 
-function FibaroBridgedAccessory(services) {
+function JeedomBridgedAccessory(services) {
     this.services = services;
 }
-FibaroBridgedAccessory.prototype.initAccessory = function (newAccessory) {
+JeedomBridgedAccessory.prototype.initAccessory = function (newAccessory) {
 	newAccessory.getService(Service.AccessoryInformation)
                     .setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
                     .setCharacteristic(Characteristic.Model, this.model)
