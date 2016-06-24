@@ -103,14 +103,15 @@ JeedomPlatform.prototype.addAccessories = function() {
     this.jeedomClient.getRooms()
     	.then(function (rooms) {
         	//console.log("pieces :"+JSON.stringify(rooms));
-		rooms.result.map(function(s, i, a) {
+		rooms.map(function(s, i, a) {
         		that.rooms[s.id] = s.name;
+        		that.log('New Room >'+s.name);
         	});
 		    that.log("Fetching Jeedom devices ...");
         	return that.jeedomClient.getDevices();
     	})
     	.then(function (devices) {
-			that.JeedomDevices2HomeKitAccessories(devices.result);    		
+			that.JeedomDevices2HomeKitAccessories(devices);    		
     	})
     	.catch(function (err, response) {
 			that.log("Error getting data from Jeedom: " + err + " " + response);
@@ -136,7 +137,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	  var that = this;
 	  devices.map(function(s, i, a) {
 		if (s.isVisible == "1" && s.object_id != null) {
-			if (that.grouping == "room") {         	
+			/*if (that.grouping == "room") {         	
 				if (s.object_id != currentRoomID) {
 					if (services.length != 0) {
 						var a = that.createAccessory(services, null, currentRoomID)
@@ -147,7 +148,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					}
 					currentRoomID = s.object_id;
 				}
-			}
+			}*/
 			that.jeedomClient.getDeviceProperties(s.id).then(function (resultEqL){
 				that.jeedomClient.getDeviceCmd(s.id).then(function (resultCMD){
 					AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL,resultCMD));
@@ -183,9 +184,9 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					service = {controlService: new Service.ContactSensor(_params.name), characteristics: [Characteristic.ContactSensorState]};
 				else if (_params.type == "BRIGHTNESS")
 					service = {controlService: new Service.LightSensor(_params.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
-				else if (_params.type == "ENERGY"){
+				else if (_params.type == "ENERGY")
 					service = {controlService: new Service.Outlet(_params.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
-				}else if (_params.type == "LOCK")
+				else if (_params.type == "LOCK")
 					service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
 				else if (_params.type == "THERMOSTAT")
 					service = {controlService: new Service.DanfossRadiatorThermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TimeInterval]};
@@ -197,7 +198,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					services.push(service);
 					service = null;
 				}
-				if (that.grouping == "none") {         	
+				//if (that.grouping == "none") {         	
 					if (services.length != 0) {
 						var a = that.createAccessory(services, _params.name, _params.object_id)
 						if (!that.accessories[a.uuid]) {
@@ -205,11 +206,12 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						}
 						services = [];
 					}
-				}
+				//}
 			}
 		}
 	  });
 	}
+	/*
 	if (that.grouping == "room") {         	
 		if (services.length != 0) {
 			var a = that.createAccessory(services, null, currentRoomID)
@@ -217,7 +219,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				that.addAccessory(a);
 			}
 		}
-	}
+	}*/
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate();
 }
