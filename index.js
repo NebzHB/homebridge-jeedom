@@ -370,18 +370,27 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
 				callback(undefined, Math.round(hsv.s));
 			} else if (characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
-				callback(undefined, properties.value == "true" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+				var v ="";
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "OPENING"){
+						v=parseInt(element.currentValue);
+						console.log("valeur "+element.generic_type+" : "+v);					
+					}
+				});
+				callback(undefined, v == 1 ? Characteristic.ContactSensorState.CONTACT_NOT_DETECTED : Characteristic.ContactSensorState.CONTACT_DETECTED);
 			} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
 				if (service.HSBValue != null) {
 					var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
 					callback(undefined, Math.round(hsv.v));
 				} else {
+					var v ="";
 					properties.forEach(function(element, index, array){
 						if(element.generic_type == "LIGHT_STATE"){
 							console.log("valeur brightness "+element.currentValue);
-							callback(undefined, parseFloat(element.currentValue));
+							v=parseFloat(element.currentValue);
 						}
 					});
+					callback(undefined, v);
 				}
 			} else if (characteristic.UUID == (new Characteristic.PositionState()).UUID) {
 				callback(undefined, Characteristic.PositionState.STOPPED);
@@ -399,7 +408,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (returnBoolean) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-						if(element.generic_type == "LIGHT_STATE" || element.generic_type == "ENERGY_STATE" || element.generic_type == "PRESENCE"){
+						if(element.generic_type == "LIGHT_STATE" || element.generic_type == "ENERGY_STATE" || element.generic_type == "PRESENCE" || element.generic_type == "OPENING"){
 							v = element.currentValue;
 							console.log("valeur binary "+element.generic_type+" : "+v);
 						}
