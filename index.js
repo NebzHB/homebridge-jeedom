@@ -166,7 +166,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					that.log('Accessoire trouvez // Name : '+_params.name+', Type : '+element.type);
 					if (element.type == "LIGHT")
 						service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
-					else if (_params.type == "LIGHTRGB") {
+					else if (element.type == "LIGHTRGB") {
 						service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
 						service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
 						service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
@@ -201,9 +201,13 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						services.push(service);
 						service = null;
 					}
+					var id = 0;
+					if(element.cmds != undefined){
+						id = element.cmds.id;
+					}
 					//if (that.grouping == "none") {         	
 						if (services.length != 0) {
-							var a = that.createAccessory(services, _params.name, _params.object_id)
+							var a = that.createAccessory(services, id, _params.name, _params.object_id)
 							if (!that.accessories[a.uuid]) {
 								that.addAccessory(a);
 							}
@@ -227,11 +231,11 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate();
 }
-JeedomPlatform.prototype.createAccessory = function(services, name, currentRoomID) {
+JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRoomID) {
 	var accessory = new JeedomBridgedAccessory(services);
 	accessory.platform 			= this;
 	accessory.name				= (name) ? name : this.rooms[currentRoomID] + "-Devices";
-	accessory.uuid 				= UUIDGen.generate(accessory.name + currentRoomID);
+	accessory.uuid 				= UUIDGen.generate(id + accessory.name + currentRoomID);
 	accessory.model				= "JeedomBridgedAccessory";
 	accessory.manufacturer		= "Jeedom";
 	accessory.serialNumber		= "<unknown>";
@@ -387,19 +391,20 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				var v ="";
 				properties.forEach(function(element, index, array){
 					if(element.generic_type == "FLAP_STATE"){
-						console.log("valeur flap "+JSON.stringify(element));
 						v=parseInt(element.currentValue);
+						console.log("valeur "+element.generic_type+" : "+v);					
 					}
 				});
 				callback(undefined, v);				
 			} else if (returnBoolean) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-						if(element.generic_type == "LIGHT_STATE" || element.generic_type == "ENERGY_STATE"){
+						if(element.generic_type == "LIGHT_STATE" || element.generic_type == "ENERGY_STATE" || element.generic_type == "PRESENCE"){
 							v = element.currentValue;
+							console.log("valeur binary "+element.generic_type+" : "+v);
 						}
 					});
-				console.log("valeur binary "+v);
+				
 				//var v = properties.value;
 				if (v == "true" || v == "false") {
 					callback(undefined, (v == "false") ? false : true);
@@ -407,7 +412,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					callback(undefined, (parseInt(v) == 0) ? false : true);
 				}
 			} else {
-				callback(undefined, parseFloat(properties.value));
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "TEMPERATURE" || element.generic_type == "BRIGHTNESS"){
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+						callback(undefined, parseFloat(element.currentValue));
+					}
+				});
 			}
 		})
 		.catch(function(err, response) {
