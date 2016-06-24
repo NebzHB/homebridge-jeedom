@@ -380,13 +380,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 				callback(undefined, properties.value == "true" ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED);
 			} else if (characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
-				var v = parseInt(properties.value);
-				if (v >= characteristic.props.minValue && v <= characteristic.props.maxValue)
-					callback(undefined, v);
-				else {
-					that.log("There was a problem getting value for blind" + IDs[0] + ", value = " + v);
-					callback("Error value window position", null);
-				}
+				var v ="";
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "FLAP_STATE"){
+						console.log("valeur flap "+JSON.stringify(element));
+						v=parseInt(element.currentValue);
+					}
+				});
+				callback(undefined, v);				
 			} else if (returnBoolean) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
@@ -414,11 +415,11 @@ JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 	this.jeedomClient.getDeviceCmd(IDs[0]).then(function (resultCMD){
 		var cmdId=0;
 		resultCMD.forEach(function(element, index, array){
-			if(value > 0 && element.generic_type == "LIGHT_SLIDER" ){
+			if(value > 0 && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")){
 				cmdId = element.id;
-			}else if((value == 255 || c == "turnOn") && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" )){
+			}else if((value == 255 || c == "turnOn") && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" || element.generic_type == "FLAP_UP" )){
 				cmdId = element.id;
-			}else if((value == 0 || c == "turnOff") && (element.generic_type == "LIGHT_OFF" || element.generic_type == "ENERGY_OFF" )){
+			}else if((value == 0 || c == "turnOff") && (element.generic_type == "LIGHT_OFF" || element.generic_type == "ENERGY_OFF" || element.generic_type == "FLAP_DOWN" )){
 				cmdId = element.id;
 			}
 		});
