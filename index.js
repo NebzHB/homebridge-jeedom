@@ -192,7 +192,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					else if (element.type == "LOCK")
 						service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
 					else if (element.type == "THERMOSTAT")
-						service = {controlService: new Service.DanfossRadiatorThermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TimeInterval]};
+						service = {controlService: new Service.Thermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TargetHeatingCoolingState]};
 		
 					if (service != null) {
 						if (service.controlService.subtype == undefined)
@@ -202,12 +202,14 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						service = null;
 					}
 					var id = 0;
+					console.log("cmds crea 2"+JSON.stringify(element.cmds));
 					if(element.cmds != undefined){
 						id = element.cmds.id;
 					}
 					//if (that.grouping == "none") {         	
 						if (services.length != 0) {
-							var a = that.createAccessory(services, id, _params.name, _params.object_id)
+							console.log("cmds crea 2"+JSON.stringify(element.cmds));
+							var a = that.createAccessory(services, id, _params.name, _params.object_id, element.cmds)
 							if (!that.accessories[a.uuid]) {
 								that.addAccessory(a);
 							}
@@ -231,7 +233,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate();
 }
-JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRoomID) {
+JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRoomID, cmds) {
+	console.log("cmds crea "+JSON.stringify(cmds));
 	var accessory = new JeedomBridgedAccessory(services);
 	accessory.platform 			= this;
 	accessory.name				= (name) ? name : this.rooms[currentRoomID] + "-Devices";
@@ -239,6 +242,7 @@ JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRo
 	accessory.model				= "JeedomBridgedAccessory";
 	accessory.manufacturer		= "Jeedom";
 	accessory.serialNumber		= "<unknown>";
+	accessory.cmds		= cmds;
 	return accessory;
 }
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
@@ -257,6 +261,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	for (var s = 0; s < accessory.services.length; s++) {
 		var service = accessory.services[s];
+		console.log("service : "+JSON.stringify(service));
 		if (service.subtype != undefined) {
 			var subtypeParams = service.subtype.split("-"); // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 			if (subtypeParams.length == 3 && subtypeParams[2] == "RGB") {
@@ -307,8 +312,6 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 					if (Math.abs(value - characteristic.value) >= 0.5) {
 						value = parseFloat( (Math.round(value / 0.5) * 0.5).toFixed(1) );
 						this.command("setTargetLevel", value, service, IDs);
-						// automatically set the interval to 2 hours
-						this.command("setTime", 2*3600 + Math.trunc((new Date()).getTime()/1000), service, IDs);
 					} else {
 						value = characteristic.value;
 					}
@@ -317,18 +320,20 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 					}, 100 );
 				} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
 					this.command("setTime", value + Math.trunc((new Date()).getTime()/1000), service, IDs);
+				} else if (characteristic.UUID == (new Characteristic.TargetHeatingCoolingState()).UUID) {
+					this.command("TargetHeatingCoolingState", value, service, IDs);
 				} else if (characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 					var action = value == Characteristic.LockTargetState.UNSECURED ? "unsecure" : "secure";
 					this.command(action, 0, service, IDs);
 				} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
-					var rgb = this.updateHomeCenterColorFromHomeKit(value, null, null, service);
+					var rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
 					this.syncColorCharacteristics(rgb, service, IDs);
 				} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
-					var rgb = this.updateHomeCenterColorFromHomeKit(null, value, null, service);
+					var rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
 					this.syncColorCharacteristics(rgb, service, IDs);
 				} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
 					if (service.HSBValue != null) {
-						var rgb = this.updateHomeCenterColorFromHomeKit(null, null, value, service);
+						var rgb = this.updateJeedomColorFromHomeKit(null, null, value, service);
 						this.syncColorCharacteristics(rgb, service, IDs);
 					} else {
 						this.command("setValue", value, service, IDs);
@@ -362,12 +367,33 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				if (t < 0) t = 0;
 				callback(undefined, t);
 			} else if (characteristic.UUID == (new Characteristic.TargetTemperature()).UUID) {
-				callback(undefined, parseFloat(properties.targetLevel));
+				var v ="";
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "THERMOSTAT_SETPOINT"){
+						v=parseInt(element.currentValue);
+						console.log("valeur "+element.generic_type+" : "+v);					
+					}					
+				});
+				callback(undefined, v);
 			} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
-				var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
+				var v ="";
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "LIGHT_COLOR"){
+						console.log("valeur brightness "+element.currentValue);
+						v=element.currentValue;
+					}
+				});
+				var hsv = that.updateHomeKitColorFromJeedom(v, service);
 				callback(undefined, Math.round(hsv.h));
 			} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
-				var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
+				var v ="";
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "LIGHT_COLOR"){
+						console.log("valeur brightness "+element.currentValue);
+						v=element.currentValue;
+					}
+				});
+				var hsv = that.updateHomeKitColorFromJeedom(v, service);
 				callback(undefined, Math.round(hsv.s));
 			} else if (characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
 				var v ="";
@@ -380,7 +406,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				callback(undefined, v == 1 ? Characteristic.ContactSensorState.CONTACT_NOT_DETECTED : Characteristic.ContactSensorState.CONTACT_DETECTED);
 			} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
 				if (service.HSBValue != null) {
-					var hsv = that.updateHomeKitColorFromJeedom(properties.color, service);
+					var v ="";
+					properties.forEach(function(element, index, array){
+						if(element.generic_type == "LIGHT_COLOR"){
+							console.log("valeur brightness "+element.currentValue);
+							v=element.currentValue;
+						}
+					});
+					var hsv = that.updateHomeKitColorFromJeedom(v, service);
 					callback(undefined, Math.round(hsv.v));
 				} else {
 					var v ="";
@@ -421,12 +454,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					callback(undefined, (parseInt(v) == 0) ? false : true);
 				}
 			} else {
+				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "TEMPERATURE" || element.generic_type == "BRIGHTNESS"){
+					if(element.generic_type == "TEMPERATURE" || element.generic_type == "BRIGHTNESS" || element.generic_type == "THERMOSTAT_TEMPERATURE"){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
-						callback(undefined, parseFloat(element.currentValue));
+						v = element.currentValue;
 					}
 				});
+				callback(undefined, parseFloat(v));
 			}
 		})
 		.catch(function(err, response) {
@@ -435,14 +470,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 }
 JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 	var that = this;
+	console.log("Command: " + c);
 	this.jeedomClient.getDeviceCmd(IDs[0]).then(function (resultCMD){
 		var cmdId=0;
 		resultCMD.forEach(function(element, index, array){
-			if(value > 0 && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")){
+			if(value > 0 && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER" || element.generic_type == "THERMOSTAT_SET_SETPOINT")){
 				cmdId = element.id;
-			}else if((value == 255 || c == "turnOn") && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" || element.generic_type == "FLAP_UP" )){
+			}else if((value == 255 || c == "turnOn") && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" || element.generic_type == "FLAP_DOWN" )){
 				cmdId = element.id;
-			}else if((value == 0 || c == "turnOff") && (element.generic_type == "LIGHT_OFF" || element.generic_type == "ENERGY_OFF" || element.generic_type == "FLAP_DOWN" )){
+			}else if((value == 0 || c == "turnOff") && (element.generic_type == "LIGHT_OFF" || element.generic_type == "ENERGY_OFF" || element.generic_type == "FLAP_UP" )){
+				cmdId = element.id;
+			}else if(c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR"){
 				cmdId = element.id;
 			}
 		});
@@ -462,22 +500,28 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 		return;
 
 	var IDs = service.subtype.split("-"); // IDs[0] is always device ID; for virtual device IDs[1] is the button ID
+	console.log('ffffffff'+JSON.stringify(characteristic));
   	this.updateSubscriptions.push({ 'id': IDs[0], 'service': service, 'characteristic': characteristic, 'onOff': onOff, "property": propertyChanged });
 }
 JeedomPlatform.prototype.startPollingUpdate = function() {
+	var that = this;
+	if(this.jeedomClient == undefined){
+		setTimeout( function() { that.startPollingUpdate()}, that.pollerPeriod * 1000);
+		return;
+	}
 	if(this.pollingUpdateRunning ) {
     	return;
     }
   	this.pollingUpdateRunning = true;
-  	
-	var that = this;
-  	this.JeedomClient.refreshStates(this.lastPoll)
+  	var that = this;
+  	this.jeedomClient.refreshStates(this.lastPoll)
   		.then(function(updates) {
-			that.lastPoll = updates.last;
-			if (updates.changes != undefined) {
-				updates.changes.map(function(s) {
-					if (s.value != undefined) {
-						var value=parseInt(s.value);
+  			that.lastPoll = updates.result.datetime;
+			if (updates.result.result != undefined) {
+				updates.result.result.map(function(s) {
+					console.log("yoyoyo "+JSON.stringify(s));
+					if (s.option.value != undefined) {
+						var value=parseInt(s.option.value);
 						if (isNaN(value))
 							value=(s.value === "true");
 						for (var i=0; i < that.updateSubscriptions.length; i++) {
@@ -545,10 +589,13 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 	return rgb;  	
 }
 JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
+	if(color == undefined)
+		color="0,0,0";
+	console.log("couleur :"+color);
 	var colors = color.split(",");
-	var r = parseInt(colors[0]);
-	var g = parseInt(colors[1]);
-	var b = parseInt(colors[2]);
+	var r = hexToR(color);
+	var g = hexToG(color);
+	var b = hexToB(color);
 	service.RGBValue.red = r;
 	service.RGBValue.green = g;
 	service.RGBValue.blue = b;
@@ -558,6 +605,7 @@ JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service)
 	service.HSBValue.brightness = hsv.v;
 	return hsv;  	
 }
+
 JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) {
 	switch (--service.countColorCharacteristics) {
 		case -1:
@@ -566,17 +614,15 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 			service.timeoutIdColorCharacteristics = setTimeout(function () {
 				if (service.countColorCharacteristics < 2)
 					return;
-				that.command("setR", rgb.r, service, IDs);
-				that.command("setG", rgb.g, service, IDs);
-				that.command("setB", rgb.b, service, IDs);
+				var rgbColor = rgbToHex(rgb.r,rgb.g,rgb.b);
+				that.command("setRGB", rgbColor, service, IDs);
 				service.countColorCharacteristics = 0;
 				service.timeoutIdColorCharacteristics = 0;
 			}, 1000);
 			break;
 		case 0:
-			this.command("setR", rgb.r, service, IDs);
-			this.command("setG", rgb.g, service, IDs);
-			this.command("setB", rgb.b, service, IDs);
+			var rgbColor = rgbToHex(rgb.r,rgb.g,rgb.b);
+			this.command("setRGB", rgbColor, service, IDs);
 			service.countColorCharacteristics = 0;
 			service.timeoutIdColorCharacteristics = 0;
 			break;
@@ -610,6 +656,18 @@ JeedomBridgedAccessory.prototype.initAccessory = function (newAccessory) {
     }
 }
 
+function hexToR(h) {return parseInt((cutHex(h)).substring(0,2),16)}
+function hexToG(h) {return parseInt((cutHex(h)).substring(2,4),16)}
+function hexToB(h) {return parseInt((cutHex(h)).substring(4,6),16)}
+function cutHex(h) {return (h.charAt(0)=="#") ? h.substring(1,7):h}
+function rgbToHex(R,G,B) {return "#"+toHex(R)+toHex(G)+toHex(B)}
+function toHex(n) {
+ n = parseInt(n,10);
+ if (isNaN(n)) return "00";
+ n = Math.max(0,Math.min(n,255));
+ return "0123456789ABCDEF".charAt((n-n%16)/16)
+      + "0123456789ABCDEF".charAt(n%16);
+}
 function HSVtoRGB(hue, saturation, value) {
 	var h = hue/360.0;
 	var s = saturation/100.0;
