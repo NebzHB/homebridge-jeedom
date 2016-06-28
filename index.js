@@ -192,7 +192,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					else if (element.type == "LOCK")
 						service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
 					else if (element.type == "THERMOSTAT")
-						service = {controlService: new Service.Thermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.TargetHeatingCoolingState]};
+						service = {controlService: new Service.Thermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature,Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]};
 		
 					if (service != null) {
 						if (service.controlService.subtype == undefined)
@@ -297,7 +297,10 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 	    this.subscribeUpdate(service, characteristic, onOff, propertyChanged); // TODO CHECK
 	}
 	if (!readOnly) {
-    	characteristic.on('set', function(value, callback, context) {
+		characteristic.on('set', function(value, callback, context) {
+			if( characteristic.UUID == '00000033-0000-1000-8000-0026BB765291'){
+				console.log('set target mode');
+			}
 			if( context !== 'fromJeedom' && context !== 'fromSetValue') {
 				if (characteristic.UUID == (new Characteristic.On()).UUID && service.isVirtual) {
 					// It's a virtual device so the command is pressButton and not turnOn or Off
@@ -425,9 +428,22 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					});
 					callback(undefined, v);
 				}
+			} else if (characteristic.UUID == (new Characteristic.CurrentHeatingCoolingState()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "THERMOSTAT_MODE"){
+						if(element.currentValue == "Off"){
+							v = Characteristic.CurrentHeatingCoolingState.OFF;
+						}else{
+							v = Characteristic.CurrentHeatingCoolingState.AUTO;
+						}
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+					}
+				});
+				callback(undefined, v);
 			} else if (characteristic.UUID == (new Characteristic.PositionState()).UUID) {
 				callback(undefined, Characteristic.PositionState.STOPPED);
-			} else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
+			}  else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 				callback(undefined, properties.value == "true" ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED);
 			} else if (characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
 				var v ="";
@@ -482,6 +498,11 @@ JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 				cmdId = element.id;
 			}else if(c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR"){
 				cmdId = element.id;
+			}else if(c == "TargetHeatingCoolingState" && element.generic_type == "THERMOSTAT_SET_MODE"){
+				if(element.name == "Off"){
+					cmdId = element.id;
+				}
+				
 			}
 		});
 		that.jeedomClient.executeDeviceAction(cmdId, c, value)
