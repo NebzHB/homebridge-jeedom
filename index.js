@@ -114,7 +114,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 			that.JeedomDevices2HomeKitAccessories(devices);    		
     	})
     	.catch(function (err, response) {
-			that.log("Error getting data from Jeedom: " + err + " " + response);
+			that.log("#2 Error getting data from Jeedom: " + err + " " + response);
     	});
 }
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
@@ -153,70 +153,131 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				that.jeedomClient.getDeviceCmd(s.id).then(function (resultCMD){
 					AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL,resultCMD));
 				}).catch(function (err, response) {
-					that.log("Error getting data from Jeedom: " + err + " " + response);
+					that.log("#4 Error getting data from Jeedom: " + err + " " + response);
 				});
 			}).catch(function (err, response) {
-				that.log("Error getting data from Jeedom: " + err + " " + response);
+				that.log("#3 Error getting data from Jeedom: " + err + " " + response);
 			}); 
 			
 			function AccessoireCreateJeedom(_params){
+			var cmds = _params;
 			console.log('PARAMS > '+JSON.stringify(_params));
-				_params.result.forEach(function(element, index, array){
-				console.log('ELEMENT > '+JSON.stringify(element));
-					that.log('Accessoire trouvez // Name : '+_params.name+', Type : '+element.type);
-					if (element.type == "LIGHT")
+					that.log('Accessoire trouvez // Name : '+_params.name);
+					if (cmds.light){
 						service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
-					else if (element.type == "LIGHTRGB") {
-						service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
-						service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
-						service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
-						service.controlService.countColorCharacteristics = 0;
-						service.controlService.timeoutIdColorCharacteristics = 0;
-						service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-					} else if (element.type == "FLAP")
-						service = {controlService: new Service.WindowCovering(_params.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
-					else if (element.type == "ENERGY2")
-						service = {controlService: new Service.Switch(_params.name), characteristics: [Characteristic.On]};
-					else if (element.type == "PRESENCE")
-						service = {controlService: new Service.MotionSensor(_params.name), characteristics: [Characteristic.MotionDetected]};
-					else if (element.type == "TEMPERATURE")
-						service = {controlService: new Service.TemperatureSensor(_params.name), characteristics: [Characteristic.CurrentTemperature]};
-					else if (element.type == "HUMIDITY")
-						service = {controlService: new Service.HumiditySensor(_params.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
-					else if (element.type == "OPENING")
-						service = {controlService: new Service.ContactSensor(_params.name), characteristics: [Characteristic.ContactSensorState]};
-					else if (element.type == "BRIGHTNESS")
-						service = {controlService: new Service.LightSensor(_params.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
-					else if (element.type == "ENERGY")
-						service = {controlService: new Service.Outlet(_params.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
-					else if (element.type == "LOCK")
-						service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
-					else if (element.type == "THERMOSTAT")
-						service = {controlService: new Service.Thermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature,Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]};
-		
-					if (service != null) {
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
 						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
-					var id = 0;
-					console.log("cmds crea 2"+JSON.stringify(element.cmds));
-					if(element.cmds != undefined){
-						id = element.cmds.id;
+					if (cmds.lightrgb) {
+						service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
+						service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
+						service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
+						service.controlService.countColorCharacteristics = 0;
+						service.controlService.timeoutIdColorCharacteristics = 0;
+						service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
 					}
+					if (cmds.flap){
+						service = {controlService: new Service.WindowCovering(_params.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.energy){
+						service = {controlService: new Service.Switch(_params.name), characteristics: [Characteristic.On]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.presence){
+						service = {controlService: new Service.MotionSensor(_params.name), characteristics: [Characteristic.MotionDetected]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.temperature){
+						console.log('device'+_params.name+' TEMPERATUREALEX');
+						service = {controlService: new Service.TemperatureSensor(_params.name), characteristics: [Characteristic.CurrentTemperature]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.humidity){
+						service = {controlService: new Service.HumiditySensor(_params.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.opening){
+						service = {controlService: new Service.ContactSensor(_params.name), characteristics: [Characteristic.ContactSensorState]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.brightness){
+						service = {controlService: new Service.LightSensor(_params.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.energy){
+						service = {controlService: new Service.Outlet(_params.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.lock){
+						service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.thermostat){
+						service = {controlService: new Service.Thermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature,Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					
 					//if (that.grouping == "none") {         	
 						if (services.length != 0) {
-							console.log("cmds crea 2"+JSON.stringify(element.cmds));
-							var a = that.createAccessory(services, id, _params.name, _params.object_id, element.cmds)
+							console.log("cmds crea 2"+JSON.stringify(services));
+							var a = that.createAccessory(services, _params.id, _params.name, _params.object_id)
+							//console.log('aaaaaaaa'+JSON.stringify(that.accessories[a.uuid]));
 							if (!that.accessories[a.uuid]) {
+								console.log('ddddddddd');
 								that.addAccessory(a);
 							}
 							services = [];
 						}
 					//}
-				});
 			}
 		}
 	  });
@@ -233,8 +294,9 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate();
 }
-JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRoomID, cmds) {
-	console.log("cmds crea "+JSON.stringify(cmds));
+JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRoomID) {
+	console.log("cmds crea "+JSON.stringify(services));
+	console.log("cmds crea id "+id);
 	var accessory = new JeedomBridgedAccessory(services);
 	accessory.platform 			= this;
 	accessory.name				= (name) ? name : this.rooms[currentRoomID] + "-Devices";
@@ -242,11 +304,10 @@ JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRo
 	accessory.model				= "JeedomBridgedAccessory";
 	accessory.manufacturer		= "Jeedom";
 	accessory.serialNumber		= "<unknown>";
-	accessory.cmds		= cmds;
 	return accessory;
 }
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
-
+	console.log('add accss');
 	if (!jeedomAccessory) {
 		return;
 	}
@@ -261,7 +322,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	for (var s = 0; s < accessory.services.length; s++) {
 		var service = accessory.services[s];
-		console.log("service : "+JSON.stringify(service));
+		//console.log("service : "+JSON.stringify(service));
 		if (service.subtype != undefined) {
 			var subtypeParams = service.subtype.split("-"); // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 			if (subtypeParams.length == 3 && subtypeParams[2] == "RGB") {
@@ -359,6 +420,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 }
 JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
 	var that = this;
+	//console.log('recuperation valeur : '+JSON.stringify(properties));
 	this.jeedomClient.getDeviceCmd(IDs[0])
 		.then(function(properties) {
 			//console.log('recuperation valeur : '+JSON.stringify(properties));
@@ -382,7 +444,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				var v ="";
 				properties.forEach(function(element, index, array){
 					if(element.generic_type == "LIGHT_COLOR"){
-						console.log("valeur brightness "+element.currentValue);
+						console.log("valeur "+element.generic_type+" : "+v);
 						v=element.currentValue;
 					}
 				});
@@ -392,7 +454,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				var v ="";
 				properties.forEach(function(element, index, array){
 					if(element.generic_type == "LIGHT_COLOR"){
-						console.log("valeur brightness "+element.currentValue);
+						console.log("valeur "+element.generic_type+" : "+v);
 						v=element.currentValue;
 					}
 				});
@@ -412,7 +474,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					var v ="";
 					properties.forEach(function(element, index, array){
 						if(element.generic_type == "LIGHT_COLOR"){
-							console.log("valeur brightness "+element.currentValue);
+							console.log("valeur "+element.generic_type+" : "+v);
 							v=element.currentValue;
 						}
 					});
@@ -422,8 +484,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					var v ="";
 					properties.forEach(function(element, index, array){
 						if(element.generic_type == "LIGHT_STATE"){
-							console.log("valeur brightness "+element.currentValue);
-							v=parseFloat(element.currentValue);
+							if(v == "")
+								v=0;
+							v=parseInt(element.currentValue);
+							console.log("valeur "+element.generic_type+" : "+v);
 						}
 					});
 					callback(undefined, v);
@@ -469,16 +533,37 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				} else {
 					callback(undefined, (parseInt(v) == 0) ? false : true);
 				}
-			} else {
+			} else if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "TEMPERATURE" || element.generic_type == "BRIGHTNESS" || element.generic_type == "THERMOSTAT_TEMPERATURE"){
+					if(element.generic_type == "TEMPERATURE" || element.generic_type == "THERMOSTAT_TEMPERATURE"){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
 						v = element.currentValue;
 					}
 				});
 				callback(undefined, parseFloat(v));
-			}
+			} else if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "BRIGHTNESS"){
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseInt(v));
+			} else if (characteristic.UUID == (new Characteristic.CurrentRelativeHumidity()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "HUMIDITY"){
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseInt(v));
+			} else {
+				var v = 0;
+				callback(undefined, parseInt(v));
+			} 
 		})
 		.catch(function(err, response) {
 			that.log("There was a problem getting value from" + IDs[0] + "-" + err);
@@ -513,7 +598,7 @@ JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 			that.log("There was a problem sending command " + c + " to " + IDs[0]);
 		});
 	}).catch(function (err, response) {
-		that.log("Error getting data from Jeedom: " + err + " " + response);
+		that.log("#1 Error getting data from Jeedom: " + err + " " + response);
 	});
 }
 JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
@@ -521,7 +606,7 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 		return;
 
 	var IDs = service.subtype.split("-"); // IDs[0] is always device ID; for virtual device IDs[1] is the button ID
-	console.log('ffffffff'+JSON.stringify(characteristic));
+	//console.log('ffffffff'+JSON.stringify(characteristic));
   	this.updateSubscriptions.push({ 'id': IDs[0], 'service': service, 'characteristic': characteristic, 'onOff': onOff, "property": propertyChanged });
 }
 JeedomPlatform.prototype.startPollingUpdate = function() {
@@ -663,6 +748,7 @@ JeedomBridgedAccessory.prototype.initAccessory = function (newAccessory) {
 
   	for (var s = 0; s < this.services.length; s++) {
 		var service = this.services[s];
+		console.log('service :'+JSON.stringify(service));
 		newAccessory.addService(service.controlService);
 		for (var i=0; i < service.characteristics.length; i++) {
 			var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
