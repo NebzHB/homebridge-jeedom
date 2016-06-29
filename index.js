@@ -164,25 +164,26 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			console.log('PARAMS > '+JSON.stringify(_params));
 					that.log('Accessoire trouvez // Name : '+_params.name);
 					if (cmds.light){
-						service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
-					}
-					if (cmds.lightrgb) {
-						service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
-						service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
-						service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
-						service.controlService.countColorCharacteristics = 0;
-						service.controlService.timeoutIdColorCharacteristics = 0;
-						service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						if (cmds.light.color) {
+							service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
+							service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
+							service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
+							service.controlService.countColorCharacteristics = 0;
+							service.controlService.timeoutIdColorCharacteristics = 0;
+							service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+							if (service.controlService.subtype == undefined)
+								service.controlService.subtype = "";
+							service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+							services.push(service);
+							service = null;
+						}else{
+							service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
+							if (service.controlService.subtype == undefined)
+								service.controlService.subtype = "";
+							service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+							services.push(service);
+							service = null;
+						}
 					}
 					if (cmds.flap){
 						service = {controlService: new Service.WindowCovering(_params.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
@@ -241,7 +242,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						services.push(service);
 						service = null;
 					}
-					if (cmds.energy){
+					if (cmds.energy2){
 						service = {controlService: new Service.Outlet(_params.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
