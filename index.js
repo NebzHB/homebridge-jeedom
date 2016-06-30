@@ -161,11 +161,12 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			
 			function AccessoireCreateJeedom(_params){
 			var cmds = _params;
-			console.log('PARAMS > '+JSON.stringify(_params));
+			//console.log('PARAMS > '+JSON.stringify(_params));
 					that.log('Accessoire trouvez // Name : '+_params.name);
 					if (cmds.light){
 						if (cmds.light.color) {
 							service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
+							service.controlService.cmd_id = cmds.light.color.id;
 							service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
 							service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
 							service.controlService.countColorCharacteristics = 0;
@@ -173,72 +174,79 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 							if (service.controlService.subtype == undefined)
 								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+							service.controlService.subtype = _params.id + "-" + cmds.light.color.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 							services.push(service);
 							service = null;
 						}else{
 							service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
+							service.controlService.cmd_id = cmds.light.id;
 							if (service.controlService.subtype == undefined)
 								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+							service.controlService.subtype = _params.id + "-" +  cmds.light.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 							services.push(service);
 							service = null;
 						}
 					}
 					if (cmds.flap){
 						service = {controlService: new Service.WindowCovering(_params.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
+						service.controlService.cmd_id = cmds.flap.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" +  cmds.flap.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.energy){
 						service = {controlService: new Service.Switch(_params.name), characteristics: [Characteristic.On]};
+						service.controlService.cmd_id = cmds.energy.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.energy.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.presence){
 						service = {controlService: new Service.MotionSensor(_params.name), characteristics: [Characteristic.MotionDetected]};
+						service.controlService.cmd_id = cmds.presence.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.presence.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.temperature){
-						console.log('device'+_params.name+' TEMPERATUREALEX');
 						service = {controlService: new Service.TemperatureSensor(_params.name), characteristics: [Characteristic.CurrentTemperature]};
+						service.controlService.cmd_id = cmds.temperature.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.temperature.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.humidity){
 						service = {controlService: new Service.HumiditySensor(_params.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
+						service.controlService.cmd_id = cmds.humidity.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.humidity.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.opening){
 						service = {controlService: new Service.ContactSensor(_params.name), characteristics: [Characteristic.ContactSensorState]};
+						service.controlService.cmd_id = cmds.opening.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.opening.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.brightness){
 						service = {controlService: new Service.LightSensor(_params.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
+						service.controlService.cmd_id = cmds.brightness.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.brightness.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
@@ -246,30 +254,32 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						service = {controlService: new Service.Outlet(_params.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.brightness.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.lock){
 						service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
+						service.controlService.cmd_id = cmds.lock.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.lock.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					if (cmds.thermostat){
 						service = {controlService: new Service.Thermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature,Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]};
+						service.controlService.cmd_id = cmds.thermostat.id;
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "--" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						service.controlService.subtype = _params.id + "-" + cmds.thermostat.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
 					
 					//if (that.grouping == "none") {         	
 						if (services.length != 0) {
-							console.log("cmds crea 2"+JSON.stringify(services));
+							//console.log("cmds crea 2"+JSON.stringify(services));
 							var a = that.createAccessory(services, _params.id, _params.name, _params.object_id)
 							//console.log('aaaaaaaa'+JSON.stringify(that.accessories[a.uuid]));
 							if (!that.accessories[a.uuid]) {
@@ -296,8 +306,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		this.startPollingUpdate();
 }
 JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRoomID) {
-	console.log("cmds crea "+JSON.stringify(services));
-	console.log("cmds crea id "+id);
+	//console.log("cmds crea "+JSON.stringify(services));
+	//console.log("cmds crea id "+id);
 	var accessory = new JeedomBridgedAccessory(services);
 	accessory.platform 			= this;
 	accessory.name				= (name) ? name : this.rooms[currentRoomID] + "-Devices";
@@ -351,13 +361,10 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		if (characteristic.props.perms[i] == "pw")
 			readOnly = false;
 	var IDs = service.subtype.split("-"); // IDs[0] is always device ID; for virtual device IDs[1] is the button ID
-	service.isVirtual = IDs[1] != "" ? true : false;
-	if (!service.isVirtual) {
-		var propertyChanged = "value"; // subscribe to the changes of this property
-		if (service.HSBValue != undefined)
-			propertyChanged = "color";	 		
-	    this.subscribeUpdate(service, characteristic, onOff, propertyChanged); // TODO CHECK
-	}
+	var propertyChanged = "value"; // subscribe to the changes of this property
+	if (service.HSBValue != undefined)
+		propertyChanged = "color";	 		
+    this.subscribeUpdate(service, characteristic, onOff, propertyChanged); // TODO CHECK
 	if (!readOnly) {
 		characteristic.on('set', function(value, callback, context) {
 			if( characteristic.UUID == '00000033-0000-1000-8000-0026BB765291'){
@@ -607,7 +614,7 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 		return;
 
 	var IDs = service.subtype.split("-"); // IDs[0] is always device ID; for virtual device IDs[1] is the button ID
-	//console.log('ffffffff'+JSON.stringify(characteristic));
+	console.log('ffffffff'+JSON.stringify(service));
   	this.updateSubscriptions.push({ 'id': IDs[0], 'service': service, 'characteristic': characteristic, 'onOff': onOff, "property": propertyChanged });
 }
 JeedomPlatform.prototype.startPollingUpdate = function() {
@@ -626,14 +633,23 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
   			that.lastPoll = updates.result.datetime;
 			if (updates.result.result != undefined) {
 				updates.result.result.map(function(s) {
-					console.log("yoyoyo "+JSON.stringify(s));
-					if (s.option.value != undefined) {
+					if (s.option.value != undefined && s.option.cmd_id != undefined) {
 						var value=parseInt(s.option.value);
 						if (isNaN(value))
-							value=(s.value === "true");
+							value=(s.option.value === "true");
+						console.log("cmd_id : "+s.option.cmd_id+" -- value : "+value);
+						//console.log("subscription"+JSON.stringify(that.updateSubscriptions));
 						for (var i=0; i < that.updateSubscriptions.length; i++) {
 							var subscription = that.updateSubscriptions[i];
-							if (subscription.id == s.id && subscription.property == "value") {
+							//console.log("subscription"+JSON.stringify(subscription));
+							if(subscription.service.subtype != undefined){
+								var IDs = subscription.service.subtype.split("-");
+								var cmd_id = IDs[1];
+								//console.log("subscription ID"+cmd_id);
+							}
+							//if (subscription.service.cmd_id == s.option.cmd_id && subscription.property == "value") {
+							if (cmd_id == s.option.cmd_id) {
+								console.log('subscription :'+cmd_id+" -- id :"+s.option.cmd_id+" value : "+value);
 								var powerValue = false;
 								var intervalValue = false;
 								if (subscription.characteristic.UUID == (new Characteristic.OutletInUse()).UUID)
@@ -641,9 +657,9 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 								if (subscription.characteristic.UUID == (new Characteristic.TimeInterval()).UUID)
 									intervalValue = true;
 								if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID)
-									subscription.characteristic.setValue(value == true ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
+									subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID)
-									subscription.characteristic.setValue(value == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
+									subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || subscription.characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
 									if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
 										subscription.characteristic.setValue(value, undefined, 'fromJeedom');
@@ -749,7 +765,7 @@ JeedomBridgedAccessory.prototype.initAccessory = function (newAccessory) {
 
   	for (var s = 0; s < this.services.length; s++) {
 		var service = this.services[s];
-		console.log('service :'+JSON.stringify(service));
+		//console.log('service :'+JSON.stringify(service));
 		newAccessory.addService(service.controlService);
 		for (var i=0; i < service.characteristics.length; i++) {
 			var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
