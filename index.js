@@ -4,10 +4,7 @@
 // "platforms": [
 //     {
 //             "platform": "Jeedom",
-//             "name": "Jeedom",
-//             "ip": "PUT IP ADDRESS OF YOUR JEEDOM HERE",
-//             "port": "PUT SERVER PORT OF YOUR JEEDOM HERE",
-//             "url": "PUT URL COMPLEMENT OF YOUR JEEDOM HERE",
+//             "url": "PUT URL OF YOUR JEEDOM HERE",
 //             "apikey": "PUT APIKEY OF YOUR JEEDOM HERE",
 //             "grouping": "PUT none OR room",
 //             "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 100 INTERVAL IN SECONDS. 2 SECONDS IS THE DEFAULT"
@@ -60,7 +57,7 @@ function JeedomPlatform(log, config, api){
 	this.api = api;
 	this.accessories = [];
   	this.log = log;
-  	this.jeedomClient = require('./lib/jeedom-api').createClient(config["ip"], config["port"], config["complement"], config["apikey"]);
+  	this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
   	this.grouping = config["grouping"];
   	if (this.grouping == undefined) {
 		this.grouping = "none"
