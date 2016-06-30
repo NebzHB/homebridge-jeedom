@@ -611,7 +611,7 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 		return;
 
 	var IDs = service.subtype.split("-"); // IDs[0] is always device ID; for virtual device IDs[1] is the button ID
-	console.log('ffffffff'+JSON.stringify(service));
+	//console.log('ffffffff'+JSON.stringify(service));
   	this.updateSubscriptions.push({ 'id': IDs[0], 'service': service, 'characteristic': characteristic, 'onOff': onOff, "property": propertyChanged });
 }
 JeedomPlatform.prototype.startPollingUpdate = function() {
@@ -634,7 +634,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 						var value=parseInt(s.option.value);
 						if (isNaN(value))
 							value=(s.option.value === "true");
-						console.log("cmd_id : "+s.option.cmd_id+" -- value : "+value);
+						//console.log("cmd_id : "+s.option.cmd_id+" -- value : "+value);
 						//console.log("subscription"+JSON.stringify(that.updateSubscriptions));
 						for (var i=0; i < that.updateSubscriptions.length; i++) {
 							var subscription = that.updateSubscriptions[i];
