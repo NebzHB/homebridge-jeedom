@@ -46,6 +46,53 @@ module.exports = function(homebridge) {
 	};
 	inherits(Characteristic.TimeInterval, Characteristic);
 	Characteristic.TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+	
+	Characteristic.CurrentPowerConsumption = function() {
+      Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
+      this.setProps({
+        format: Characteristic.Formats.UINT16,
+        unit: "watts",
+        maxValue: 1000000000,
+        minValue: 0,
+        minStep: 1,
+        perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+      });
+      this.value = this.getDefaultValue();
+    };
+    inherits(Characteristic.CurrentPowerConsumption, Characteristic);
+    Characteristic.CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
+
+    Characteristic.TotalPowerConsumption = function() {
+      Characteristic.call(this, 'Total Consumption', 'E863F10C-079E-48FF-8F27-9C2605A29F52');
+      this.setProps({
+        format: Characteristic.Formats.FLOAT, // Deviation from Eve Energy observed type
+        unit: "kilowatthours",
+        maxValue: 1000000000,
+        minValue: 0,
+        minStep: 0.001,
+        perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+      });
+      this.value = this.getDefaultValue();
+    };
+    inherits(Characteristic.TotalPowerConsumption, Characteristic);
+    Characteristic.TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
+    
+    	/**
+	 * Custom Service "Power Monitor"
+	 */
+
+	Service.PowerMonitor = function(displayName, subtype) {
+	  Service.call(this, displayName, '0EB29E08-C307-498E-8E1A-4EDC5FF70607', subtype);
+
+	  // Required Characteristics
+	  this.addCharacteristic(Characteristic.CurrentPowerConsumption);
+	  this.addCharacteristic(Characteristic.TotalPowerConsumption);
+
+	  // Optional Characteristics
+
+	};
+	inherits(Service.PowerMonitor, Service);
+	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
 
   	// End of custom Services and Characteristics
 
@@ -199,6 +246,15 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						if (service.controlService.subtype == undefined)
 							service.controlService.subtype = "";
 						service.controlService.subtype = _params.id + "-" + cmds.energy.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
+					if (cmds.power || cmds.consumption){
+						service = {controlService: new Service.PowerMonitor(_params.name), characteristics: [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]};
+						service.controlService.cmd_id = cmds.power.id;
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "-" + cmds.power.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 						services.push(service);
 						service = null;
 					}
@@ -619,6 +675,24 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					}
 				});
 				callback(undefined, parseInt(v));
+			} else if (characteristic.UUID == (new Characteristic.CurrentPowerConsumption()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "POWER"){
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseFloat(v));
+			} else if (characteristic.UUID == (new Characteristic.TotalPowerConsumption()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "CONSUMPTION"){
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseFloat(v));
 			} else {
 				var v = 0;
 				callback(undefined, parseInt(v));
