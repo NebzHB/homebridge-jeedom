@@ -356,6 +356,15 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						services.push(service);
 						service = null;
 					}
+					if (cmds.alarm){
+						service = {controlService: new Service.SecuritySystem(_params.name), characteristics: [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]};
+						service.controlService.cmd_id = cmds.alarm.id;
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "-" + cmds.alarm.enable_state.id + "-" + cmds.alarm.state.id; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+						services.push(service);
+						service = null;
+					}
 					
 					//if (that.grouping == "none") {         	
 						if (services.length != 0) {
@@ -598,6 +607,60 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					});
 					callback(undefined, v);
 				}
+			} else if (characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
+				var v = 0;
+				var alarm = 0;
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "ALARM_ENABLE_STATE"){
+						if(parseInt(element.currentValue) == 0){
+							console.log("valeur "+element.generic_type+" : desarmé");
+							v = Characteristic.SecuritySystemCurrentState.DISARMED;
+						}else{
+							console.log("valeur "+element.generic_type+" : armé");
+							v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+						}
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+					}
+					if(element.generic_type == "ALARM_STATE"){
+						if(parseInt(element.currentValue) == 1){
+							console.log("valeur "+element.generic_type+" : alarm");
+							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+						}
+					}
+				});
+				if(alarm != 0){
+					callback(undefined, alarm);
+				}else{
+					callback(undefined, v);
+				}
+				
+			} else if (characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
+				var v = 0;
+				var alarm = 0;
+				properties.forEach(function(element, index, array){
+					if(element.generic_type == "ALARM_ENABLE_STATE"){
+						if(parseInt(element.currentValue) == 0){
+							console.log("valeur "+element.generic_type+" : desarmé");
+							v = Characteristic.SecuritySystemCurrentState.DISARMED;
+						}else{
+							console.log("valeur "+element.generic_type+" : armé");
+							v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+						}
+						console.log("valeur "+element.generic_type+" : "+element.currentValue);
+					}
+					if(element.generic_type == "ALARM_STATE"){
+						if(parseInt(element.currentValue) == 1){
+							console.log("valeur "+element.generic_type+" : alarm");
+							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+						}
+					}
+				});
+				if(alarm != 0){
+					callback(undefined, alarm);
+				}else{
+					callback(undefined, v);
+				}
+				
 			} else if (characteristic.UUID == (new Characteristic.CurrentHeatingCoolingState()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
@@ -705,6 +768,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 	var that = this;
 	console.log("Command: " + c);
+	if(service.UUID == (new Service.SecuritySystem()).UUID){
+		c = "SetAlarmMode";
+	}
+	
 	this.jeedomClient.getDeviceCmd(IDs[0]).then(function (resultCMD){
 		var cmdId=0;
 		resultCMD.forEach(function(element, index, array){
@@ -715,6 +782,10 @@ JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 			}else if((value == 0 || c == "turnOff") && (element.generic_type == "LIGHT_OFF" || element.generic_type == "ENERGY_OFF" || element.generic_type == "FLAP_UP" )){
 				cmdId = element.id;
 			}else if(c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR"){
+				cmdId = element.id;
+			}else if(c == "SetAlarmMode" && element.generic_type == "ALARM_ARMED" && value < 3){
+				cmdId = element.id;
+			}else if(c == "SetAlarmMode" && element.generic_type == "ALARM_RELEASED" && value == 3){
 				cmdId = element.id;
 			}else if(c == "TargetHeatingCoolingState" && element.generic_type == "THERMOSTAT_SET_MODE"){
 				if(element.name == "Off"){
@@ -770,10 +841,11 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 							if(subscription.service.subtype != undefined){
 								var IDs = subscription.service.subtype.split("-");
 								var cmd_id = IDs[1];
+								var cmd2_id = IDs[2];
 								//console.log("subscription ID"+cmd_id);
 							}
 							//if (subscription.service.cmd_id == s.option.cmd_id && subscription.property == "value") {
-							if (cmd_id == s.option.cmd_id) {
+							if (cmd_id == s.option.cmd_id || cmd2_id == s.option.cmd_id) {
 								console.log('subscription :'+cmd_id+" -- id :"+s.option.cmd_id+" value : "+value);
 								var powerValue = false;
 								var intervalValue = false;
@@ -783,6 +855,15 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 									intervalValue = true;
 								if (subscription.characteristic.UUID == (new Characteristic.SmokeDetected()).UUID)
 									subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');
+								else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID){
+									if(cmd2_id == s.option.cmd_id && value == 1){
+										subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED , undefined, 'fromJeedom');
+									}else{
+										subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+									}
+								}else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID){
+									subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+								}
 								else if (subscription.characteristic.UUID == (new Characteristic.LeakDetected()).UUID)
 									subscription.characteristic.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
 								else if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID)
