@@ -205,130 +205,245 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			
 			function AccessoireCreateJeedom(_params){
 			var cmds = _params;
-			//console.log('PARAMS > '+JSON.stringify(_params));
+			console.log('PARAMS > '+JSON.stringify(_params));
 					that.log('Accessoire trouvez // Name : '+_params.name);
 					if (cmds.light){
-						if (cmds.light.color) {
-							service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
-							service.controlService.cmd_id = cmds.light.color.id;
-							service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
-							service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
-							service.controlService.countColorCharacteristics = 0;
-							service.controlService.timeoutIdColorCharacteristics = 0;
-							service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" + cmds.light.color.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-							services.push(service);
-							service = null;
-						}else{
-							service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
-							service.controlService.cmd_id = cmds.light.id;
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" +  cmds.light.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-							services.push(service);
-							service = null;
-						}
+						var cmds2 = cmds;
+						cmds.light.forEach(function(cmd, index, array){
+							if (cmd.color) {
+								service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]};
+								service.controlService.cmd_id = cmd.color.id;
+								service.controlService.HSBValue = {hue: 0, saturation: 0, brightness: 0};
+								service.controlService.RGBValue = {red: 0, green: 0, blue: 0};
+								service.controlService.countColorCharacteristics = 0;
+								service.controlService.timeoutIdColorCharacteristics = 0;
+								service.controlService.subtype = "RGB"; // for RGB color add a subtype parameter; it will go into 3rd position: "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.color.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}else{
+								if(cmd.state){
+									var cmd_on = 0;
+									var cmd_off = 0;
+									var cmd_slider = 0;
+									cmds2.light.forEach(function(cmd2, index2, array2){
+										if(cmd2.on){
+											if(cmd2.on.value == cmd.state.id){
+												cmd_on = cmd2.on.id;
+											}
+										}else if(cmd2.off){
+											if(cmd2.off.value == cmd.state.id){
+												cmd_off = cmd2.off.id;
+											}
+										}else if(cmd2.slider){
+											if(cmd2.slider.value == cmd.state.id){
+												cmd_slider = cmd2.slider.id;
+											}
+										}
+									});
+									service = {controlService: new Service.Lightbulb(_params.name), characteristics: [Characteristic.On, Characteristic.Brightness]};
+									service.controlService.cmd_id = cmds.light.id;
+									if (service.controlService.subtype == undefined)
+										service.controlService.subtype = "";
+									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|"+ cmd_on + "|" + cmd_off + "|" + cmd_slider + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+									services.push(service);
+									service = null;
+								}
+							}
+						});
+						
 					}
 					if (cmds.flap){
-						service = {controlService: new Service.WindowCovering(_params.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
-						service.controlService.cmd_id = cmds.flap.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" +  cmds.flap.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						var cmds2 = cmds;
+						cmds.flap.forEach(function(cmd, index, array){
+							if(cmd.state){
+								var cmd_up = 0;
+								var cmd_down = 0;
+								var cmd_slider = 0;
+								var cmd_stop = 0;
+								cmds2.flap.forEach(function(cmd2, index2, array2){
+									if(cmd2.up){
+										if(cmd2.up.value == cmd.state.id){
+											cmd_up = cmd2.up.id;
+										}
+									}else if(cmd2.down){
+										if(cmd2.down.value == cmd.state.id){
+											cmd_down = cmd2.down.id;
+										}
+									}else if(cmd2.slider){
+										if(cmd2.slider.value == cmd.state.id){
+											cmd_slider = cmd2.slider.id;
+										}
+									}else if(cmd2.stop){
+										if(cmd2.stop.value == cmd.state.id){
+											stop = cmd2.stop.id;
+										}
+									}
+								});
+								service = {controlService: new Service.WindowCovering(_params.name), characteristics: [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]};
+								service.controlService.cmd_id = cmd.state.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.state.id + "|"+ cmd_down + "|" + cmd_up  + "|" + cmd_slider + "|" + cmd_stop + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.energy){
-						service = {controlService: new Service.Switch(_params.name), characteristics: [Characteristic.On]};
-						service.controlService.cmd_id = cmds.energy.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.energy.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						var cmds2 = cmds;
+						cmds.energy.forEach(function(cmd, index, array){
+							if(cmd.state){
+								var cmd_on = 0;
+								var cmd_off = 0;
+								cmds2.energy.forEach(function(cmd2, index2, array2){
+									if(cmd2.on){
+										if(cmd2.on.value == cmd.state.id){
+											cmd_on = cmd2.on.id;
+										}
+									}else if(cmd2.off){
+										if(cmd2.off.value == cmd.state.id){
+											cmd_off = cmd2.off.id;
+										}
+									}
+								});
+								service = {controlService: new Service.Switch(_params.name), characteristics: [Characteristic.On]};
+								service.controlService.cmd_id = cmd.state.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								console.log('cmdsIDs'+cmd.state.id + "|"+ cmd_on + "|" + cmd_off);
+								service.controlService.subtype = _params.id + "-" + cmd.state.id + "|"+ cmd_on + "|" + cmd_off + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.power || cmds.consumption){
-						service = {controlService: new Service.PowerMonitor(_params.name), characteristics: [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]};
-						service.controlService.cmd_id = cmds.power.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.power.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.power.forEach(function(cmd, index, array){
+							if(cmd.power || cmd.consumption){
+								service = {controlService: new Service.PowerMonitor(_params.name), characteristics: [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]};
+								if(cmd.power){
+									var cmd_id = cmd.power.id;
+								}else{
+									var cmd_id = cmd.consumption.id;
+								}
+								
+								service.controlService.cmd_id = cmd_id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd_id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
+						
 					}
 					if (cmds.battery){
-						service = {controlService: new Service.BatteryService(_params.name), characteristics: [Characteristic.BatteryLevel]};
-						service.controlService.cmd_id = cmds.battery.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.battery.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.battery.forEach(function(cmd, index, array){
+							if(cmd.battery){
+								service = {controlService: new Service.BatteryService(_params.name), characteristics: [Characteristic.BatteryLevel]};
+								service.controlService.cmd_id = cmd.battery.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.battery.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.presence){
-						service = {controlService: new Service.MotionSensor(_params.name), characteristics: [Characteristic.MotionDetected]};
-						service.controlService.cmd_id = cmds.presence.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.presence.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.presence.forEach(function(cmd, index, array){
+							if(cmd.presence){
+								service = {controlService: new Service.MotionSensor(_params.name), characteristics: [Characteristic.MotionDetected]};
+								service.controlService.cmd_id = cmd.presence.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.presence.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.temperature){
-						service = {controlService: new Service.TemperatureSensor(_params.name), characteristics: [Characteristic.CurrentTemperature]};
-						service.controlService.cmd_id = cmds.temperature.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.temperature.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.temperature.forEach(function(cmd, index, array){
+							if(cmd.temperature){
+								service = {controlService: new Service.TemperatureSensor(_params.name), characteristics: [Characteristic.CurrentTemperature]};
+								service.controlService.cmd_id = cmd.temperature.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.temperature.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
+						
 					}
 					if (cmds.humidity){
-						service = {controlService: new Service.HumiditySensor(_params.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
-						service.controlService.cmd_id = cmds.humidity.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.humidity.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.humidity.forEach(function(cmd, index, array){
+							if(cmd.humidity){
+								service = {controlService: new Service.HumiditySensor(_params.name), characteristics: [Characteristic.CurrentRelativeHumidity]};
+								service.controlService.cmd_id = cmd.humidity.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.humidity.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.smoke){
-						service = {controlService: new Service.SmokeSensor(_params.name), characteristics: [Characteristic.SmokeDetected]};
-						service.controlService.cmd_id = cmds.smoke.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.smoke.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.smoke.forEach(function(cmd, index, array){
+							if(cmd.smoke){
+								service = {controlService: new Service.SmokeSensor(_params.name), characteristics: [Characteristic.SmokeDetected]};
+								service.controlService.cmd_id = cmd.smoke.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.smoke.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.flood){
-						service = {controlService: new Service.LeakSensor(_params.name), characteristics: [Characteristic.LeakDetected]};
-						service.controlService.cmd_id = cmds.flood.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.flood.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.flood.forEach(function(cmd, index, array){
+							if(cmd.flood){
+								service = {controlService: new Service.LeakSensor(_params.name), characteristics: [Characteristic.LeakDetected]};
+								service.controlService.cmd_id = cmd.flood.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.flood.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.opening){
-						service = {controlService: new Service.ContactSensor(_params.name), characteristics: [Characteristic.ContactSensorState]};
-						service.controlService.cmd_id = cmds.opening.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.opening.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.opening.forEach(function(cmd, index, array){
+							if(cmd.opening){
+								service = {controlService: new Service.ContactSensor(_params.name), characteristics: [Characteristic.ContactSensorState]};
+								service.controlService.cmd_id = cmd.opening.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.opening.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.brightness){
-						service = {controlService: new Service.LightSensor(_params.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
-						service.controlService.cmd_id = cmds.brightness.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.brightness.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.brightness.forEach(function(cmd, index, array){
+							if(cmd.brightness){
+								service = {controlService: new Service.LightSensor(_params.name), characteristics: [Characteristic.CurrentAmbientLightLevel]};
+								service.controlService.cmd_id = cmd.brightness.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.brightness.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.energy2){
 						service = {controlService: new Service.Outlet(_params.name), characteristics: [Characteristic.On, Characteristic.OutletInUse]};
@@ -339,13 +454,17 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						service = null;
 					}
 					if (cmds.lock){
-						service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
-						service.controlService.cmd_id = cmds.lock.id;
-						if (service.controlService.subtype == undefined)
-							service.controlService.subtype = "";
-						service.controlService.subtype = _params.id + "-" + cmds.lock.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
-						services.push(service);
-						service = null;
+						cmds.lock.forEach(function(cmd, index, array){
+							if(cmd.lock){
+								service = {controlService: new Service.LockMechanism(_params.name), characteristics: [Characteristic.LockCurrentState, Characteristic.LockTargetState]};
+								service.controlService.cmd_id = cmd.lock.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.lock.id + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
+								services.push(service);
+								service = null;
+							}
+						});
 					}
 					if (cmds.thermostat){
 						service = {controlService: new Service.Thermostat(_params.name), characteristics: [Characteristic.CurrentTemperature, Characteristic.TargetTemperature,Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]};
@@ -517,6 +636,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 }
 JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
 	var that = this;
+	var cmds = IDs[1].split("|");
 	//console.log('recuperation valeur : '+JSON.stringify(properties));
 	this.jeedomClient.getDeviceCmd(IDs[0])
 		.then(function(properties) {
@@ -560,7 +680,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.SmokeDetected()).UUID) {
 				var v ="";
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "SMOKE"){
+					if(element.generic_type == "SMOKE" && element.id == cmds[0]){
 						v=parseInt(element.currentValue);
 						console.log("valeur "+element.generic_type+" : "+v);					
 					}
@@ -569,7 +689,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			}else if (characteristic.UUID == (new Characteristic.LeakDetected()).UUID) {
 				var v ="";
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "FLOOD"){
+					if(element.generic_type == "FLOOD" && element.id == cmds[0]){
 						v=parseInt(element.currentValue);
 						console.log("valeur "+element.generic_type+" : "+v);					
 					}
@@ -578,7 +698,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			}else if (characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
 				var v ="";
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "OPENING"){
+					if(element.generic_type == "OPENING" && element.id == cmds[0]){
 						v=parseInt(element.currentValue);
 						console.log("valeur "+element.generic_type+" : "+v);					
 					}
@@ -598,7 +718,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				} else {
 					var v ="";
 					properties.forEach(function(element, index, array){
-						if(element.generic_type == "LIGHT_STATE"){
+						if(element.generic_type == "LIGHT_STATE" && element.id == cmds[0]){
 							if(v == "")
 								v=0;
 							v=parseInt(element.currentValue);
@@ -681,7 +801,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
 				var v ="";
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "FLAP_STATE"){
+					if(element.generic_type == "FLAP_STATE"  && element.id == cmds[0]){
 						v=parseInt(element.currentValue);
 						console.log("valeur "+element.generic_type+" : "+v);					
 					}
@@ -690,7 +810,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (returnBoolean) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-						if(element.generic_type == "LIGHT_STATE" || element.generic_type == "ENERGY_STATE" || element.generic_type == "PRESENCE" || element.generic_type == "OPENING"){
+						if((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])){
 							v = element.currentValue;
 							console.log("valeur binary "+element.generic_type+" : "+v);
 						}
@@ -705,7 +825,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "TEMPERATURE" || element.generic_type == "THERMOSTAT_TEMPERATURE"){
+					if((element.generic_type == "TEMPERATURE" && element.id == cmds[0]) || element.generic_type == "THERMOSTAT_TEMPERATURE"){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
 						v = element.currentValue;
 					}
@@ -714,7 +834,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "BRIGHTNESS"){
+					if(element.generic_type == "BRIGHTNESS" && element.id == cmds[0]){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
 						v = element.currentValue;
 					}
@@ -723,7 +843,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.CurrentRelativeHumidity()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "HUMIDITY"){
+					if(element.generic_type == "HUMIDITY" && element.id == cmds[0]){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
 						v = element.currentValue;
 					}
@@ -732,7 +852,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.BatteryLevel()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "BATTERY"){
+					if(element.generic_type == "BATTERY" && element.id == cmds[0]){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
 						v = element.currentValue;
 					}
@@ -741,7 +861,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.CurrentPowerConsumption()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "POWER"){
+					if(element.generic_type == "POWER" && element.id == cmds[0]){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
 						v = element.currentValue;
 					}
@@ -750,7 +870,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			} else if (characteristic.UUID == (new Characteristic.TotalPowerConsumption()).UUID) {
 				var v = 0;
 				properties.forEach(function(element, index, array){
-					if(element.generic_type == "CONSUMPTION"){
+					if(element.generic_type == "CONSUMPTION" && element.id == cmds[0]){
 						console.log("valeur "+element.generic_type+" : "+element.currentValue);
 						v = element.currentValue;
 					}
@@ -768,18 +888,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 	var that = this;
 	console.log("Command: " + c);
+	var cmds = IDs[1].split("|");
 	if(service.UUID == (new Service.SecuritySystem()).UUID){
 		c = "SetAlarmMode";
 	}
 	
 	this.jeedomClient.getDeviceCmd(IDs[0]).then(function (resultCMD){
-		var cmdId=0;
+		var cmdId=cmds[0];
 		resultCMD.forEach(function(element, index, array){
-			if(value > 0 && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER" || element.generic_type == "THERMOSTAT_SET_SETPOINT")){
+			if(value > 0  && element.id == cmds[3] && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")){
 				cmdId = element.id;
-			}else if((value == 255 || c == "turnOn") && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" || element.generic_type == "FLAP_DOWN" )){
+			}else if((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" || element.generic_type == "FLAP_DOWN" )){
 				cmdId = element.id;
-			}else if((value == 0 || c == "turnOff") && (element.generic_type == "LIGHT_OFF" || element.generic_type == "ENERGY_OFF" || element.generic_type == "FLAP_UP" )){
+			}else if((value == 0 || c == "turnOff") && element.id == cmds[2] && (element.generic_type == "LIGHT_OFF" || (element.generic_type == "ENERGY_OFF" && element.id == cmds[2]) || element.generic_type == "FLAP_UP" )){
 				cmdId = element.id;
 			}else if(c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR"){
 				cmdId = element.id;
@@ -787,11 +908,12 @@ JeedomPlatform.prototype.command = function(c,value, service, IDs) {
 				cmdId = element.id;
 			}else if(c == "SetAlarmMode" && element.generic_type == "ALARM_RELEASED" && value == 3){
 				cmdId = element.id;
-			}else if(c == "TargetHeatingCoolingState" && element.generic_type == "THERMOSTAT_SET_MODE"){
-				if(element.name == "Off"){
+			}else if(c == "setTargetLevel" && value > 0 && element.generic_type == "THERMOSTAT_SET_SETPOINT"){
+				cmdId = element.id;
+			}else if(c == "TargetHeatingCoolingState"){
+				if(element.generic_type == "THERMOSTAT_SET_MODE" && element.name == "Off"){
 					cmdId = element.id;
 				}
-				
 			}
 		});
 		that.jeedomClient.executeDeviceAction(cmdId, c, value)
@@ -840,7 +962,8 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 							//console.log("subscription"+JSON.stringify(subscription));
 							if(subscription.service.subtype != undefined){
 								var IDs = subscription.service.subtype.split("-");
-								var cmd_id = IDs[1];
+								var cmds = IDs[1].split("|");
+								var cmd_id = cmds[0];
 								var cmd2_id = IDs[2];
 								//console.log("subscription ID"+cmd_id);
 							}
