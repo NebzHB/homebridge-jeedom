@@ -180,7 +180,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	  var service = null;
 	  var that = this;
 	  devices.map(function(s, i, a) {
-		if (s.isVisible == "1" && s.object_id != null) {
+		if (s.isVisible == "1" && s.object_id != null && (typeof s.configuration.sendToHomebridge === "undefined" || s.configuration.sendToHomebridge == 1)) {
 			/*if (that.grouping == "room") {         	
 				if (s.object_id != currentRoomID) {
 					if (services.length != 0) {
@@ -205,8 +205,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			
 			function AccessoireCreateJeedom(_params){
 			var cmds = _params;
-			console.log('PARAMS > '+JSON.stringify(_params));
-					that.log('Accessoire trouvez // Name : '+_params.name);
+			//console.log('PARAMS > '+JSON.stringify(_params));
+					//that.log('Accessoire trouvez // Name : '+_params.name);
 					if (cmds.light){
 						var cmds2 = cmds;
 						cmds.light.forEach(function(cmd, index, array){
@@ -313,7 +313,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								service.controlService.cmd_id = cmd.state.id;
 								if (service.controlService.subtype == undefined)
 									service.controlService.subtype = "";
-								console.log('cmdsIDs'+cmd.state.id + "|"+ cmd_on + "|" + cmd_off);
+								//console.log('cmdsIDs'+cmd.state.id + "|"+ cmd_on + "|" + cmd_off);
 								service.controlService.subtype = _params.id + "-" + cmd.state.id + "|"+ cmd_on + "|" + cmd_off + "-" + service.controlService.subtype; // "DEVICE_ID-VIRTUAL_BUTTON_ID-RGB_MARKER
 								services.push(service);
 								service = null;
@@ -491,7 +491,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							var a = that.createAccessory(services, _params.id, _params.name, _params.object_id)
 							//console.log('aaaaaaaa'+JSON.stringify(that.accessories[a.uuid]));
 							if (!that.accessories[a.uuid]) {
-								console.log('ddddddddd');
 								that.addAccessory(a);
 							}
 							services = [];
@@ -526,7 +525,6 @@ JeedomPlatform.prototype.createAccessory = function(services,id, name, currentRo
 	return accessory;
 }
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
-	console.log('add accss');
 	if (!jeedomAccessory) {
 		return;
 	}
@@ -969,7 +967,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 							}
 							//if (subscription.service.cmd_id == s.option.cmd_id && subscription.property == "value") {
 							if (cmd_id == s.option.cmd_id || cmd2_id == s.option.cmd_id) {
-								console.log('subscription :'+cmd_id+" -- id :"+s.option.cmd_id+" value : "+value);
+								//console.log('subscription :'+cmd_id+" -- id :"+s.option.cmd_id+" value : "+value);
 								var powerValue = false;
 								var intervalValue = false;
 								if (subscription.characteristic.UUID == (new Characteristic.OutletInUse()).UUID)
