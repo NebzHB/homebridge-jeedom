@@ -98,6 +98,9 @@ function JeedomPlatform(log, config, api) {
 	this.api = api;
 	this.accessories = [];
 	this.log = log;
+	if (config["url"] == "undefined") {
+		this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
+	}
 	this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
 	this.grouping = config["grouping"];
 	if (this.grouping == undefined) {
@@ -130,7 +133,6 @@ function JeedomPlatform(log, config, api) {
 		// Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
 		// Or start discover new accessories
 		this.api.on('didFinishLaunching', function() {
-			console.log("Plugin - DidFinishLaunching");
 			this.addAccessories();
 		}.bind(this));
 	}
@@ -143,7 +145,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 		//console.log("pieces :"+JSON.stringify(rooms));
 		rooms.map(function(s, i, a) {
 			that.rooms[s.id] = s.name;
-			that.log('New Room >' + s.name);
+			//that.log('New Room >' + s.name);
 		});
 		that.log("Fetching Jeedom devices ...");
 		return that.jeedomClient.getDevices();
@@ -185,7 +187,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				function AccessoireCreateJeedom(_params) {
 					var cmds = _params;
 					//console.log('PARAMS > '+JSON.stringify(_params));
-					that.log('Accessoire trouve // Name : '+_params.name);
+					//that.log('Accessoire trouve // Name : '+_params.name);
 					if (cmds.light) {
 						var cmds2 = cmds;
 						cmds.light.forEach(function(cmd, index, array) {
@@ -529,10 +531,11 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						services = [];
 					}
 				}
+
 			}
 		});
 	}
-
+	this.log("Homebridge Plugin is running now !")
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate(0);
 };
@@ -674,7 +677,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "THERMOSTAT_SETPOINT") {
 					v = parseInt(element.currentValue);
-					console.log("valeur " + element.generic_type + " : " + v);
+					//console.log("valeur " + element.generic_type + " : " + v);
 				}
 			});
 			callback(undefined, v);
@@ -682,7 +685,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = "";
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "LIGHT_COLOR") {
-					console.log("valeur " + element.generic_type + " : " + v);
+					//console.log("valeur " + element.generic_type + " : " + v);
 					v = element.currentValue;
 				}
 			});
@@ -692,7 +695,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = "";
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "LIGHT_COLOR") {
-					console.log("valeur " + element.generic_type + " : " + v);
+					//console.log("valeur " + element.generic_type + " : " + v);
 					v = element.currentValue;
 				}
 			});
@@ -703,7 +706,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "SMOKE" && element.id == cmds[0]) {
 					v = parseInt(element.currentValue);
-					console.log("valeur " + element.generic_type + " : " + v);
+					//console.log("valeur " + element.generic_type + " : " + v);
 				}
 			});
 			callback(undefined, v == 1 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
@@ -712,7 +715,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "FLOOD" && element.id == cmds[0]) {
 					v = parseInt(element.currentValue);
-					console.log("valeur " + element.generic_type + " : " + v);
+					//console.log("valeur " + element.generic_type + " : " + v);
 				}
 			});
 			callback(undefined, v == 1 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED);
@@ -721,7 +724,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "OPENING" && element.id == cmds[0]) {
 					v = parseInt(element.currentValue);
-					console.log("valeur " + element.generic_type + " : " + v);
+					//console.log("valeur " + element.generic_type + " : " + v);
 				}
 			});
 			callback(undefined, v == 1 ? Characteristic.ContactSensorState.CONTACT_NOT_DETECTED : Characteristic.ContactSensorState.CONTACT_DETECTED);
@@ -730,7 +733,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				var v = "";
 				properties.forEach(function(element, index, array) {
 					if (element.generic_type == "LIGHT_COLOR") {
-						console.log("valeur " + element.generic_type + " : " + v);
+						//console.log("valeur " + element.generic_type + " : " + v);
 						v = element.currentValue;
 					}
 				});
@@ -743,7 +746,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 						if (v == "")
 							v = 0;
 						v = parseInt(element.currentValue);
-						console.log("valeur " + element.generic_type + " : " + v);
+						//console.log("valeur " + element.generic_type + " : " + v);
 					}
 				});
 				callback(undefined, v);
@@ -754,17 +757,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "ALARM_ENABLE_STATE") {
 					if (parseInt(element.currentValue) == 0) {
-						console.log("valeur " + element.generic_type + " : desarmé");
+						//console.log("valeur " + element.generic_type + " : desarmé");
 						v = Characteristic.SecuritySystemCurrentState.DISARMED;
 					} else {
-						console.log("valeur " + element.generic_type + " : armé");
+						//console.log("valeur " + element.generic_type + " : armé");
 						v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 					}
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 				}
 				if (element.generic_type == "ALARM_STATE") {
 					if (parseInt(element.currentValue) == 1) {
-						console.log("valeur " + element.generic_type + " : alarm");
+						//console.log("valeur " + element.generic_type + " : alarm");
 						alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 					}
 				}
@@ -781,17 +784,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "ALARM_ENABLE_STATE") {
 					if (parseInt(element.currentValue) == 0) {
-						console.log("valeur " + element.generic_type + " : desarmé");
+						//console.log("valeur " + element.generic_type + " : desarmé");
 						v = Characteristic.SecuritySystemCurrentState.DISARMED;
 					} else {
-						console.log("valeur " + element.generic_type + " : armé");
+						//console.log("valeur " + element.generic_type + " : armé");
 						v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 					}
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 				}
 				if (element.generic_type == "ALARM_STATE") {
 					if (parseInt(element.currentValue) == 1) {
-						console.log("valeur " + element.generic_type + " : alarm");
+						//console.log("valeur " + element.generic_type + " : alarm");
 						alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 					}
 				}
@@ -811,7 +814,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					} else {
 						v = Characteristic.CurrentHeatingCoolingState.AUTO;
 					}
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 				}
 			});
 			callback(undefined, v);
@@ -824,7 +827,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "FLAP_STATE" && element.id == cmds[0]) {
 					v = parseInt(element.currentValue);
-					console.log("valeur " + element.generic_type + " : " + v);
+					//console.log("valeur " + element.generic_type + " : " + v);
 				}
 			});
 			callback(undefined, v);
@@ -833,7 +836,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			properties.forEach(function(element, index, array) {
 				if ((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])) {
 					v = element.currentValue;
-					console.log("valeur binary " + element.generic_type + " : " + v);
+					//console.log("valeur binary " + element.generic_type + " : " + v);
 				}
 			});
 
@@ -847,7 +850,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = 0;
 			properties.forEach(function(element, index, array) {
 				if ((element.generic_type == "TEMPERATURE" && element.id == cmds[0]) || element.generic_type == "THERMOSTAT_TEMPERATURE") {
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 					v = element.currentValue;
 				}
 			});
@@ -856,7 +859,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = 0;
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "BRIGHTNESS" && element.id == cmds[0]) {
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 					v = element.currentValue;
 				}
 			});
@@ -865,7 +868,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = 0;
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "HUMIDITY" && element.id == cmds[0]) {
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 					v = element.currentValue;
 				}
 			});
@@ -874,7 +877,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = 0;
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "BATTERY" && element.id == cmds[0]) {
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 					v = element.currentValue;
 				}
 			});
@@ -883,7 +886,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = 0;
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "POWER" && element.id == cmds[0]) {
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 					v = element.currentValue;
 				}
 			});
@@ -892,7 +895,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			var v = 0;
 			properties.forEach(function(element, index, array) {
 				if (element.generic_type == "CONSUMPTION" && element.id == cmds[0]) {
-					console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
 					v = element.currentValue;
 				}
 			});
@@ -907,20 +910,29 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 };
 JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 	var that = this;
-	console.log("Command: " + c);
 	var cmds = IDs[1].split("|");
 	if (service.UUID == (new Service.SecuritySystem()).UUID) {
 		c = "SetAlarmMode";
+	} else if (value == 0 && service.UUID == (new Service.WindowCovering).UUID) {
+		c = "flapDown";
+	} else if ((value == 99 || value == 100) && service.UUID == (new Service.WindowCovering).UUID) {
+		c = "flapUp";
 	}
-
 	this.jeedomClient.getDeviceCmd(IDs[0]).then(function(resultCMD) {
 		var cmdId = cmds[0];
 		resultCMD.forEach(function(element, index, array) {
-			if (value > 0 && element.id == cmds[3] && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")) {
+			if (c == "flapDown" && element.generic_type == "FLAP_DOWN") {
 				cmdId = element.id;
-			} else if ((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON" || element.generic_type == "FLAP_DOWN" )) {
+			} else if (c == "flapUp" && element.generic_type == "FLAP_UP") {
 				cmdId = element.id;
-			} else if ((value == 0 || c == "turnOff") && element.id == cmds[2] && (element.generic_type == "LIGHT_OFF" || (element.generic_type == "ENERGY_OFF" && element.id == cmds[2]) || element.generic_type == "FLAP_UP" )) {
+			} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")) {
+				cmdId = element.id;
+				if(value == undefined){
+					value = 0;
+				}
+			} else if ((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON")) {
+				cmdId = element.id;
+			} else if ((value == 0 || c == "turnOff") && element.id == cmds[2] && (element.generic_type == "LIGHT_OFF" || (element.generic_type == "ENERGY_OFF" && element.id == cmds[2]) )) {
 				cmdId = element.id;
 			} else if (c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR") {
 				cmdId = element.id;
@@ -1038,7 +1050,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 					}
 				}
 			});
-		
+
 		}
 		that.startPollingUpdate(lastPoll);
 	}).catch(function(err, response) {
@@ -1061,7 +1073,7 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
 	if (color == undefined)
 		color = "0,0,0";
-	console.log("couleur :" + color);
+	//console.log("couleur :" + color);
 	var colors = color.split(",");
 	var r = hexToR(color);
 	var g = hexToG(color);
