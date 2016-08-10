@@ -927,8 +927,12 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 				cmdId = element.id;
 			} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")) {
 				cmdId = element.id;
-				if(value == undefined){
-					value = 0;
+				if (value == undefined) {
+					if (c == "turnOn") {
+						value = 99;
+					} else if (c == "turnOff") {
+						value = 0;
+					}
 				}
 			} else if ((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON")) {
 				cmdId = element.id;
