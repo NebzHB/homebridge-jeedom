@@ -235,10 +235,17 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
-									service = {
-										controlService : new Service.Lightbulb(_params.name),
-										characteristics : [Characteristic.On, Characteristic.Brightness]
-									};
+									if (cmd_slider == 0) {
+										service = {
+											controlService : new Service.Lightbulb(_params.name),
+											characteristics : [Characteristic.On]
+										};
+									} else {
+										service = {
+											controlService : new Service.Lightbulb(_params.name),
+											characteristics : [Characteristic.On, Characteristic.Brightness]
+										};
+									}
 									service.controlService.cmd_id = cmds.light.id;
 									if (service.controlService.subtype == undefined)
 										service.controlService.subtype = "";
@@ -535,7 +542,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			}
 		});
 	}
-	this.log("Homebridge Plugin is running now !")
+	this.log("Homebridge Plugin is running now !");
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate(0);
 };
