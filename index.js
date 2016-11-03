@@ -98,7 +98,7 @@ function JeedomPlatform(log, config, api) {
 	this.api = api;
 	this.accessories = [];
 	this.log = log;
-	if (config["url"] == "undefined") {
+	if (config["url"] == "undefined" || config["url"] == "http:\/\/:80") {
 		this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 	}
 	this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
