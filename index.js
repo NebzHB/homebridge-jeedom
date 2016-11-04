@@ -173,7 +173,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		var service = null;
 		var that = this;
 		devices.map(function(s, i, a) {
-			if (s.isVisible == "1" && s.object_id != null && ( typeof s.configuration.sendToHomebridge === "undefined" || s.configuration.sendToHomebridge == 1)) {
+			if (s.isVisible == "1" && s.object_id != null && ( typeof s.configuration.sendToHomebridge === "undefined" || s.configuration.sendToHomebridge == 1 || s.configuration.sendToHomebridge == undefined)) {
 				that.jeedomClient.getDeviceProperties(s.id).then(function(resultEqL) {
 					that.jeedomClient.getDeviceCmd(s.id).then(function(resultCMD) {
 						AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
