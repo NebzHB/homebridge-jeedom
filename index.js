@@ -173,138 +173,54 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		var service = null;
 		var that = this;
 		devices.map(function(s, i, a) {
-			if (s.isVisible == "1" && s.object_id != null && typeof s.configuration.sendToHomebridge === "undefined") {
-				if(s.configuration.sendToHomebridge == 1){
-					that.jeedomClient.getDeviceProperties(s.id).then(function(resultEqL) {
-							that.jeedomClient.getDeviceCmd(s.id).then(function(resultCMD) {
-							AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
-						}).catch(function(err, response) {
-							that.log("#4 Error getting data from Jeedom: " + err + " " + response);
-						});
+			if (s.isVisible == "1" && s.object_id != null) {
+				that.jeedomClient.getDeviceProperties(s.id).then(function(resultEqL) {
+						that.jeedomClient.getDeviceCmd(s.id).then(function(resultCMD) {
+						AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
 					}).catch(function(err, response) {
-						that.log("#3 Error getting data from Jeedom: " + err + " " + response);
+						that.log("#4 Error getting data from Jeedom: " + err + " " + response);
 					});
+				}).catch(function(err, response) {
+					that.log("#3 Error getting data from Jeedom: " + err + " " + response);
+				});
 
-					function AccessoireCreateJeedom(_params) {
-						var cmds = _params;
-						//console.log('PARAMS > '+JSON.stringify(_params));
-						//that.log('Accessoire trouve // Name : '+_params.name);
-						if (cmds.light) {
-							var cmds2 = cmds;
-							cmds.light.forEach(function(cmd, index, array) {
-								if (cmd.color) {
-									service = {
-										controlService : new Service.Lightbulb(_params.name),
-										characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
-									};
-									service.controlService.cmd_id = cmd.color.id;
-									service.controlService.HSBValue = {
-										hue : 0,
-										saturation : 0,
-										brightness : 0
-									};
-									service.controlService.RGBValue = {
-										red : 0,
-										green : 0,
-										blue : 0
-									};
-									service.controlService.countColorCharacteristics = 0;
-									service.controlService.timeoutIdColorCharacteristics = 0;
-									service.controlService.subtype = "RGB";
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.color.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								} else {
-									if (cmd.state) {
-										var cmd_on = 0;
-										var cmd_off = 0;
-										var cmd_slider = 0;
-										cmds2.light.forEach(function(cmd2, index2, array2) {
-											if (cmd2.on) {
-												if (cmd2.on.value == cmd.state.id) {
-													cmd_on = cmd2.on.id;
-												}
-											} else if (cmd2.off) {
-												if (cmd2.off.value == cmd.state.id) {
-													cmd_off = cmd2.off.id;
-												}
-											} else if (cmd2.slider) {
-												if (cmd2.slider.value == cmd.state.id) {
-													cmd_slider = cmd2.slider.id;
-												}
-											}
-										});
-										if (cmd_slider == 0) {
-											service = {
-												controlService : new Service.Lightbulb(_params.name),
-												characteristics : [Characteristic.On]
-											};
-										} else {
-											service = {
-												controlService : new Service.Lightbulb(_params.name),
-												characteristics : [Characteristic.On, Characteristic.Brightness]
-											};
-										}
-										service.controlService.cmd_id = cmds.light.id;
-										if (service.controlService.subtype == undefined)
-											service.controlService.subtype = "";
-										service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "|" + cmd_slider + "-" + service.controlService.subtype;
-										services.push(service);
-										service = null;
-									}
-								}
-							});
-
-						}
-						if (cmds.flap) {
-							var cmds2 = cmds;
-							cmds.flap.forEach(function(cmd, index, array) {
-								if (cmd.state) {
-									var cmd_up = 0;
-									var cmd_down = 0;
-									var cmd_slider = 0;
-									var cmd_stop = 0;
-									cmds2.flap.forEach(function(cmd2, index2, array2) {
-										if (cmd2.up) {
-											if (cmd2.up.value == cmd.state.id) {
-												cmd_up = cmd2.up.id;
-											}
-										} else if (cmd2.down) {
-											if (cmd2.down.value == cmd.state.id) {
-												cmd_down = cmd2.down.id;
-											}
-										} else if (cmd2.slider) {
-											if (cmd2.slider.value == cmd.state.id) {
-												cmd_slider = cmd2.slider.id;
-											}
-										} else if (cmd2.stop) {
-											if (cmd2.stop.value == cmd.state.id) {
-												stop = cmd2.stop.id;
-											}
-										}
-									});
-									service = {
-										controlService : new Service.WindowCovering(_params.name),
-										characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
-									};
-									service.controlService.cmd_id = cmd.state.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_down + "|" + cmd_up + "|" + cmd_slider + "|" + cmd_stop + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.energy) {
-							var cmds2 = cmds;
-							cmds.energy.forEach(function(cmd, index, array) {
+				function AccessoireCreateJeedom(_params) {
+					var cmds = _params;
+					//console.log('PARAMS > '+JSON.stringify(_params));
+					//that.log('Accessoire trouve // Name : '+_params.name);
+					if (cmds.light) {
+						var cmds2 = cmds;
+						cmds.light.forEach(function(cmd, index, array) {
+							if (cmd.color) {
+								service = {
+									controlService : new Service.Lightbulb(_params.name),
+									characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
+								};
+								service.controlService.cmd_id = cmd.color.id;
+								service.controlService.HSBValue = {
+									hue : 0,
+									saturation : 0,
+									brightness : 0
+								};
+								service.controlService.RGBValue = {
+									red : 0,
+									green : 0,
+									blue : 0
+								};
+								service.controlService.countColorCharacteristics = 0;
+								service.controlService.timeoutIdColorCharacteristics = 0;
+								service.controlService.subtype = "RGB";
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.color.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							} else {
 								if (cmd.state) {
 									var cmd_on = 0;
 									var cmd_off = 0;
-									cmds2.energy.forEach(function(cmd2, index2, array2) {
+									var cmd_slider = 0;
+									cmds2.light.forEach(function(cmd2, index2, array2) {
 										if (cmd2.on) {
 											if (cmd2.on.value == cmd.state.id) {
 												cmd_on = cmd2.on.id;
@@ -313,237 +229,324 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											if (cmd2.off.value == cmd.state.id) {
 												cmd_off = cmd2.off.id;
 											}
+										} else if (cmd2.slider) {
+											if (cmd2.slider.value == cmd.state.id) {
+												cmd_slider = cmd2.slider.id;
+											}
 										}
 									});
-									service = {
-										controlService : new Service.Switch(_params.name),
-										characteristics : [Characteristic.On]
-									};
-									service.controlService.cmd_id = cmd.state.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.power || cmds.consumption) {
-							cmds.power.forEach(function(cmd, index, array) {
-								if (cmd.power || cmd.consumption) {
-									service = {
-										controlService : new Service.PowerMonitor(_params.name),
-										characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
-									};
-									if (cmd.power) {
-										var cmd_id = cmd.power.id;
+									if (cmd_slider == 0) {
+										service = {
+											controlService : new Service.Lightbulb(_params.name),
+											characteristics : [Characteristic.On]
+										};
 									} else {
-										var cmd_id = cmd.consumption.id;
+										service = {
+											controlService : new Service.Lightbulb(_params.name),
+											characteristics : [Characteristic.On, Characteristic.Brightness]
+										};
 									}
-
-									service.controlService.cmd_id = cmd_id;
+									service.controlService.cmd_id = cmds.light.id;
 									if (service.controlService.subtype == undefined)
 										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd_id + "-" + service.controlService.subtype;
+									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "|" + cmd_slider + "-" + service.controlService.subtype;
 									services.push(service);
 									service = null;
 								}
-							});
-
-						}
-						if (cmds.battery) {
-							cmds.battery.forEach(function(cmd, index, array) {
-								if (cmd.battery) {
-									service = {
-										controlService : new Service.BatteryService(_params.name),
-										characteristics : [Characteristic.BatteryLevel]
-									};
-									service.controlService.cmd_id = cmd.battery.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.battery.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.presence) {
-							cmds.presence.forEach(function(cmd, index, array) {
-								if (cmd.presence) {
-									service = {
-										controlService : new Service.MotionSensor(_params.name),
-										characteristics : [Characteristic.MotionDetected]
-									};
-									service.controlService.cmd_id = cmd.presence.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.presence.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.temperature) {
-							cmds.temperature.forEach(function(cmd, index, array) {
-								if (cmd.temperature) {
-									service = {
-										controlService : new Service.TemperatureSensor(_params.name),
-										characteristics : [Characteristic.CurrentTemperature]
-									};
-									service.controlService.cmd_id = cmd.temperature.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.temperature.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-
-						}
-						if (cmds.humidity) {
-							cmds.humidity.forEach(function(cmd, index, array) {
-								if (cmd.humidity) {
-									service = {
-										controlService : new Service.HumiditySensor(_params.name),
-										characteristics : [Characteristic.CurrentRelativeHumidity]
-									};
-									service.controlService.cmd_id = cmd.humidity.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.humidity.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.smoke) {
-							cmds.smoke.forEach(function(cmd, index, array) {
-								if (cmd.smoke) {
-									service = {
-										controlService : new Service.SmokeSensor(_params.name),
-										characteristics : [Characteristic.SmokeDetected]
-									};
-									service.controlService.cmd_id = cmd.smoke.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.smoke.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.flood) {
-							cmds.flood.forEach(function(cmd, index, array) {
-								if (cmd.flood) {
-									service = {
-										controlService : new Service.LeakSensor(_params.name),
-										characteristics : [Characteristic.LeakDetected]
-									};
-									service.controlService.cmd_id = cmd.flood.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.flood.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.opening) {
-							cmds.opening.forEach(function(cmd, index, array) {
-								if (cmd.opening) {
-									service = {
-										controlService : new Service.ContactSensor(_params.name),
-										characteristics : [Characteristic.ContactSensorState]
-									};
-									service.controlService.cmd_id = cmd.opening.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.opening.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.brightness) {
-							cmds.brightness.forEach(function(cmd, index, array) {
-								if (cmd.brightness) {
-									service = {
-										controlService : new Service.LightSensor(_params.name),
-										characteristics : [Characteristic.CurrentAmbientLightLevel]
-									};
-									service.controlService.cmd_id = cmd.brightness.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.brightness.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.energy2) {
-							service = {
-								controlService : new Service.Outlet(_params.name),
-								characteristics : [Characteristic.On, Characteristic.OutletInUse]
-							};
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" + cmds.brightness.id + "-" + service.controlService.subtype;
-							services.push(service);
-							service = null;
-						}
-						if (cmds.lock) {
-							cmds.lock.forEach(function(cmd, index, array) {
-								if (cmd.lock) {
-									service = {
-										controlService : new Service.LockMechanism(_params.name),
-										characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
-									};
-									service.controlService.cmd_id = cmd.lock.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.lock.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.thermostat) {
-							service = {
-								controlService : new Service.Thermostat(_params.name),
-								characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
-							};
-							service.controlService.cmd_id = cmds.thermostat.id;
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" + cmds.thermostat.id + "-" + service.controlService.subtype;
-							services.push(service);
-							service = null;
-						}
-						if (cmds.alarm) {
-							service = {
-								controlService : new Service.SecuritySystem(_params.name),
-								characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
-							};
-							service.controlService.cmd_id = cmds.alarm.id;
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" + cmds.alarm.enable_state.id + "-" + cmds.alarm.state.id;
-							services.push(service);
-							service = null;
-						}
-						if (services.length != 0) {
-							var a = that.createAccessory(services, _params.id, _params.name, _params.object_id);
-							if (!that.accessories[a.uuid]) {
-								that.addAccessory(a);
 							}
-							services = [];
-						}
-					}
+						});
 
+					}
+					if (cmds.flap) {
+						var cmds2 = cmds;
+						cmds.flap.forEach(function(cmd, index, array) {
+							if (cmd.state) {
+								var cmd_up = 0;
+								var cmd_down = 0;
+								var cmd_slider = 0;
+								var cmd_stop = 0;
+								cmds2.flap.forEach(function(cmd2, index2, array2) {
+									if (cmd2.up) {
+										if (cmd2.up.value == cmd.state.id) {
+											cmd_up = cmd2.up.id;
+										}
+									} else if (cmd2.down) {
+										if (cmd2.down.value == cmd.state.id) {
+											cmd_down = cmd2.down.id;
+										}
+									} else if (cmd2.slider) {
+										if (cmd2.slider.value == cmd.state.id) {
+											cmd_slider = cmd2.slider.id;
+										}
+									}
+								});
+								service = {
+									controlService : new Service.WindowCovering(_params.name),
+									characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
+								};
+								service.controlService.cmd_id = cmd.state.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_down + "|" + cmd_up + "|" + cmd_slider + "-" + service.controlService.subtype;
+
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.energy) {
+						var cmds2 = cmds;
+						cmds.energy.forEach(function(cmd, index, array) {
+							if (cmd.state) {
+								var cmd_on = 0;
+								var cmd_off = 0;
+								cmds2.energy.forEach(function(cmd2, index2, array2) {
+									if (cmd2.on) {
+										if (cmd2.on.value == cmd.state.id) {
+											cmd_on = cmd2.on.id;
+										}
+									} else if (cmd2.off) {
+										if (cmd2.off.value == cmd.state.id) {
+											cmd_off = cmd2.off.id;
+										}
+									}
+								});
+								service = {
+									controlService : new Service.Switch(_params.name),
+									characteristics : [Characteristic.On]
+								};
+								service.controlService.cmd_id = cmd.state.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.power || cmds.consumption) {
+						cmds.power.forEach(function(cmd, index, array) {
+							if (cmd.power || cmd.consumption) {
+								service = {
+									controlService : new Service.PowerMonitor(_params.name),
+									characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
+								};
+								if (cmd.power) {
+									var cmd_id = cmd.power.id;
+								} else {
+									var cmd_id = cmd.consumption.id;
+								}
+
+								service.controlService.cmd_id = cmd_id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd_id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+
+					}
+					if (cmds.battery) {
+						cmds.battery.forEach(function(cmd, index, array) {
+							if (cmd.battery) {
+								service = {
+									controlService : new Service.BatteryService(_params.name),
+									characteristics : [Characteristic.BatteryLevel]
+								};
+								service.controlService.cmd_id = cmd.battery.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.battery.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.presence) {
+						cmds.presence.forEach(function(cmd, index, array) {
+							if (cmd.presence) {
+								service = {
+									controlService : new Service.MotionSensor(_params.name),
+									characteristics : [Characteristic.MotionDetected]
+								};
+								service.controlService.cmd_id = cmd.presence.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.presence.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.temperature) {
+						cmds.temperature.forEach(function(cmd, index, array) {
+							if (cmd.temperature) {
+								service = {
+									controlService : new Service.TemperatureSensor(_params.name),
+									characteristics : [Characteristic.CurrentTemperature]
+								};
+								service.controlService.cmd_id = cmd.temperature.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.temperature.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+
+					}
+					if (cmds.humidity) {
+						cmds.humidity.forEach(function(cmd, index, array) {
+							if (cmd.humidity) {
+								service = {
+									controlService : new Service.HumiditySensor(_params.name),
+									characteristics : [Characteristic.CurrentRelativeHumidity]
+								};
+								service.controlService.cmd_id = cmd.humidity.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.humidity.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.smoke) {
+						cmds.smoke.forEach(function(cmd, index, array) {
+							if (cmd.smoke) {
+								service = {
+									controlService : new Service.SmokeSensor(_params.name),
+									characteristics : [Characteristic.SmokeDetected]
+								};
+								service.controlService.cmd_id = cmd.smoke.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.smoke.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.flood) {
+						cmds.flood.forEach(function(cmd, index, array) {
+							if (cmd.flood) {
+								service = {
+									controlService : new Service.LeakSensor(_params.name),
+									characteristics : [Characteristic.LeakDetected]
+								};
+								service.controlService.cmd_id = cmd.flood.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.flood.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.opening) {
+						cmds.opening.forEach(function(cmd, index, array) {
+							if (cmd.opening) {
+								service = {
+									controlService : new Service.ContactSensor(_params.name),
+									characteristics : [Characteristic.ContactSensorState]
+								};
+								service.controlService.cmd_id = cmd.opening.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.opening.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.brightness) {
+						cmds.brightness.forEach(function(cmd, index, array) {
+							if (cmd.brightness) {
+								service = {
+									controlService : new Service.LightSensor(_params.name),
+									characteristics : [Characteristic.CurrentAmbientLightLevel]
+								};
+								service.controlService.cmd_id = cmd.brightness.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.brightness.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.energy2) {
+						service = {
+							controlService : new Service.Outlet(_params.name),
+							characteristics : [Characteristic.On, Characteristic.OutletInUse]
+						};
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "-" + cmds.brightness.id + "-" + service.controlService.subtype;
+						services.push(service);
+						service = null;
+					}
+					if (cmds.lock) {
+						cmds.lock.forEach(function(cmd, index, array) {
+							if (cmd.lock) {
+								service = {
+									controlService : new Service.LockMechanism(_params.name),
+									characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
+								};
+								service.controlService.cmd_id = cmd.lock.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = "";
+								service.controlService.subtype = _params.id + "-" + cmd.lock.id + "-" + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							}
+						});
+					}
+					if (cmds.thermostat) {
+						service = {
+							controlService : new Service.Thermostat(_params.name),
+							characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
+						};
+						service.controlService.cmd_id = cmds.thermostat.id;
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "-" + cmds.thermostat.id + "-" + service.controlService.subtype;
+						services.push(service);
+						service = null;
+					}
+					if (cmds.alarm) {
+						service = {
+							controlService : new Service.SecuritySystem(_params.name),
+							characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
+						};
+						service.controlService.cmd_id = cmds.alarm.id;
+						if (service.controlService.subtype == undefined)
+							service.controlService.subtype = "";
+						service.controlService.subtype = _params.id + "-" + cmds.alarm.enable_state.id + "-" + cmds.alarm.state.id;
+						services.push(service);
+						service = null;
+					}
+					if (services.length != 0) {
+						var a = that.createAccessory(services, _params.id, _params.name, _params.object_id);
+						//if (!that.accessories[a.uuid]) {
+							that.addAccessory(a);
+						//}
+						services = [];
+					}
 				}
 			}
 		});
 	}
+	
+	// Remove not reviewd accessories: cached accessories no more present in Home Center
+	/*for (var a in this.accessories) {
+		if (!this.accessories[a].reviewed) {
+		    this.log("Removing Accessory: " + this.accessories[a].displayName);
+			this.api.unregisterPlatformAccessories("homebridge-jeedom", "Jeedom", [this.accessories[a]]);
+		}
+	}*/
+	
 	this.log("Homebridge Plugin is running now !");
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate(0);
@@ -552,24 +555,69 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 	var accessory = new JeedomBridgedAccessory(services);
 	accessory.platform = this;
 	accessory.name = (name) ? name : this.rooms[currentRoomID] + "-Devices";
-	accessory.uuid = UUIDGen.generate(id + accessory.name + currentRoomID);
+	accessory.UUID = UUIDGen.generate(id + accessory.name + currentRoomID);
+	accessory.context = {};
+	accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
 	accessory.model = "JeedomBridgedAccessory";
 	accessory.manufacturer = "Jeedom";
 	accessory.serialNumber = "<unknown>";
+	accessory.services_add = services;
 	return accessory;
 };
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	if (!jeedomAccessory) {
 		return;
 	}
-	var newAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.uuid);
-	jeedomAccessory.initAccessory(newAccessory);
+	var isNewAccessory = false;
+	var uniqueSeed = jeedomAccessory.UUID;
+	var services = jeedomAccessory.services_add;
+	this.log("Verif Accessory: " + jeedomAccessory.name);
+	var newAccessory = this.existingAccessory(uniqueSeed);
+	if (newAccessory == null) {
+		this.log("New Accessory: " + jeedomAccessory.name);
+		isNewAccessory = true;
+		var newAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.UUID);
+		jeedomAccessory.initAccessory(newAccessory);
+		this.accessories[jeedomAccessory.UUID] = jeedomAccessory;
+	}
 	newAccessory.reachable = true;
-
-	this.accessories[jeedomAccessory.UUID] = jeedomAccessory;
-	this.log("Adding Accessory: " + jeedomAccessory.name);
-	this.api.registerPlatformAccessories("homebridge-jeedom", "Jeedom", [newAccessory]);
+	
+	// Remove services existing in HomeKit accessory no more present in Home Center
+  	for (var t = 0; t < newAccessory.services.length; t++) {
+  		var found = false;
+	  	for (var s = 0; s < services.length; s++) {
+	  		if (newAccessory.services[t].displayName == undefined || services[s].controlService.displayName == newAccessory.services[t].displayName) {
+				found = true;
+				break;	  		
+	  		}
+		}
+		if (!found) {
+			newAccessory.removeService(newAccessory.services[t]);
+			this.log("Supression des service de : " + jeedomAccessory.name);
+		}
+	}
+	
+	if (isNewAccessory) {
+		this.log("Adding Accessory: " + jeedomAccessory.name);
+		this.api.registerPlatformAccessories("homebridge-jeedom", "Jeedom", [newAccessory]);
+	}else{
+		this.log("Maj Accessory: " + jeedomAccessory.name);
+		this.api.updatePlatformAccessories([newAccessory]);
+	}
+	newAccessory.reviewed = true;
 };
+
+JeedomPlatform.prototype.existingAccessory = function(uniqueSeed) {
+	for (var a in this.accessories) {
+		if (this.accessories[a].UUID == uniqueSeed) {
+			this.log("Checked");
+			return this.accessories[a];
+		}
+	}
+	return null;
+};
+
+
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	for (var s = 0; s < accessory.services.length; s++) {
 		var service = accessory.services[s];
@@ -596,7 +644,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 				this.bindCharacteristicEvents(characteristic, service);
 		}
 	}
-	this.log("Configuring Accessory: " + accessory.displayName);
+	this.log("Configuring Accessory: " + accessory.displayName +" > "+ accessory.context.uniqueSeed);
 	this.accessories[accessory.UUID] = accessory;
 	accessory.reachable = true;
 };
