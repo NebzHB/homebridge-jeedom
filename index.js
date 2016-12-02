@@ -802,7 +802,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					if (element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) {
 						if (v == "")
 							v = 0;
-						v = parseInt(element.currentValue);
+						// v = parseInt(element.currentValue);
+						v = Math.round(parseInt(element.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
 						//console.log("valeur " + element.generic_type + " : " + v);
 					}
 				});
@@ -990,6 +991,9 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 					} else if (c == "turnOff") {
 						value = 0;
 					}
+				} else {
+					// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
+					value =	Math.round(value * 99/100);
 				}
 			} else if ((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON")) {
 				cmdId = element.id;
@@ -1086,6 +1090,9 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 									subscription.characteristic.setValue(value, undefined, 'fromJeedom');
 							} else if (s.power != undefined && powerValue) {
 								subscription.characteristic.setValue(parseFloat(s.power) > 1.0 ? true : false, undefined, 'fromJeedom');
+							} // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %	
+							else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID) {				
+								subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
 							} else if ((subscription.onOff && typeof (value) == "boolean") || !subscription.onOff) {
 								subscription.characteristic.setValue(value, undefined, 'fromJeedom');
 							} else {
