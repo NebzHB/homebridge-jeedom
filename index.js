@@ -152,6 +152,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 		that.log("Fetching Jeedom devices ...");
 		return that.jeedomClient.getDevices();
 	}).then(function(devices) {
+		that.log("Device > "+devices);
 		that.JeedomDevices2HomeKitAccessories(devices);
 	}).catch(function(err, response) {
 		that.log("#2 Error getting data from Jeedom: " + err + " " + response);
