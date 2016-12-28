@@ -549,7 +549,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		}
 	}*/
 	
-	this.log("Homebridge Plugin is running now !");
+	this.log("Homebridge Plugin is running now ! // Si vous avez un Warning Avahi (ne pas en tenir compte)");
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate(0);
 };
