@@ -100,6 +100,8 @@ function JeedomPlatform(log, config, api) {
 	this.log = log;
 	if (config["url"] == "undefined" || config["url"] == "http://:80") {
 		this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
+	}else{
+		this.log("Adresse Jeedom bien configurée :"+config["url"]);	
 	}
 	this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
 	this.grouping = config["grouping"];
@@ -145,11 +147,12 @@ JeedomPlatform.prototype.addAccessories = function() {
 		//console.log("pieces :"+JSON.stringify(rooms));
 		rooms.map(function(s, i, a) {
 			that.rooms[s.id] = s.name;
-			//that.log('New Room >' + s.name);
+			that.log('New Room >' + s.name);
 		});
 		that.log("Fetching Jeedom devices ...");
 		return that.jeedomClient.getDevices();
 	}).then(function(devices) {
+		that.log("Device > "+devices);
 		that.JeedomDevices2HomeKitAccessories(devices);
 	}).catch(function(err, response) {
 		that.log("#2 Error getting data from Jeedom: " + err + " " + response);
@@ -187,7 +190,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				function AccessoireCreateJeedom(_params) {
 					var cmds = _params;
 					//console.log('PARAMS > '+JSON.stringify(_params));
-					//that.log('Accessoire trouve // Name : '+_params.name);
+					that.log('Accessoire trouve // Name : '+_params.name);
 					if (cmds.light) {
 						var cmds2 = cmds;
 						cmds.light.forEach(function(cmd, index, array) {
@@ -547,7 +550,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		}
 	}*/
 	
-	this.log("Homebridge Plugin is running now !");
+	this.log("Homebridge Plugin is running now ! // Si vous avez un Warning Avahi (ne pas en tenir compte)");
 	if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
 		this.startPollingUpdate(0);
 };
