@@ -256,9 +256,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 									services.push(service);
 									service = null;
 								}
-							}else{
-								that.log(_params.name+' // ATTENTION pas d\'etat trouvé ! Homebridge demande obligatoirement un etat.');
-								that.log(_params.name+' // Non enregistré');
 							}
 						});
 
@@ -297,9 +294,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 
 								services.push(service);
 								service = null;
-							}else{
-								that.log(_params.name+' // ATTENTION pas d\'etat trouvé ! Homebridge demande obligatoirement un etat.');
-								that.log(_params.name+' // Non enregistré');
 							}
 						});
 					}
@@ -330,9 +324,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "-" + service.controlService.subtype;
 								services.push(service);
 								service = null;
-							}else{
-								that.log(_params.name+' // ATTENTION pas d\'etat trouvé ! Homebridge demande obligatoirement un etat.');
-								that.log(_params.name+' // Non enregistré');
 							}
 						});
 					}
