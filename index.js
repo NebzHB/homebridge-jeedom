@@ -152,7 +152,9 @@ JeedomPlatform.prototype.addAccessories = function() {
 		that.log("Fetching Jeedom devices ...");
 		return that.jeedomClient.getDevices();
 	}).then(function(devices) {
-		that.log("Device > "+devices);
+		if(devices == null){
+			that.log("Device > "+devices);
+		}
 		that.JeedomDevices2HomeKitAccessories(devices);
 	}).catch(function(err, response) {
 		that.log("#2 Error getting data from Jeedom: " + err + " " + response);
@@ -193,7 +195,11 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					that.log('Accessoire trouve // Name : '+_params.name);
 					if (cmds.light) {
 						if(cmds.light.state == undefined){
-							that.log(_params.name+"// Non enregistre, car pas d etat");	
+							that.log("------------------------------------------------------------");
+							that.log("-                        WARNING                           -");
+							that.log("------------------------------------------------------------");
+							that.log(_params.name+" > NON ENREGISTRE, CAR PAS D ETAT !");
+							that.log("------------------------------------------------------------");
 						}
 						var cmds2 = cmds;
 						cmds.light.forEach(function(cmd, index, array) {
@@ -265,6 +271,13 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					}
 					if (cmds.flap) {
 						var cmds2 = cmds;
+						if(cmds.flap.state == undefined){
+							that.log("------------------------------------------------------------");
+							that.log("-                        WARNING                           -");
+							that.log("------------------------------------------------------------");
+							that.log(_params.name+" > NON ENREGISTRE, CAR PAS D ETAT !");
+							that.log("------------------------------------------------------------");
+						}
 						cmds.flap.forEach(function(cmd, index, array) {
 							if (cmd.state) {
 								var cmd_up = 0;
@@ -302,6 +315,13 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					}
 					if (cmds.energy) {
 						var cmds2 = cmds;
+						if(cmds.energy.state == undefined){
+							that.log("------------------------------------------------------------");
+							that.log("-                        WARNING                           -");
+							that.log("------------------------------------------------------------");
+							that.log(_params.name+" > NON ENREGISTRE, CAR PAS D ETAT !");
+							that.log("------------------------------------------------------------");
+						}
 						cmds.energy.forEach(function(cmd, index, array) {
 							if (cmd.state) {
 								var cmd_on = 0;
