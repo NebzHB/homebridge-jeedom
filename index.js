@@ -255,6 +255,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "|" + cmd_slider + "-" + service.controlService.subtype;
 									services.push(service);
 									service = null;
+								}else{
+									that.log(_params.name+"// Non enregistre, car pas d etat");	
 								}
 							}
 						});
