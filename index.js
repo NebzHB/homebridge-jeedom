@@ -192,7 +192,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					//console.log('PARAMS > '+JSON.stringify(_params));
 					that.log('Accessoire trouve // Name : '+_params.name);
 					if (cmds.light) {
-						if(!isset(cmds.light.state){
+						if(cmds.light.state == undefined){
 							that.log(_params.name+"// Non enregistre, car pas d etat");	
 						}
 						var cmds2 = cmds;
