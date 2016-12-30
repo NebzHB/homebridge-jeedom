@@ -192,6 +192,9 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					//console.log('PARAMS > '+JSON.stringify(_params));
 					that.log('Accessoire trouve // Name : '+_params.name);
 					if (cmds.light) {
+						if(!isset(cmds.light.state){
+							that.log(_params.name+"// Non enregistre, car pas d etat");	
+						}
 						var cmds2 = cmds;
 						cmds.light.forEach(function(cmd, index, array) {
 							if (cmd.color) {
@@ -255,8 +258,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "|" + cmd_slider + "-" + service.controlService.subtype;
 									services.push(service);
 									service = null;
-								}else{
-									that.log(_params.name+"// Non enregistre, car pas d etat");	
 								}
 							}
 						});
