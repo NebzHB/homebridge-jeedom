@@ -261,7 +261,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							}
 						});
-						if(present_light != undefined){
+						if(present_light == undefined){
 							that.log("------------------------------------------------------------");
 							that.log("-                        WARNING                           -");
 							that.log("------------------------------------------------------------");
@@ -307,7 +307,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								service = null;
 							}
 						});
-						if(present_flap != undefined){
+						if(present_flap == undefined){
 							that.log("------------------------------------------------------------");
 							that.log("-                        WARNING                           -");
 							that.log("------------------------------------------------------------");
@@ -345,7 +345,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								service = null;
 							}
 						});
-						if(present_energy != undefined){
+						if(present_energy == undefined){
 							that.log("------------------------------------------------------------");
 							that.log("-                        WARNING                           -");
 							that.log("------------------------------------------------------------");
