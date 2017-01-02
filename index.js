@@ -194,7 +194,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					//console.log('PARAMS > '+JSON.stringify(_params));
 					that.log('Accessoire trouve // Name : '+_params.name);
 					if (cmds.light) {
-						if(cmds.light.state == undefined){
+						if(cmds.light[0].state == undefined){
 							that.log("------------------------------------------------------------");
 							that.log("-                        WARNING                           -");
 							that.log("------------------------------------------------------------");
@@ -271,7 +271,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					}
 					if (cmds.flap) {
 						var cmds2 = cmds;
-						if(cmds.flap.state == undefined){
+						if(cmds.flap[0].state == undefined){
 							that.log("------------------------------------------------------------");
 							that.log("-                        WARNING                           -");
 							that.log("------------------------------------------------------------");
@@ -315,7 +315,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					}
 					if (cmds.energy) {
 						var cmds2 = cmds;
-						if(cmds.energy.state == undefined){
+						if(cmds.energy[0].state == undefined){
 							that.log("------------------------------------------------------------");
 							that.log("-                        WARNING                           -");
 							that.log("------------------------------------------------------------");
