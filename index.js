@@ -1226,6 +1226,9 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 				characteristic.props.maxValue = 1000;
 				characteristic.props.minStep = 1;
 				characteristic.props.minValue = 1;
+		 }
+         		   if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
+                characteristic.props.minValue = -50;
 			}
 			this.platform.bindCharacteristicEvents(characteristic, service.controlService);
 		}
