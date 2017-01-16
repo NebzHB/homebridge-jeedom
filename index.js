@@ -222,7 +222,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								service = null;
 							} else {
 								if (cmd.state) {
-									var present_light = true;
 									var cmd_on = 0;
 									var cmd_off = 0;
 									var cmd_slider = 0;
@@ -261,20 +260,11 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							}
 						});
-						if(present_light == undefined){
-							that.log("------------------------------------------------------------");
-							that.log("-                        WARNING                           -");
-							that.log("------------------------------------------------------------");
-							that.log(_params.name+" > NON ENREGISTRE, CAR PAS D ETAT !");
-							that.log("------------------------------------------------------------");
-						}
-
 					}
 					if (cmds.flap) {
 						var cmds2 = cmds;
 						cmds.flap.forEach(function(cmd, index, array) {
 							if (cmd.state) {
-								var present_flap = true;
 								var cmd_up = 0;
 								var cmd_down = 0;
 								var cmd_slider = 0;
@@ -307,18 +297,10 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								service = null;
 							}
 						});
-						if(present_flap == undefined){
-							that.log("------------------------------------------------------------");
-							that.log("-                        WARNING                           -");
-							that.log("------------------------------------------------------------");
-							that.log(_params.name+" > NON ENREGISTRE, CAR PAS D ETAT !");
-							that.log("------------------------------------------------------------");
-						}
 					}
 					if (cmds.energy) {
 						var cmds2 = cmds;
 						cmds.energy.forEach(function(cmd, index, array) {
-							var present_energy = true;
 							if (cmd.state) {
 								var cmd_on = 0;
 								var cmd_off = 0;
@@ -345,13 +327,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								service = null;
 							}
 						});
-						if(present_energy == undefined){
-							that.log("------------------------------------------------------------");
-							that.log("-                        WARNING                           -");
-							that.log("------------------------------------------------------------");
-							that.log(_params.name+" > NON ENREGISTRE, CAR PAS D ETAT !");
-							that.log("------------------------------------------------------------");
-						}
 					}
 					if (cmds.power || cmds.consumption) {
 						cmds.power.forEach(function(cmd, index, array) {
