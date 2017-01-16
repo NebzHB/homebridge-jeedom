@@ -98,11 +98,12 @@ function JeedomPlatform(log, config, api) {
 	this.api = api;
 	this.accessories = [];
 	this.log = log;
-	if (config["url"] == "undefined" || config["url"] == "http://:80") {
+	config['url'] = "http://127.0.0.1:80"; 
+	/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
 		this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 	}else{
 		this.log("Adresse Jeedom bien configurée :"+config["url"]);	
-	}
+	}*/
 	this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
 	this.grouping = config["grouping"];
 	if (this.grouping == undefined) {
