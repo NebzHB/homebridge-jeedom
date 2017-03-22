@@ -94,72 +94,82 @@ module.exports = function(homebridge) {
 	homebridge.registerPlatform("homebridge-jeedom", "Jeedom", JeedomPlatform, true);
 };
 function JeedomPlatform(log, config, api) {
-	this.config = config || {};
-	this.api = api;
-	this.accessories = [];
-	this.log = log;
-	config['url'] = "http://127.0.0.1:80"; 
-	/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
-		this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
-	}else{
-		this.log("Adresse Jeedom bien configurée :"+config["url"]);	
-	}*/
-	this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
-	this.grouping = config["grouping"];
-	if (this.grouping == undefined) {
-		this.grouping = "none";
-	}
-	this.rooms = {};
-	this.updateSubscriptions = [];
-	this.lastPoll = 0;
-	this.pollingUpdateRunning = false;
-	this.pollerPeriod = config["pollerperiod"];
-	if ( typeof this.pollerPeriod == 'string')
-		this.pollerPeriod = parseInt(this.pollerPeriod);
-	else if (this.pollerPeriod == undefined)
-		this.pollerPeriod = 5;
-
-	var self = this;
-	this.requestServer = http.createServer();
-	this.requestServer.on('error', function(err) {
-
-	});
-	this.requestServer.listen(18091, function() {
-		self.log("Server Listening...");
-	});
-
-	if (api) {
-		// Save the API object as plugin needs to register new accessory via this object.
+	try{
+		this.config = config || {};
 		this.api = api;
+		this.accessories = [];
+		this.log = log;
+		config['url'] = "http://127.0.0.1:80"; 
+		/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
+			this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
+		}else{
+			this.log("Adresse Jeedom bien configurée :"+config["url"]);	
+		}*/
+		this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
+		this.grouping = config["grouping"];
+		if (this.grouping == undefined) {
+			this.grouping = "none";
+		}
+		this.rooms = {};
+		this.updateSubscriptions = [];
+		this.lastPoll = 0;
+		this.pollingUpdateRunning = false;
+		this.pollerPeriod = config["pollerperiod"];
+		if ( typeof this.pollerPeriod == 'string')
+			this.pollerPeriod = parseInt(this.pollerPeriod);
+		else if (this.pollerPeriod == undefined)
+			this.pollerPeriod = 5;
 
-		// Listen to event "didFinishLaunching", this means homebridge already finished loading cached accessories
-		// Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
-		// Or start discover new accessories
-		this.api.on('didFinishLaunching', function() {
-			this.addAccessories();
-		}.bind(this));
+		var self = this;
+		this.requestServer = http.createServer();
+		this.requestServer.on('error', function(err) {
+
+		});
+		this.requestServer.listen(18091, function() {
+			self.log("Server Listening...");
+		});
+
+		if (api) {
+			// Save the API object as plugin needs to register new accessory via this object.
+			this.api = api;
+
+			// Listen to event "didFinishLaunching", this means homebridge already finished loading cached accessories
+			// Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
+			// Or start discover new accessories
+			this.api.on('didFinishLaunching', function() {
+				this.addAccessories();
+			}.bind(this));
+		}
+	}
+	catch (e) {
+		this.log("Erreur de la Fonction JeedomPlatform : "+e);	
 	}
 }
 
 JeedomPlatform.prototype.addAccessories = function() {
-	this.log("Fetching Jeedom Objects ...");
-	var that = this;
-	this.jeedomClient.getRooms().then(function(rooms) {
-		//console.log("pieces :"+JSON.stringify(rooms));
-		rooms.map(function(s, i, a) {
-			that.rooms[s.id] = s.name;
-			that.log('New Room >' + s.name);
+	try{
+		this.log("Fetching Jeedom Objects ...");
+		var that = this;
+		this.jeedomClient.getRooms().then(function(rooms) {
+			//console.log("pieces :"+JSON.stringify(rooms));
+			rooms.map(function(s, i, a) {
+				that.rooms[s.id] = s.name;
+				that.log('New Room >' + s.name);
+			});
+			that.log("Fetching Jeedom devices ...");
+			return that.jeedomClient.getDevices();
+		}).then(function(devices) {
+			if(devices == null){
+				that.log("Device > "+devices);
+			}
+			that.JeedomDevices2HomeKitAccessories(devices);
+		}).catch(function(err, response) {
+			that.log("#2 Error getting data from Jeedom: " + err + " " + response);
 		});
-		that.log("Fetching Jeedom devices ...");
-		return that.jeedomClient.getDevices();
-	}).then(function(devices) {
-		if(devices == null){
-			that.log("Device > "+devices);
-		}
-		that.JeedomDevices2HomeKitAccessories(devices);
-	}).catch(function(err, response) {
-		that.log("#2 Error getting data from Jeedom: " + err + " " + response);
-	});
+	}
+	catch(e){
+		this.log("Erreur de la fonction addAccessories :"+e);
+	}
 };
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	var foundAccessories = [];
