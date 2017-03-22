@@ -98,11 +98,12 @@ function JeedomPlatform(log, config, api) {
 	this.api = api;
 	this.accessories = [];
 	this.log = log;
-	if (config["url"] == "undefined" || config["url"] == "http://:80") {
+	config['url'] = "http://127.0.0.1:80"; 
+	/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
 		this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 	}else{
 		this.log("Adresse Jeedom bien configurée :"+config["url"]);	
-	}
+	}*/
 	this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
 	this.grouping = config["grouping"];
 	if (this.grouping == undefined) {
@@ -152,7 +153,9 @@ JeedomPlatform.prototype.addAccessories = function() {
 		that.log("Fetching Jeedom devices ...");
 		return that.jeedomClient.getDevices();
 	}).then(function(devices) {
-		that.log("Device > "+devices);
+		if(devices == null){
+			that.log("Device > "+devices);
+		}
 		that.JeedomDevices2HomeKitAccessories(devices);
 	}).catch(function(err, response) {
 		that.log("#2 Error getting data from Jeedom: " + err + " " + response);
@@ -258,7 +261,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							}
 						});
-
 					}
 					if (cmds.flap) {
 						var cmds2 = cmds;
@@ -1200,6 +1202,9 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 				characteristic.props.maxValue = 1000;
 				characteristic.props.minStep = 1;
 				characteristic.props.minValue = 1;
+		 }
+         		   if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
+                characteristic.props.minValue = -50;
 			}
 			this.platform.bindCharacteristicEvents(characteristic, service.controlService);
 		}
