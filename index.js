@@ -647,7 +647,7 @@ JeedomPlatform.prototype.existingAccessory = function(uniqueSeed) {
 		}
 		return null;
 	}
-	catche(e){
+	catch(e){
 		this.log("Erreur de la fonction existingAccessory :"+e);	
 	}
 };
