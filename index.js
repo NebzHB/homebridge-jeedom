@@ -763,75 +763,28 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 	}
 };
 JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
-	var that = this;
-	var cmds = IDs[1].split("|");
-	this.jeedomClient.getDeviceCmd(IDs[0]).then(function(properties) {
-		if (characteristic.UUID == (new Characteristic.OutletInUse()).UUID) {
-			callback(undefined, parseFloat(properties.power) > 1.0 ? true : false);
-		} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
-			var t = (new Date()).getTime();
-			t = parseInt(properties.timestamp) - t;
-			if (t < 0)
-				t = 0;
-			callback(undefined, t);
-		} else if (characteristic.UUID == (new Characteristic.TargetTemperature()).UUID) {
-			var v = "";
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "THERMOSTAT_SETPOINT") {
-					v = parseInt(element.currentValue);
-					//console.log("valeur " + element.generic_type + " : " + v);
-				}
-			});
-			callback(undefined, v);
-		} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
-			var v = "";
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "LIGHT_COLOR") {
-					//console.log("valeur " + element.generic_type + " : " + v);
-					v = element.currentValue;
-				}
-			});
-			var hsv = that.updateHomeKitColorFromJeedom(v, service);
-			callback(undefined, Math.round(hsv.h));
-		} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
-			var v = "";
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "LIGHT_COLOR") {
-					//console.log("valeur " + element.generic_type + " : " + v);
-					v = element.currentValue;
-				}
-			});
-			var hsv = that.updateHomeKitColorFromJeedom(v, service);
-			callback(undefined, Math.round(hsv.s));
-		} else if (characteristic.UUID == (new Characteristic.SmokeDetected()).UUID) {
-			var v = "";
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "SMOKE" && element.id == cmds[0]) {
-					v = parseInt(element.currentValue);
-					//console.log("valeur " + element.generic_type + " : " + v);
-				}
-			});
-			callback(undefined, v == 1 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
-		} else if (characteristic.UUID == (new Characteristic.LeakDetected()).UUID) {
-			var v = "";
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "FLOOD" && element.id == cmds[0]) {
-					v = parseInt(element.currentValue);
-					//console.log("valeur " + element.generic_type + " : " + v);
-				}
-			});
-			callback(undefined, v == 1 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED);
-		} else if (characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
-			var v = "";
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "OPENING" && element.id == cmds[0]) {
-					v = parseInt(element.currentValue);
-					//console.log("valeur " + element.generic_type + " : " + v);
-				}
-			});
-			callback(undefined, v == 1 ? Characteristic.ContactSensorState.CONTACT_NOT_DETECTED : Characteristic.ContactSensorState.CONTACT_DETECTED);
-		} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
-			if (service.HSBValue != null) {
+	try{
+		var that = this;
+		var cmds = IDs[1].split("|");
+		this.jeedomClient.getDeviceCmd(IDs[0]).then(function(properties) {
+			if (characteristic.UUID == (new Characteristic.OutletInUse()).UUID) {
+				callback(undefined, parseFloat(properties.power) > 1.0 ? true : false);
+			} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
+				var t = (new Date()).getTime();
+				t = parseInt(properties.timestamp) - t;
+				if (t < 0)
+					t = 0;
+				callback(undefined, t);
+			} else if (characteristic.UUID == (new Characteristic.TargetTemperature()).UUID) {
+				var v = "";
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "THERMOSTAT_SETPOINT") {
+						v = parseInt(element.currentValue);
+						//console.log("valeur " + element.generic_type + " : " + v);
+					}
+				});
+				callback(undefined, v);
+			} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
 				var v = "";
 				properties.forEach(function(element, index, array) {
 					if (element.generic_type == "LIGHT_COLOR") {
@@ -840,245 +793,307 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					}
 				});
 				var hsv = that.updateHomeKitColorFromJeedom(v, service);
-				callback(undefined, Math.round(hsv.v));
-			} else {
+				callback(undefined, Math.round(hsv.h));
+			} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
 				var v = "";
 				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) {
-						if (v == "")
-							v = 0;
-						// v = parseInt(element.currentValue);
-						v = Math.round(parseInt(element.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
+					if (element.generic_type == "LIGHT_COLOR") {
+						//console.log("valeur " + element.generic_type + " : " + v);
+						v = element.currentValue;
+					}
+				});
+				var hsv = that.updateHomeKitColorFromJeedom(v, service);
+				callback(undefined, Math.round(hsv.s));
+			} else if (characteristic.UUID == (new Characteristic.SmokeDetected()).UUID) {
+				var v = "";
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "SMOKE" && element.id == cmds[0]) {
+						v = parseInt(element.currentValue);
+						//console.log("valeur " + element.generic_type + " : " + v);
+					}
+				});
+				callback(undefined, v == 1 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
+			} else if (characteristic.UUID == (new Characteristic.LeakDetected()).UUID) {
+				var v = "";
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "FLOOD" && element.id == cmds[0]) {
+						v = parseInt(element.currentValue);
+						//console.log("valeur " + element.generic_type + " : " + v);
+					}
+				});
+				callback(undefined, v == 1 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED);
+			} else if (characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
+				var v = "";
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "OPENING" && element.id == cmds[0]) {
+						v = parseInt(element.currentValue);
+						//console.log("valeur " + element.generic_type + " : " + v);
+					}
+				});
+				callback(undefined, v == 1 ? Characteristic.ContactSensorState.CONTACT_NOT_DETECTED : Characteristic.ContactSensorState.CONTACT_DETECTED);
+			} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
+				if (service.HSBValue != null) {
+					var v = "";
+					properties.forEach(function(element, index, array) {
+						if (element.generic_type == "LIGHT_COLOR") {
+							//console.log("valeur " + element.generic_type + " : " + v);
+							v = element.currentValue;
+						}
+					});
+					var hsv = that.updateHomeKitColorFromJeedom(v, service);
+					callback(undefined, Math.round(hsv.v));
+				} else {
+					var v = "";
+					properties.forEach(function(element, index, array) {
+						if (element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) {
+							if (v == "")
+								v = 0;
+							// v = parseInt(element.currentValue);
+							v = Math.round(parseInt(element.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
+							//console.log("valeur " + element.generic_type + " : " + v);
+						}
+					});
+					callback(undefined, v);
+				}
+			} else if (characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
+				var v = 0;
+				var alarm = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "ALARM_ENABLE_STATE") {
+						if (parseInt(element.currentValue) == 0) {
+							//console.log("valeur " + element.generic_type + " : desarmé");
+							v = Characteristic.SecuritySystemCurrentState.DISARMED;
+						} else {
+							//console.log("valeur " + element.generic_type + " : armé");
+							v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+						}
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					}
+					if (element.generic_type == "ALARM_STATE") {
+						if (parseInt(element.currentValue) == 1) {
+							//console.log("valeur " + element.generic_type + " : alarm");
+							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+						}
+					}
+				});
+				if (alarm != 0) {
+					callback(undefined, alarm);
+				} else {
+					callback(undefined, v);
+				}
+
+			} else if (characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
+				var v = 0;
+				var alarm = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "ALARM_ENABLE_STATE") {
+						if (parseInt(element.currentValue) == 0) {
+							//console.log("valeur " + element.generic_type + " : desarmé");
+							v = Characteristic.SecuritySystemCurrentState.DISARMED;
+						} else {
+							//console.log("valeur " + element.generic_type + " : armé");
+							v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+						}
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					}
+					if (element.generic_type == "ALARM_STATE") {
+						if (parseInt(element.currentValue) == 1) {
+							//console.log("valeur " + element.generic_type + " : alarm");
+							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+						}
+					}
+				});
+				if (alarm != 0) {
+					callback(undefined, alarm);
+				} else {
+					callback(undefined, v);
+				}
+
+			} else if (characteristic.UUID == (new Characteristic.CurrentHeatingCoolingState()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "THERMOSTAT_MODE") {
+						if (element.currentValue == "Off") {
+							v = Characteristic.CurrentHeatingCoolingState.OFF;
+						} else {
+							v = Characteristic.CurrentHeatingCoolingState.AUTO;
+						}
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					}
+				});
+				callback(undefined, v);
+			} else if (characteristic.UUID == (new Characteristic.PositionState()).UUID) {
+				callback(undefined, Characteristic.PositionState.STOPPED);
+			} else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
+				callback(undefined, properties.value == "true" ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED);
+			} else if (characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
+				var v = "";
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "FLAP_STATE" && element.id == cmds[0]) {
+						v = parseInt(element.currentValue);
 						//console.log("valeur " + element.generic_type + " : " + v);
 					}
 				});
 				callback(undefined, v);
-			}
-		} else if (characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
-			var v = 0;
-			var alarm = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "ALARM_ENABLE_STATE") {
-					if (parseInt(element.currentValue) == 0) {
-						//console.log("valeur " + element.generic_type + " : desarmé");
-						v = Characteristic.SecuritySystemCurrentState.DISARMED;
-					} else {
-						//console.log("valeur " + element.generic_type + " : armé");
-						v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+			} else if (returnBoolean) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if ((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])) {
+						v = element.currentValue;
+						//console.log("valeur binary " + element.generic_type + " : " + v);
 					}
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-				}
-				if (element.generic_type == "ALARM_STATE") {
-					if (parseInt(element.currentValue) == 1) {
-						//console.log("valeur " + element.generic_type + " : alarm");
-						alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
-					}
-				}
-			});
-			if (alarm != 0) {
-				callback(undefined, alarm);
-			} else {
-				callback(undefined, v);
-			}
+				});
 
-		} else if (characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
-			var v = 0;
-			var alarm = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "ALARM_ENABLE_STATE") {
-					if (parseInt(element.currentValue) == 0) {
-						//console.log("valeur " + element.generic_type + " : desarmé");
-						v = Characteristic.SecuritySystemCurrentState.DISARMED;
-					} else {
-						//console.log("valeur " + element.generic_type + " : armé");
-						v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-					}
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+				//var v = properties.value;
+				if (v == "true" || v == "false") {
+					callback(undefined, (v == "false") ? false : true);
+				} else {
+					callback(undefined, (parseInt(v) == 0) ? false : true);
 				}
-				if (element.generic_type == "ALARM_STATE") {
-					if (parseInt(element.currentValue) == 1) {
-						//console.log("valeur " + element.generic_type + " : alarm");
-						alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+			} else if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if ((element.generic_type == "TEMPERATURE" && element.id == cmds[0]) || element.generic_type == "THERMOSTAT_TEMPERATURE") {
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						v = element.currentValue;
 					}
-				}
-			});
-			if (alarm != 0) {
-				callback(undefined, alarm);
+				});
+				callback(undefined, parseFloat(v));
+			} else if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "BRIGHTNESS" && element.id == cmds[0]) {
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseInt(v));
+			} else if (characteristic.UUID == (new Characteristic.CurrentRelativeHumidity()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "HUMIDITY" && element.id == cmds[0]) {
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseInt(v));
+			} else if (characteristic.UUID == (new Characteristic.BatteryLevel()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "BATTERY" && element.id == cmds[0]) {
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseInt(v));
+			} else if (characteristic.UUID == (new Characteristic.CurrentPowerConsumption()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "POWER" && element.id == cmds[0]) {
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseFloat(v));
+			} else if (characteristic.UUID == (new Characteristic.TotalPowerConsumption()).UUID) {
+				var v = 0;
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == "CONSUMPTION" && element.id == cmds[0]) {
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						v = element.currentValue;
+					}
+				});
+				callback(undefined, parseFloat(v));
 			} else {
-				callback(undefined, v);
+				var v = 0;
+				callback(undefined, parseInt(v));
 			}
-
-		} else if (characteristic.UUID == (new Characteristic.CurrentHeatingCoolingState()).UUID) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "THERMOSTAT_MODE") {
-					if (element.currentValue == "Off") {
-						v = Characteristic.CurrentHeatingCoolingState.OFF;
-					} else {
-						v = Characteristic.CurrentHeatingCoolingState.AUTO;
-					}
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-				}
-			});
-			callback(undefined, v);
-		} else if (characteristic.UUID == (new Characteristic.PositionState()).UUID) {
-			callback(undefined, Characteristic.PositionState.STOPPED);
-		} else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
-			callback(undefined, properties.value == "true" ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED);
-		} else if (characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
-			var v = "";
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "FLAP_STATE" && element.id == cmds[0]) {
-					v = parseInt(element.currentValue);
-					//console.log("valeur " + element.generic_type + " : " + v);
-				}
-			});
-			callback(undefined, v);
-		} else if (returnBoolean) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if ((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])) {
-					v = element.currentValue;
-					//console.log("valeur binary " + element.generic_type + " : " + v);
-				}
-			});
-
-			//var v = properties.value;
-			if (v == "true" || v == "false") {
-				callback(undefined, (v == "false") ? false : true);
-			} else {
-				callback(undefined, (parseInt(v) == 0) ? false : true);
-			}
-		} else if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if ((element.generic_type == "TEMPERATURE" && element.id == cmds[0]) || element.generic_type == "THERMOSTAT_TEMPERATURE") {
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					v = element.currentValue;
-				}
-			});
-			callback(undefined, parseFloat(v));
-		} else if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "BRIGHTNESS" && element.id == cmds[0]) {
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					v = element.currentValue;
-				}
-			});
-			callback(undefined, parseInt(v));
-		} else if (characteristic.UUID == (new Characteristic.CurrentRelativeHumidity()).UUID) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "HUMIDITY" && element.id == cmds[0]) {
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					v = element.currentValue;
-				}
-			});
-			callback(undefined, parseInt(v));
-		} else if (characteristic.UUID == (new Characteristic.BatteryLevel()).UUID) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "BATTERY" && element.id == cmds[0]) {
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					v = element.currentValue;
-				}
-			});
-			callback(undefined, parseInt(v));
-		} else if (characteristic.UUID == (new Characteristic.CurrentPowerConsumption()).UUID) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "POWER" && element.id == cmds[0]) {
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					v = element.currentValue;
-				}
-			});
-			callback(undefined, parseFloat(v));
-		} else if (characteristic.UUID == (new Characteristic.TotalPowerConsumption()).UUID) {
-			var v = 0;
-			properties.forEach(function(element, index, array) {
-				if (element.generic_type == "CONSUMPTION" && element.id == cmds[0]) {
-					//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					v = element.currentValue;
-				}
-			});
-			callback(undefined, parseFloat(v));
-		} else {
-			var v = 0;
-			callback(undefined, parseInt(v));
-		}
-	}).catch(function(err, response) {
-		that.log("There was a problem getting value from" + IDs[0] + "-" + err);
-	});
+		}).catch(function(err, response) {
+			that.log("There was a problem getting value from" + IDs[0] + "-" + err);
+		});
+	}
+	catch(e){
+		this.log("Erreur de la fonction getAccessoryValue :"+e);
+	}
 };
 JeedomPlatform.prototype.command = function(c, value, service, IDs) {
-	var that = this;
-	var cmds = IDs[1].split("|");
-	if (service.UUID == (new Service.SecuritySystem()).UUID) {
-		c = "SetAlarmMode";
-	} else if (value == 0 && service.UUID == (new Service.WindowCovering).UUID) {
-		c = "flapDown";
-	} else if ((value == 99 || value == 100) && service.UUID == (new Service.WindowCovering).UUID) {
-		c = "flapUp";
-	}
-	this.jeedomClient.getDeviceCmd(IDs[0]).then(function(resultCMD) {
-		var cmdId = cmds[0];
-		resultCMD.forEach(function(element, index, array) {
-			if (c == "flapDown" && element.generic_type == "FLAP_DOWN") {
-				cmdId = element.id;
-			} else if (c == "flapUp" && element.generic_type == "FLAP_UP") {
-				cmdId = element.id;
-			} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")) {
-				cmdId = element.id;
-				if (value == undefined) {
-					if (c == "turnOn") {
-						value = 99;
-					} else if (c == "turnOff") {
-						value = 0;
-					}
-				} else {
-					// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
-					value =	Math.round(value * 99/100);
-				}
-			} else if ((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON")) {
-				cmdId = element.id;
-			} else if ((value == 0 || c == "turnOff") && element.id == cmds[2] && (element.generic_type == "LIGHT_OFF" || (element.generic_type == "ENERGY_OFF" && element.id == cmds[2]) )) {
-				cmdId = element.id;
-			} else if (c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR") {
-				cmdId = element.id;
-			} else if (c == "SetAlarmMode" && element.generic_type == "ALARM_ARMED" && value < 3) {
-				cmdId = element.id;
-			} else if (c == "SetAlarmMode" && element.generic_type == "ALARM_RELEASED" && value == 3) {
-				cmdId = element.id;
-			} else if (c == "setTargetLevel" && value > 0 && element.generic_type == "THERMOSTAT_SET_SETPOINT") {
-				cmdId = element.id;
-			} else if (c == "TargetHeatingCoolingState") {
-				if (element.generic_type == "THERMOSTAT_SET_MODE" && element.name == "Off") {
+	try{
+		var that = this;
+		var cmds = IDs[1].split("|");
+		if (service.UUID == (new Service.SecuritySystem()).UUID) {
+			c = "SetAlarmMode";
+		} else if (value == 0 && service.UUID == (new Service.WindowCovering).UUID) {
+			c = "flapDown";
+		} else if ((value == 99 || value == 100) && service.UUID == (new Service.WindowCovering).UUID) {
+			c = "flapUp";
+		}
+		this.jeedomClient.getDeviceCmd(IDs[0]).then(function(resultCMD) {
+			var cmdId = cmds[0];
+			resultCMD.forEach(function(element, index, array) {
+				if (c == "flapDown" && element.generic_type == "FLAP_DOWN") {
 					cmdId = element.id;
+				} else if (c == "flapUp" && element.generic_type == "FLAP_UP") {
+					cmdId = element.id;
+				} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")) {
+					cmdId = element.id;
+					if (value == undefined) {
+						if (c == "turnOn") {
+							value = 99;
+						} else if (c == "turnOff") {
+							value = 0;
+						}
+					} else {
+						// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
+						value =	Math.round(value * 99/100);
+					}
+				} else if ((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON")) {
+					cmdId = element.id;
+				} else if ((value == 0 || c == "turnOff") && element.id == cmds[2] && (element.generic_type == "LIGHT_OFF" || (element.generic_type == "ENERGY_OFF" && element.id == cmds[2]) )) {
+					cmdId = element.id;
+				} else if (c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR") {
+					cmdId = element.id;
+				} else if (c == "SetAlarmMode" && element.generic_type == "ALARM_ARMED" && value < 3) {
+					cmdId = element.id;
+				} else if (c == "SetAlarmMode" && element.generic_type == "ALARM_RELEASED" && value == 3) {
+					cmdId = element.id;
+				} else if (c == "setTargetLevel" && value > 0 && element.generic_type == "THERMOSTAT_SET_SETPOINT") {
+					cmdId = element.id;
+				} else if (c == "TargetHeatingCoolingState") {
+					if (element.generic_type == "THERMOSTAT_SET_MODE" && element.name == "Off") {
+						cmdId = element.id;
+					}
 				}
-			}
-		});
-		that.jeedomClient.executeDeviceAction(cmdId, c, value).then(function(response) {
-			that.log("Command: " + c + ((value != undefined) ? ", value: " + value : ""));
+			});
+			that.jeedomClient.executeDeviceAction(cmdId, c, value).then(function(response) {
+				that.log("Command: " + c + ((value != undefined) ? ", value: " + value : ""));
+			}).catch(function(err, response) {
+				that.log("There was a problem sending command " + c + " to " + IDs[0]);
+			});
 		}).catch(function(err, response) {
-			that.log("There was a problem sending command " + c + " to " + IDs[0]);
+			that.log("#1 Error getting data from Jeedom: " + err + " " + response);
 		});
-	}).catch(function(err, response) {
-		that.log("#1 Error getting data from Jeedom: " + err + " " + response);
-	});
+	}
+	catch(e){
+		this.log("Erreur de la fonction command :"+e);	
+	}
 };
 JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
-	if (characteristic.UUID == (new Characteristic.PositionState()).UUID)
-		return;
+	try{
+		if (characteristic.UUID == (new Characteristic.PositionState()).UUID)
+			return;
 
-	var IDs = service.subtype.split("-");
-	this.updateSubscriptions.push({
-		'id' : IDs[0],
-		'service' : service,
-		'characteristic' : characteristic,
-		'onOff' : onOff,
-		"property" : propertyChanged
-	});
+		var IDs = service.subtype.split("-");
+		this.updateSubscriptions.push({
+			'id' : IDs[0],
+			'service' : service,
+			'characteristic' : characteristic,
+			'onOff' : onOff,
+			"property" : propertyChanged
+		});
+	}
+	catch(e){
+		this.log("Erreur de la fonction subscribeUpdate :"+e);
+	}
 };
 JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 	var that = this;
