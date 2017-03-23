@@ -1183,6 +1183,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 		that.startPollingUpdate(lastPoll);
 	}).catch(function(err, response) {
 		that.log("Error fetching updates: " + err);
+		that.startPollingUpdate(lastPoll);
 	});
 };
 JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
