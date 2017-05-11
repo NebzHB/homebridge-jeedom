@@ -121,7 +121,6 @@ function JeedomPlatform(log, config, api) {
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		else if (this.pollerPeriod == undefined)
 			this.pollerPeriod = 25; // 25 is more optimized if nothing happens
-		this.pollerPeriod = 25; // force 25, should remove from config
 		
 		var self = this;
 		this.requestServer = http.createServer();
