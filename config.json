@@ -14,7 +14,7 @@
             "name": "Jeedom",
             "url": "COMPLETE URL OF YOUR JEEDOM HERE",
             "apikey": "PUT APIKEY OF YOUR JEEDOM HERE",
-            "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 100 INTERVAL IN SECONDS. 2 SECONDS IS THE DEFAULT"
+            "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 30 INTERVAL IN SECONDS. 25 SECONDS IS THE DEFAULT"
         }
 
     ],
