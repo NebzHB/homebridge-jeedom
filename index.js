@@ -114,12 +114,15 @@ function JeedomPlatform(log, config, api) {
 		this.updateSubscriptions = [];
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
+		this.simplifiedUUID = true; // the accessories keep his UUID if the room is changed or if it's renamed
+		this.accessoiresInProgress = 0; // keep the count of adding accessories before running the garbage collector
 		this.pollerPeriod = config["pollerperiod"];
 		if ( typeof this.pollerPeriod == 'string')
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		else if (this.pollerPeriod == undefined)
-			this.pollerPeriod = 5;
-
+			this.pollerPeriod = 25; // 25 is more optimized if nothing happens
+		this.pollerPeriod = 25; // force 25, should remove from config
+		
 		var self = this;
 		this.requestServer = http.createServer();
 		this.requestServer.on('error', function(err) {
@@ -164,7 +167,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 			}
 			that.JeedomDevices2HomeKitAccessories(devices);
 		}).catch(function(err, response) {
-			that.log("#2 Error getting data from Jeedom: " + err + " " + response);
+			that.log("#2 Error getting data from Jeedom: " + err + " (" + response + ") id:" + s.id + " name:" + s.name);
 		});
 	}
 	catch(e){
@@ -173,9 +176,8 @@ JeedomPlatform.prototype.addAccessories = function() {
 };
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	try{
-		var foundAccessories = [];
+		
 		if (devices != undefined) {
-			// Order results by roomID
 			devices.sort(function compare(a, b) {
 				if (a.object_id > b.object_id) {
 					return -1;
@@ -190,21 +192,29 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			var service = null;
 			var that = this;
 			devices.map(function(s, i, a) {
-				if (s.isVisible == "1" && s.object_id != null) {
-					that.jeedomClient.getDeviceProperties(s.id).then(function(resultEqL) {
-							that.jeedomClient.getDeviceCmd(s.id).then(function(resultCMD) {
-							AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
-						}).catch(function(err, response) {
-							that.log("#4 Error getting data from Jeedom: " + err + " " + response);
+				//that.log(s);
+				if (s.isVisible == "1" && s.object_id != null && s.sendToHomebridge != "0") { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
+					that.accessoiresInProgress++;
+					that.jeedomClient.getDeviceProperties(s.id)
+						.then(function(resultEqL) {
+							that.jeedomClient.getDeviceCmd(s.id)
+								.then(function(resultCMD) {
+									AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
+								})
+								.catch(function(err, response) {
+									that.log("#4 Error getting data from Jeedom: " + err + " (" + response + ") id:" + s.id + " name:" + s.name);
+								});
+						})
+						.catch(function(err, response) {
+							that.log("#3 Error getting data from Jeedom: " + err + " (" + response + ") id:" + s.id + " name:" + s.name);
 						});
-					}).catch(function(err, response) {
-						that.log("#3 Error getting data from Jeedom: " + err + " " + response);
-					});
-
+						
+					
 					function AccessoireCreateJeedom(_params) {
+						
 						var cmds = _params;
 						//console.log('PARAMS > '+JSON.stringify(_params));
-						that.log('Accessoire trouve // Name : '+_params.name);
+						that.log('┌──── ' + that.rooms[_params.object_id] + " > " + _params.name + " (" + _params.id + ")");
 						if (cmds.light) {
 							var cmds2 = cmds;
 							cmds.light.forEach(function(cmd, index, array) {
@@ -545,26 +555,61 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						}
 						if (services.length != 0) {
 							var a = that.createAccessory(services, _params.id, _params.name, _params.object_id);
-							//if (!that.accessories[a.uuid]) {
 								that.addAccessory(a);
-							//}
 							services = [];
 						}
+						else
+						{
+							that.log('│ Accessoire sans Type Générique');
+							var a = that.createAccessory([], s.id, s.name, s.object_id); // create a cached lookalike object for unregistering it
+							that.delAccessory(a);
+						}
+						that.log("└─────────");
+						that.accessoiresInProgress--;
+						//that.log('│ Reste (avant ramasse-miettes): ' + that.accessoiresInProgress);
 					}
 				}
+				else
+				{
+					that.log('┌──── ' + that.rooms[s.object_id] + " > " +s.name+" ("+s.id+")");
+					var Messg= '│ Accessoire ';
+					Messg   += s.isVisible == "1" ? 'visible' : 'invisible';
+					Messg   += s.object_id != null ? '' : ', pas dans une pièce';
+					Messg   += s.sendToHomebridge != "0" ? '' : ', pas coché pour Homebridge';
+					that.log(Messg);
+					var a = that.createAccessory([], s.id, s.name, s.object_id); // create a cached lookalike object for unregistering it
+					that.delAccessory(a);
+					that.log("└─────────");
+				}
+				
 			});
 		}
-
-		// Remove not reviewd accessories: cached accessories no more present in Home Center
-		/*for (var a in this.accessories) {
-			if (!this.accessories[a].reviewed) {
-			    this.log("Removing Accessory: " + this.accessories[a].displayName);
-				this.api.unregisterPlatformAccessories("homebridge-jeedom", "Jeedom", [this.accessories[a]]);
+		
+		var isReady=setInterval(() => { // every 5 seconds, we verify if there is still accessories to handle
+			if(that.accessoiresInProgress==0)
+			{
+				this.log("┌────RAMASSE-MIETTES─────");
+				this.log("│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))");
+				var hasDeleted = false
+				for (var a in this.accessories) 
+				{
+					if(!this.accessories[a].reviewed && this.accessories[a].displayName)
+					{
+							this.log("│ ┌──── Trouvé: "+this.accessories[a].displayName);
+							this.delAccessory(this.accessories[a],true);
+							this.log("│ │ Supprimé du cache !");
+							that.log("│ └─────────");
+							hasDeleted=true;
+					}
+				}
+				if(!hasDeleted) this.log("│ Rien à supprimer");
+				this.log("└────────────────────────");
+				this.log("Homebridge Plugin is running now ! // Si vous avez un Warning Avahi (ne pas en tenir compte)");
+				clearInterval(isReady)
 			}
-		}*/
-
-		this.log("Homebridge Plugin is running now ! // Si vous avez un Warning Avahi (ne pas en tenir compte)");
-		if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
+		},5000);
+		
+		if (this.pollerPeriod >= 1 && this.pollerPeriod <= 30)
 			this.startPollingUpdate(0);
 	}
 	catch(e){
@@ -576,9 +621,11 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 		var accessory = new JeedomBridgedAccessory(services);
 		accessory.platform = this;
 		accessory.name = (name) ? name : this.rooms[currentRoomID] + "-Devices";
-		accessory.UUID = UUIDGen.generate(id + accessory.name + currentRoomID);
+		if (this.simplifiedUUID) accessory.UUID = UUIDGen.generate(id + accessory.name);
+		else accessory.UUID = UUIDGen.generate(id + accessory.name + currentRoomID);
 		accessory.context = {};
-		accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
+		if (this.simplifiedUUID) accessory.context.uniqueSeed = id + accessory.name;
+		else accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
 		accessory.model = "JeedomBridgedAccessory";
 		accessory.manufacturer = "Jeedom";
 		accessory.serialNumber = "<unknown>";
@@ -586,7 +633,31 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 		return accessory;
 	}
 	catch(e){
-		this.log("Erreur de la fonction createAccessory :"+e);
+		this.log("│ Erreur de la fonction createAccessory :"+e);
+	}
+};
+JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
+	try{
+		silence = typeof silence  !== 'undefined' ? silence : false;
+		if (!jeedomAccessory) {
+			return;
+		}
+		var uniqueSeed = jeedomAccessory.UUID;
+		if(!silence) this.log("│ Vérification d'existance de l'accessoire dans Homebridge...");
+		var existingAccessory = this.existingAccessory(uniqueSeed,silence);
+		if(existingAccessory)
+		{
+			if(!silence) this.log("│ Suppression de l'accessoire (" + jeedomAccessory.name + ")");
+			this.api.unregisterPlatformAccessories("homebridge-jeedom", "Jeedom", [existingAccessory]);
+			existingAccessory.reviewed=true;
+		}
+		else
+		{
+			if(!silence) this.log("│ Accessoire Ignoré");
+		}
+	}
+	catch(e){
+		this.log("│ Erreur de la fonction delAccessory :"+e);
 	}
 };
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
@@ -597,10 +668,10 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		var isNewAccessory = false;
 		var uniqueSeed = jeedomAccessory.UUID;
 		var services = jeedomAccessory.services_add;
-		this.log("Verif Accessory: " + jeedomAccessory.name);
+		this.log("│ Vérification d'existance de l'accessoire dans Homebridge...");
 		var newAccessory = this.existingAccessory(uniqueSeed);
-		if (newAccessory == null) {
-			this.log("New Accessory: " + jeedomAccessory.name);
+		if (!newAccessory) {
+			this.log("│ Nouvel accessoire (" + jeedomAccessory.name + ")");
 			isNewAccessory = true;
 			var newAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.UUID);
 			jeedomAccessory.initAccessory(newAccessory);
@@ -608,7 +679,8 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		newAccessory.reachable = true;
 
-		// Remove services existing in HomeKit accessory no more present in Home Center
+
+		// Remove services existing in HomeKit accessory no more present in Jeedom
 		for (var t = 0; t < newAccessory.services.length; t++) {
 			var found = false;
 			for (var s = 0; s < services.length; s++) {
@@ -619,36 +691,40 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			}
 			if (!found) {
 				newAccessory.removeService(newAccessory.services[t]);
-				this.log("Supression des service de : " + jeedomAccessory.name);
+				this.log("│ Supression des service (" + jeedomAccessory.name + "/" + newAccessory.services[t].displayName + ")");
 			}
 		}
 
+		
+		
 		if (isNewAccessory) {
-			this.log("Adding Accessory: " + jeedomAccessory.name);
+			this.log("│ Ajout de l'accessoire (" + jeedomAccessory.name + ")");
 			this.api.registerPlatformAccessories("homebridge-jeedom", "Jeedom", [newAccessory]);
 		}else{
-			this.log("Maj Accessory: " + jeedomAccessory.name);
+			this.log("│ Mise à jour de l'accessoire (" + jeedomAccessory.name + ")");
 			this.api.updatePlatformAccessories([newAccessory]);
 		}
 		newAccessory.reviewed = true;
 	}
 	catch(e){
-		this.log("Erreur de la fonction addAccessory :"+e);
+		this.log("│ Erreur de la fonction addAccessory :"+e);
 	}
 };
 
-JeedomPlatform.prototype.existingAccessory = function(uniqueSeed) {
+JeedomPlatform.prototype.existingAccessory = function(uniqueSeed,silence) {
 	try{
+		silence = typeof silence  !== 'undefined' ? silence : false;
 		for (var a in this.accessories) {
 			if (this.accessories[a].UUID == uniqueSeed) {
-				this.log("Checked");
+				if(!silence) this.log("│ Accessoire déjà existant dans Homebridge");
 				return this.accessories[a];
 			}
 		}
+		if(!silence) this.log("│ Accessoire non existant dans Homebridge");
 		return null;
 	}
 	catch(e){
-		this.log("Erreur de la fonction existingAccessory :"+e);	
+		this.log("│ Erreur de la fonction existingAccessory :"+e);	
 	}
 };
 
@@ -680,7 +756,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 					this.bindCharacteristicEvents(characteristic, service);
 			}
 		}
-		this.log("Configuring Accessory: " + accessory.displayName +" > "+ accessory.context.uniqueSeed);
+		this.log("Configuration de l'accessoire: " + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
 		accessory.reachable = true;
 	}
@@ -1096,6 +1172,10 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 	}
 };
 JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
+	if(this.pollingUpdateRunning ) {
+    	return;
+	}
+	this.pollingUpdateRunning = true;
 	var that = this;
 	if (this.jeedomClient == undefined) {
 		setTimeout(function() {
@@ -1107,8 +1187,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 	this.jeedomClient.refreshStates(this.lastPoll).then(function(updates) {
 		if (updates.result != undefined) {
 			var lastPoll = updates.datetime;
-		}
-		if (updates.result != undefined) {
+
 			updates.result.map(function(s) {
 				if (s.option.value != undefined && s.option.cmd_id != undefined) {
 					var value = parseInt(s.option.value);
@@ -1180,10 +1259,10 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 			});
 
 		}
-		that.startPollingUpdate(lastPoll);
+		that.pollingUpdateRunning = false;
+		setTimeout( function() { that.startPollingUpdate(lastPoll) }, that.pollerPeriod * 1000);
 	}).catch(function(err, response) {
-		that.log("Error fetching updates: " + err);
-		that.startPollingUpdate(lastPoll);
+		that.log("Error fetching updates: " + err + response);
 	});
 };
 JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
