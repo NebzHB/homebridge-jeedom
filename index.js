@@ -122,13 +122,13 @@ function JeedomPlatform(log, config, api) {
 		else if (this.pollerPeriod == undefined)
 			this.pollerPeriod = 25; // 25 is more optimized if nothing happens
 		
-		var self = this;
+		var that = this;
 		this.requestServer = http.createServer();
 		this.requestServer.on('error', function(err) {
 
 		});
 		this.requestServer.listen(18091, function() {
-			self.log("Server Listening...");
+			that.log("Serveur à l'écoute...");
 		});
 
 		if (api) {
@@ -150,24 +150,27 @@ function JeedomPlatform(log, config, api) {
 
 JeedomPlatform.prototype.addAccessories = function() {
 	try{
-		this.log("Fetching Jeedom Objects ...");
 		var that = this;
-		this.jeedomClient.getRooms().then(function(rooms) {
-			//console.log("pieces :"+JSON.stringify(rooms));
-			rooms.map(function(s, i, a) {
-				that.rooms[s.id] = s.name;
-				that.log('New Room >' + s.name);
+		that.log("Synchronisation Jeedom <> Homebridge...");
+		that.jeedomClient.getAll()
+			.then(function(model){
+				
+				that.log("Enumération des objets Jeedom (Pièces)...");
+				model.objects.map(function(s, i, a) {
+					that.rooms[s.id] = s.name;
+					that.log('Pièce >' + s.name);
+				});
+			
+				that.log("Enumération des périphériques Jeedom...");
+				if(model.eqLogics == null){
+						that.log("Périf > "+model.eqLogics);
+				}
+				
+				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
+			})
+			.catch(function(err, response) {
+				that.log("#2 Erreur de récupération des données Jeedom: " + err + " (" + response + ")");
 			});
-			that.log("Fetching Jeedom devices ...");
-			return that.jeedomClient.getDevices();
-		}).then(function(devices) {
-			if(devices == null){
-				that.log("Device > "+devices);
-			}
-			that.JeedomDevices2HomeKitAccessories(devices);
-		}).catch(function(err, response) {
-			that.log("#2 Error getting data from Jeedom: " + err + " (" + response + ") id:" + s.id + " name:" + s.name);
-		});
 	}
 	catch(e){
 		this.log("Erreur de la fonction addAccessories :"+e);
@@ -190,24 +193,15 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			var services = [];
 			var service = null;
 			var that = this;
-			devices.map(function(s, i, a) {
-				//that.log(s);
-				if (s.isVisible == "1" && s.object_id != null && s.sendToHomebridge != "0") { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
+			devices.map(function(device) {
+				//that.log(device);
+				if (device.isVisible == "1" && device.object_id != null && device.sendToHomebridge != "0") { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
 					that.accessoiresInProgress++;
-					that.jeedomClient.getDeviceProperties(s.id)
-						.then(function(resultEqL) {
-							that.jeedomClient.getDeviceCmd(s.id)
-								.then(function(resultCMD) {
-									AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
-								})
-								.catch(function(err, response) {
-									that.log("#4 Error getting data from Jeedom: " + err + " (" + response + ") id:" + s.id + " name:" + s.name);
-								});
-						})
-						.catch(function(err, response) {
-							that.log("#3 Error getting data from Jeedom: " + err + " (" + response + ") id:" + s.id + " name:" + s.name);
-						});
-						
+				
+					var resultEqL = that.jeedomClient.getDeviceProperties(device.id);
+					var resultCMD = that.jeedomClient.getDeviceCmd(device.id);
+					
+					AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
 					
 					function AccessoireCreateJeedom(_params) {
 						
@@ -553,15 +547,17 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							service = null;
 						}
 						if (services.length != 0) {
-							var a = that.createAccessory(services, _params.id, _params.name, _params.object_id);
-								that.addAccessory(a);
+							that.addAccessory(
+								that.createAccessory(services, _params.id, _params.name, _params.object_id)
+							);
 							services = [];
 						}
 						else
 						{
 							that.log('│ Accessoire sans Type Générique');
-							var a = that.createAccessory([], s.id, s.name, s.object_id); // create a cached lookalike object for unregistering it
-							that.delAccessory(a);
+							that.delAccessory(
+								that.createAccessory([], device.id, device.name, device.object_id) // create a cached lookalike object for unregistering it
+							);
 						}
 						that.log("└─────────");
 						that.accessoiresInProgress--;
@@ -570,26 +566,29 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				}
 				else
 				{
-					that.log('┌──── ' + that.rooms[s.object_id] + " > " +s.name+" ("+s.id+")");
+					that.log('┌──── ' + that.rooms[device.object_id] + " > " +device.name+" ("+device.id+")");
 					var Messg= '│ Accessoire ';
-					Messg   += s.isVisible == "1" ? 'visible' : 'invisible';
-					Messg   += s.object_id != null ? '' : ', pas dans une pièce';
-					Messg   += s.sendToHomebridge != "0" ? '' : ', pas coché pour Homebridge';
+					Messg   += device.isVisible == "1" ? 'visible' : 'invisible';
+					Messg   += device.object_id != null ? '' : ', pas dans une pièce';
+					Messg   += device.sendToHomebridge != "0" ? '' : ', pas coché pour Homebridge';
 					that.log(Messg);
-					var a = that.createAccessory([], s.id, s.name, s.object_id); // create a cached lookalike object for unregistering it
-					that.delAccessory(a);
+
+					that.delAccessory(
+						that.createAccessory([], device.id, device.name, device.object_id) // create a cached lookalike object for unregistering it
+					);
 					that.log("└─────────");
 				}
 				
 			});
 		}
 		
-		var isReady=setInterval(() => { // every 5 seconds, we verify if there is still accessories to handle
+		//var isReady=setInterval(() => { // every 5 seconds, we verify if there is still accessories to handle
 			if(that.accessoiresInProgress==0)
 			{
 				this.log("┌────RAMASSE-MIETTES─────");
 				this.log("│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))");
 				var hasDeleted = false
+				var countA=0;
 				for (var a in this.accessories) 
 				{
 					if(!this.accessories[a].reviewed && this.accessories[a].displayName)
@@ -599,14 +598,15 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							this.log("│ │ Supprimé du cache !");
 							that.log("│ └─────────");
 							hasDeleted=true;
-					}
+					}else countA++;
 				}
 				if(!hasDeleted) this.log("│ Rien à supprimer");
 				this.log("└────────────────────────");
-				this.log("Homebridge Plugin is running now ! // Si vous avez un Warning Avahi (ne pas en tenir compte)");
-				clearInterval(isReady)
+				var endLog = "--== Homebridge est démarré et a intégré "+countA+" accessoire"+ (countA>1 ? "s" : "") +" ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--";
+				this.log(endLog);
+		//		clearInterval(isReady)
 			}
-		},5000);
+	//	},5000);
 		
 		if (this.pollerPeriod >= 1 && this.pollerPeriod <= 30)
 			this.startPollingUpdate(0);
@@ -1187,11 +1187,11 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 		if (updates.result != undefined) {
 			var lastPoll = updates.datetime;
 
-			updates.result.map(function(s) {
-				if (s.option.value != undefined && s.option.cmd_id != undefined) {
-					var value = parseInt(s.option.value);
+			updates.result.map(function(update) {
+				if (update.option.value != undefined && update.option.cmd_id != undefined) {
+					var value = parseInt(update.option.value);
 					if (isNaN(value))
-						value = (s.option.value === "true");
+						value = (update.option.value === "true");
 					for (var i = 0; i < that.updateSubscriptions.length; i++) {
 						var subscription = that.updateSubscriptions[i];
 						if (subscription.service.subtype != undefined) {
@@ -1200,7 +1200,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 							var cmd_id = cmds[0];
 							var cmd2_id = IDs[2];
 						}
-						if (cmd_id == s.option.cmd_id || cmd2_id == s.option.cmd_id) {
+						if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id) {
 							var powerValue = false;
 							var intervalValue = false;
 							if (subscription.characteristic.UUID == (new Characteristic.OutletInUse()).UUID)
@@ -1210,7 +1210,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 							if (subscription.characteristic.UUID == (new Characteristic.SmokeDetected()).UUID)
 								subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');
 							else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
-								if (cmd2_id == s.option.cmd_id && value == 1) {
+								if (cmd2_id == update.option.cmd_id && value == 1) {
 									subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
 								} else {
 									subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
@@ -1226,8 +1226,8 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 							else if (subscription.characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || subscription.characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
 								if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
 									subscription.characteristic.setValue(value, undefined, 'fromJeedom');
-							} else if (s.power != undefined && powerValue) {
-								subscription.characteristic.setValue(parseFloat(s.power) > 1.0 ? true : false, undefined, 'fromJeedom');
+							} else if (update.power != undefined && powerValue) {
+								subscription.characteristic.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
 							} // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %	
 							else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID) {				
 								subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
@@ -1239,11 +1239,11 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 						}
 					}
 				}
-				if (s.color != undefined) {
+				if (update.color != undefined) {
 					for (var i = 0; i < that.updateSubscriptions.length; i++) {
 						var subscription = that.updateSubscriptions[i];
-						if (subscription.id == s.id && subscription.property == "color") {
-							var hsv = that.updateHomeKitColorFromJeedom(s.color, subscription.service);
+						if (subscription.id == update.id && subscription.property == "color") {
+							var hsv = that.updateHomeKitColorFromJeedom(update.color, subscription.service);
 							if (subscription.characteristic.UUID == (new Characteristic.On()).UUID)
 								subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
 							else if (subscription.characteristic.UUID == (new Characteristic.Hue()).UUID)
