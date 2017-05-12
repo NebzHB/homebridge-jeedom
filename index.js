@@ -841,7 +841,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 	try{
 		var that = this;
 		var cmds = IDs[1].split("|");
-		this.jeedomClient.getDeviceCmd(IDs[0]).then(function(properties) {
+		var properties = this.jeedomClient.getDeviceCmd(IDs[0]);
 			if (characteristic.UUID == (new Characteristic.OutletInUse()).UUID) {
 				callback(undefined, parseFloat(properties.power) > 1.0 ? true : false);
 			} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
@@ -1083,9 +1083,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				var v = 0;
 				callback(undefined, parseInt(v));
 			}
-		}).catch(function(err, response) {
-			that.log("There was a problem getting value from" + IDs[0] + "-" + err);
-		});
+
 	}
 	catch(e){
 		this.log("Erreur de la fonction getAccessoryValue :"+e);
@@ -1102,7 +1100,7 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 		} else if ((value == 99 || value == 100) && service.UUID == (new Service.WindowCovering).UUID) {
 			c = "flapUp";
 		}
-		this.jeedomClient.getDeviceCmd(IDs[0]).then(function(resultCMD) {
+		var resultCMD = this.jeedomClient.getDeviceCmd(IDs[0]); 
 			var cmdId = cmds[0];
 			resultCMD.forEach(function(element, index, array) {
 				if (c == "flapDown" && element.generic_type == "FLAP_DOWN") {
@@ -1144,9 +1142,7 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 			}).catch(function(err, response) {
 				that.log("There was a problem sending command " + c + " to " + IDs[0]);
 			});
-		}).catch(function(err, response) {
-			that.log("#1 Error getting data from Jeedom: " + err + " " + response);
-		});
+
 	}
 	catch(e){
 		this.log("Erreur de la fonction command :"+e);	
