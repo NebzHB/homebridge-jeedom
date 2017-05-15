@@ -99,6 +99,9 @@ function JeedomPlatform(log, config, api) {
 		this.api = api;
 		this.accessories = [];
 		this.log = log;
+		this.debug = config['debug'] || false;
+
+		
 		config['url'] = "http://127.0.0.1:80"; 
 		/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
 			this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
@@ -115,12 +118,11 @@ function JeedomPlatform(log, config, api) {
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
 		this.simplifiedUUID = true; // the accessories keep his UUID if the room is changed or if it's renamed
-		this.accessoiresInProgress = 0; // keep the count of adding accessories before running the garbage collector
 		this.pollerPeriod = config["pollerperiod"];
 		if ( typeof this.pollerPeriod == 'string')
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		else if (this.pollerPeriod == undefined)
-			this.pollerPeriod = 25; // 25 is more optimized if nothing happens
+			this.pollerPeriod = 30; // 30 is more optimized if nothing happens
 		
 		var that = this;
 		this.requestServer = http.createServer();
@@ -152,9 +154,9 @@ JeedomPlatform.prototype.addAccessories = function() {
 	try{
 		var that = this;
 		that.log("Synchronisation Jeedom <> Homebridge...");
-		that.jeedomClient.getAll()
+		that.jeedomClient.getModel()
 			.then(function(model){
-				
+				that.lastPoll=model.config.datetime;
 				that.log("Enumération des objets Jeedom (Pièces)...");
 				model.objects.map(function(s, i, a) {
 					that.rooms[s.id] = s.name;
@@ -196,7 +198,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			devices.map(function(device) {
 				//that.log(device);
 				if (device.isVisible == "1" && device.object_id != null && device.sendToHomebridge != "0") { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
-					that.accessoiresInProgress++;
+
 				
 					var resultEqL = that.jeedomClient.getDeviceProperties(device.id);
 					var resultCMD = that.jeedomClient.getDeviceCmd(device.id);
@@ -560,7 +562,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							);
 						}
 						that.log("└─────────");
-						that.accessoiresInProgress--;
 						//that.log('│ Reste (avant ramasse-miettes): ' + that.accessoiresInProgress);
 					}
 				}
@@ -582,34 +583,30 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			});
 		}
 		
-		//var isReady=setInterval(() => { // every 5 seconds, we verify if there is still accessories to handle
-			if(that.accessoiresInProgress==0)
+		this.log("┌────RAMASSE-MIETTES─────");
+		this.log("│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))");
+		var hasDeleted = false
+		var countA=0;
+		for (var a in this.accessories) 
+		{
+			if(!this.accessories[a].reviewed && this.accessories[a].displayName)
 			{
-				this.log("┌────RAMASSE-MIETTES─────");
-				this.log("│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))");
-				var hasDeleted = false
-				var countA=0;
-				for (var a in this.accessories) 
-				{
-					if(!this.accessories[a].reviewed && this.accessories[a].displayName)
-					{
-							this.log("│ ┌──── Trouvé: "+this.accessories[a].displayName);
-							this.delAccessory(this.accessories[a],true);
-							this.log("│ │ Supprimé du cache !");
-							that.log("│ └─────────");
-							hasDeleted=true;
-					}else countA++;
-				}
-				if(!hasDeleted) this.log("│ Rien à supprimer");
-				this.log("└────────────────────────");
-				var endLog = "--== Homebridge est démarré et a intégré "+countA+" accessoire"+ (countA>1 ? "s" : "") +" ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--";
-				this.log(endLog);
-		//		clearInterval(isReady)
-			}
-	//	},5000);
+					this.log("│ ┌──── Trouvé: "+this.accessories[a].displayName);
+					this.delAccessory(this.accessories[a],true);
+					this.log("│ │ Supprimé du cache !");
+					that.log("│ └─────────");
+					hasDeleted=true;
+			}else countA++;
+		}
+		if(!hasDeleted) this.log("│ Rien à supprimer");
+		this.log("└────────────────────────");
+		var endLog = "--== Homebridge est démarré et a intégré "+countA+" accessoire"+ (countA>1 ? "s" : "") +" ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--";
+		this.log(endLog);
+		if(countA >= 95) this.log("!!! ATTENTION !!! Vous avez "+countA+" accessoires et HomeKit en supporte 100 max !!");
+		else if(countA >= 85) this.log("! Avertissement, vous avez "+countA+" accessoires et HomeKit en supporte 100 max !!");
 		
-		if (this.pollerPeriod >= 1 && this.pollerPeriod <= 30)
-			this.startPollingUpdate(0);
+		if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
+			this.startPollingUpdate(this.lastPoll);
 	}
 	catch(e){
 		this.log("Erreur de la fonction JeedomDevices2HomeKitAccessories :"+e);
@@ -755,7 +752,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 					this.bindCharacteristicEvents(characteristic, service);
 			}
 		}
-		this.log("Configuration de l'accessoire: " + accessory.displayName);
+		this.log("Accessoire en cache: " + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
 		accessory.reachable = true;
 	}
@@ -777,6 +774,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		this.subscribeUpdate(service, characteristic, onOff, propertyChanged);
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
+				if (this.debug) this.log("SET:"+value,context,JSON.stringify(characteristic));
 				if (characteristic.UUID == '00000033-0000-1000-8000-0026BB765291') {
 					console.log('set target mode');
 				}
@@ -826,6 +824,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
+			if (this.debug) this.log("GET:"+IDs,onOff,service,JSON.stringify(characteristic));
 			if (service.isVirtual) {
 				callback(undefined, false);
 			} else {
@@ -1173,6 +1172,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 	this.pollingUpdateRunning = true;
 	var that = this;
 	if (this.jeedomClient == undefined) {
+		this.log("#p11 should never happens, thank you to report to Homebridge-jeedom forum");
 		setTimeout(function() {
 			that.startPollingUpdate(0);
 		}, that.pollerPeriod * 1000);
@@ -1185,9 +1185,22 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 
 			updates.result.map(function(update) {
 				if (update.option.value != undefined && update.option.cmd_id != undefined) {
+					if (that.debug) that.log("updateReceived:"+update.option.value+" ["+update.color+"[[" + JSON.stringify(update));
+
+					var FC = update.option.value[0];
+					
+					if(FC == "#") update.color=update.option.value;
+					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
+					
 					var value = parseInt(update.option.value);
 					if (isNaN(value))
 						value = (update.option.value === "true");
+						//value = update.option.value;
+
+					if (that.debug) that.log("after corr:"+value+" ["+update.color+"[[" + JSON.stringify(update));
+					
+
+					
 					for (var i = 0; i < that.updateSubscriptions.length; i++) {
 						var subscription = that.updateSubscriptions[i];
 						if (subscription.service.subtype != undefined) {
@@ -1200,42 +1213,54 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 							var powerValue = false;
 							var intervalValue = false;
 							if (subscription.characteristic.UUID == (new Characteristic.OutletInUse()).UUID)
-								powerValue = true;
-							if (subscription.characteristic.UUID == (new Characteristic.TimeInterval()).UUID)
-								intervalValue = true;
-							if (subscription.characteristic.UUID == (new Characteristic.SmokeDetected()).UUID)
-								subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');
+                                powerValue = true;
+                            if (subscription.characteristic.UUID == (new Characteristic.TimeInterval()).UUID)
+                                intervalValue = true;
+                            if (subscription.characteristic.UUID == (new Characteristic.SmokeDetected()).UUID)
+                                subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');
+                            
 							else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
-								if (cmd2_id == update.option.cmd_id && value == 1) {
-									subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
-								} else {
-									subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
-								}
-							} else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
-								subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
-							} else if (subscription.characteristic.UUID == (new Characteristic.LeakDetected()).UUID)
-								subscription.characteristic.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID)
-								subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID)
-								subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || subscription.characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
-								if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
-									subscription.characteristic.setValue(value, undefined, 'fromJeedom');
-							} else if (update.power != undefined && powerValue) {
-								subscription.characteristic.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
-							} // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %	
-							else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID) {				
-								subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
-							} else if ((subscription.onOff && typeof (value) == "boolean") || !subscription.onOff) {
-								subscription.characteristic.setValue(value, undefined, 'fromJeedom');
-							} else {
-								subscription.characteristic.setValue(value == 0 ? false : true, undefined, 'fromJeedom');
+                                if (cmd2_id == update.option.cmd_id && value == 1) {
+                                    subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
+                                } 
+								else {
+                                    subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+                                }
+                            } 
+							else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
+                                subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+                            } 
+							
+							else if (subscription.characteristic.UUID == (new Characteristic.LeakDetected()).UUID) {
+                                subscription.characteristic.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
 							}
+                            else if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
+                                subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
+							}
+                            else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
+                                subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
+							}
+                            else if (subscription.characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || subscription.characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
+                                if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
+                                    subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+                            } 
+							else if (update.power != undefined && powerValue) {
+                                subscription.characteristic.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
+                            } // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %    
+                            else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID) {                
+                                subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
+                            } 
+							else if ((subscription.onOff && typeof (value) == "boolean") || !subscription.onOff) {
+                                subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+                            } 
+							else {
+                                subscription.characteristic.setValue(value == 0 ? false : true, undefined, 'fromJeedom');
+                            }
 						}
 					}
 				}
 				if (update.color != undefined) {
+					that.log("isColor");
 					for (var i = 0; i < that.updateSubscriptions.length; i++) {
 						var subscription = that.updateSubscriptions[i];
 						if (subscription.id == update.id && subscription.property == "color") {
@@ -1258,6 +1283,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 		setTimeout( function() { that.startPollingUpdate(lastPoll) }, that.pollerPeriod * 1000);
 	}).catch(function(err, response) {
 		that.log("Error fetching updates: " + err + response);
+		//that.startPollingUpdate(lastPoll);
 	});
 };
 JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
