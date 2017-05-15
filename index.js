@@ -100,7 +100,7 @@ function JeedomPlatform(log, config, api) {
 		this.accessories = [];
 		this.log = log;
 		this.debug = config['debug'] || false;
-
+		this.debug = true; // del this line when going to stable !!!!
 		
 		config['url'] = "http://127.0.0.1:80"; 
 		/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
@@ -774,7 +774,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		this.subscribeUpdate(service, characteristic, onOff, propertyChanged);
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
-				if (this.debug) this.log("SET:"+value,context,JSON.stringify(characteristic));
+				if (this.debug) this.log("SET:"+value+" "+context+" characteristic:"+JSON.stringify(characteristic)+"END");
 				if (characteristic.UUID == '00000033-0000-1000-8000-0026BB765291') {
 					console.log('set target mode');
 				}
@@ -824,7 +824,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
-			if (this.debug) this.log("GET:"+IDs,onOff,service,JSON.stringify(characteristic));
+			if (this.debug) this.log("GET:"+IDs,onOff,service,JSON.stringify(characteristic).replace("\n",""));
 			if (service.isVirtual) {
 				callback(undefined, false);
 			} else {
@@ -1185,7 +1185,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 
 			updates.result.map(function(update) {
 				if (update.option.value != undefined && update.option.cmd_id != undefined) {
-					if (that.debug) that.log("updateReceived:"+update.option.value+" ["+update.color+"[[" + JSON.stringify(update));
+					if (that.debug) that.log("updateReceived:"+update.option.value+" ["+update.color+"[[" + JSON.stringify(update).replace("\n",""));
 
 					var FC = update.option.value[0];
 					
@@ -1197,7 +1197,7 @@ JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
 						value = (update.option.value === "true");
 						//value = update.option.value;
 
-					if (that.debug) that.log("after corr:"+value+" ["+update.color+"[[" + JSON.stringify(update));
+					if (that.debug) that.log("after corr:"+value+" ["+update.color+"[[" + JSON.stringify(update).replace("\n",""));
 					
 
 					
