@@ -1,1 +1,39 @@
-CHANGELOG
+NOTES DE SORTIE / REALEASE NOTES
+
+CHANGEMENTS / CHANGELOG
+v1.0.16 --
+    - Activation d'un mode debug dans la plateforme, il sera lié au status du plugin.
+    - Françisation des messages du log, plus de verbosité, plus de clareté et de détails pour encore mieux vous aider en cas de problème.
+    - Modification des paramètres de composition des UUID, uniquement l'id jeedom et le nom du périphérique (la pièce jeedom entrait en considération).
+        - ATTENTION : cela signifie que à l'installation de cette version, vos périphériques dans Maison vont disparaitre pour réapparaitre dans la pièce par défaut (et casser vos scènes et automations).
+        - Point positif : vous pouvez maintenant changer de pièce dans jeedom les périphériques sans les perdre dans Maison. Malheureusement, ils ne changeront pas dans Maison (non-implémenté dans homebridge).
+        - j'ai gardé le nom du périphérique pour l'instant dans l'identifiant car le renommage d'un périphérique dans jeedom casserait tout dans Maison (pour l'instant) de toute façon.
+    - Modification du délais d'interrogation-longue pour optimiser les systèmes avec moins de changements d'états.
+    - Modification du modèle de fonctionnement. Maintenant on prend un état des périphérique au démarrage du plugin et on le met à jour en temps réèl à chaque changement dans jeedom ou Maison. Moins de requêtes sur l'API jeedom, plus petits temps de réponse dans Maison.
+    - Ajout d'un ramasse miettes à la fin de l'ajout des périphériques présent dans jeedom à homebridge, tout ce qui n'a pas été ajouté/modifié est supprimé d'homebridge (si vous avez rendu invisible un périf ou supprimé dans jeedom par exemple).
+    - Suppression du bouton Regénérer le fichier de configuration : plus besoin, lorsqu'on sauvegarde la configuration, on regénère le fichier automatiquement et on relance le Daemon.
+    - Suppression du bouton Effacer le cache : plus besoin, on gère la suppression individuelle des périphériques. 
+        - TIPS : Si vous avez un problème avec un périphérique malgré tout : décochez "Envoyer à HomeBridge" | relancez le daemon | décochez "Envoyer à HomeBridge" | relancez le daemon : il sera recréé tout proprement (et dans la pièce par défaut de Maison).
+    - Ajout d'avertissements et de messages d'attention si on s'approche du nombre fatidique de 100 accessoires envoyés dans homebridge (HomeKit ne supporte pas plus de 100 accessoires).
+    - Au démarrage du daemon, vérification si avahi-daemon et dbus sont bien lancés, sinon, les démarrer.
+    - A l'install des dépendances, passer avahi-daemon et dbus à enabled si pas le cas.
+    - Corrections diverses, simplifications et optimisations.
+
+PROBLEMES CONNUS / KNOWN ISSUES
+  - Possible problème si on change les Infos/Commandes de type .. pas certain que homebridge retouve tout... (mais on gère le passage de "Aucun/Ne pas tenir compte" à un type et inversément) : si problème : voir TIPS plus haut.
+  - Possibles problèmes sur les ampoules (voir todo) mais il existait déjà.
+  - Possibles problèmes sur certains types génériques plus rares.
+  
+A FAIRE / TODO | ROADMAP
+  - Champ textfield custom dans la configuration pour ceux qui veullent rajouter des accessories manuellement dans homebridge (Sonos etc).
+  - Modulariser les périphériques : afin de clarifier et de simplifier l'ajout de gestions de nouveaux types.
+  - Corriger un bug dans les lightbulbs, set à false la color (pré-existant).
+  - Modifier un perif (ajout modif supp services) et reparser ses services (reuse function ?)
+  - Ajouter des accessoires supportés (Barrier, GarageDoor, Camera, double relay, etc)
+  - Comme les pièces ne sont pas portée dans Maison, donner l'option d'un préfix ou sufix nom de la pièce pour avoir facile à les ranger dans Maison (mais il faut renommer pour siri... donc on laisse le choix)
+  - Créer un accèssoire du style CUSTOM_HOMEBRIDGE, dans lequel on peut mixer différents types générique et faire sa petite config en connaissance de cause (connaître les types génériques de HAP-NodeJS (Homekit Application Protocol reverse-engineerd) qui est la base de homebridge)
+  - Investiguer pour activer ENERGY2 pour avoir une prise avec la consommation electrique dans Maison (ATTENTION à la gestion des multiprises)
+  - Investiguer pour recharger les accessoires sans relancer le daemon.
+  - la vérification du status de dépendances homebridge doit inclure la version homebridge required et HAP-NodeJS etc
+  - lors d'un update du plugin, relancer les dépendances et relancer le daemon
+  - ...
