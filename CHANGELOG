@@ -41,4 +41,5 @@ A FAIRE / TODO | ROADMAP
   - Investiguer pour recharger les accessoires sans relancer le daemon.
   - la vérification du status de dépendances homebridge doit inclure la version homebridge required et HAP-NodeJS etc
   - lors d'un update du plugin, relancer les dépendances et relancer le daemon
+  - Modifier les "Manufacturer", "Model", "SerialNumber" des accessoires pour correspondre avec par exemple le nom du eqtype ou autre
   - ...
