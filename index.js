@@ -129,7 +129,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			var service = null;
 			
 			devices.map(function(device) {
-				//that.log(device);
+				//that.log('debug',device);
 				var goesToHomebridge = (device.isVisible == '1' && device.object_id != null && device.sendToHomebridge != '0'); // we dont receive not visible and empty room, so the only test here is sendToHomebridge
 				if (goesToHomebridge) { 
 
@@ -483,7 +483,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						}
 						if (services.length != 0) {
 							that.addAccessory(
-								that.createAccessory(services, _params.id, _params.name, _params.object_id)
+								that.createAccessory(services, _params.id, _params.name, _params.object_id, _params.eqType_name,_params.logicalId)
 							);
 							services = [];
 						}
@@ -491,7 +491,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						{
 							that.log('│ Accessoire sans Type Générique');
 							that.delAccessory(
-								that.createAccessory([], device.id, device.name, device.object_id) // create a cached lookalike object for unregistering it
+								that.createAccessory([], device.id, device.name, device.object_id, device.eqType_name, device.logicalId) // create a cached lookalike object for unregistering it
 							);
 						}
 						that.log('└─────────');
@@ -507,7 +507,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					that.log(Messg);
 
 					that.delAccessory(
-						that.createAccessory([], device.id, device.name, device.object_id) // create a cached lookalike object for unregistering it
+						that.createAccessory([], device.id, device.name, device.object_id, device.eqType_name, device.logicalId) // create a cached lookalike object for unregistering it
 					);
 					that.log('└─────────');
 				}
@@ -545,7 +545,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		this.log('error','Erreur de la fonction JeedomDevices2HomeKitAccessories :'+e);
 	}
 };
-JeedomPlatform.prototype.createAccessory = function(services, id, name, currentRoomID) {
+JeedomPlatform.prototype.createAccessory = function(services, id, name, currentRoomID, eqType_name, logicalId) {
 	try{
 		var accessory = new JeedomBridgedAccessory(services);
 		accessory.platform = this;
@@ -555,9 +555,9 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 		accessory.context = {};
 		if (this.simplifiedUUID) accessory.context.uniqueSeed = id + accessory.name;
 		else accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
-		accessory.model = 'JeedomBridgedAccessory';
+		accessory.model = eqType_name;
 		accessory.manufacturer = 'Jeedom';
-		accessory.serialNumber = '<unknown>';
+		accessory.serialNumber = '<'+id+'-'+logicalId+'>';
 		accessory.services_add = services;
 		return accessory;
 	}
