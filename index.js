@@ -483,7 +483,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						}
 						if (services.length != 0) {
 							that.addAccessory(
-								that.createAccessory(services, _params.id, _params.name, _params.object_id, _params.eqType_name,_params.logicalId)
+								that.createAccessory(services, device.id, device.name, device.object_id, device.eqType_name,device.logicalId)
 							);
 							services = [];
 						}
@@ -556,7 +556,7 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 		if (this.simplifiedUUID) accessory.context.uniqueSeed = id + accessory.name;
 		else accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
 		accessory.model = eqType_name;
-		accessory.manufacturer = 'Jeedom';
+		accessory.manufacturer = 'Jeedom > '+ this.rooms[currentRoomID] +' > '+name;
 		accessory.serialNumber = '<'+id+'-'+logicalId+'>';
 		accessory.services_add = services;
 		return accessory;
