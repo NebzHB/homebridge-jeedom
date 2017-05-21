@@ -3,6 +3,7 @@ NOTES DE SORTIE / REALEASE NOTES
 CHANGEMENTS / CHANGELOG
 v1.0.18 --
     - Combiné les types OPENING et OPENING_WINDOW car c'est un même type dans homebridge.
+    - Ajout du Model (nom du type de l'eqLogic) et du Serial Number (id de l'objet + id logique) dans homebridge.
 v1.0.17 --
     - Prise en charge du niveau de debug du plugin mobile (il faut sauver le niveau et relancer le demon pour prise en charge)
     - Simplification du code (retiré des choses inutiles comme la création d'un serveur http
