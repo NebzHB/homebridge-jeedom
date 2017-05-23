@@ -170,44 +170,42 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 									service.controlService.subtype = _params.id + '-' + cmd.color.id + '-' + service.controlService.subtype;
 									services.push(service);
 									service = null;
-								} else {
-									if (cmd.state) {
-										var cmd_on = 0;
-										var cmd_off = 0;
-										var cmd_slider = 0;
-										cmds2.light.forEach(function(cmd2, index2, array2) {
-											if (cmd2.on) {
-												if (cmd2.on.value == cmd.state.id) {
-													cmd_on = cmd2.on.id;
-												}
-											} else if (cmd2.off) {
-												if (cmd2.off.value == cmd.state.id) {
-													cmd_off = cmd2.off.id;
-												}
-											} else if (cmd2.slider) {
-												if (cmd2.slider.value == cmd.state.id) {
-													cmd_slider = cmd2.slider.id;
-												}
+								} else if (cmd.state) {
+									var cmd_on = 0;
+									var cmd_off = 0;
+									var cmd_slider = 0;
+									cmds2.light.forEach(function(cmd2, index2, array2) {
+										if (cmd2.on) {
+											if (cmd2.on.value == cmd.state.id) {
+												cmd_on = cmd2.on.id;
 											}
-										});
-										if (cmd_slider == 0) {
-											service = {
-												controlService : new Service.Lightbulb(_params.name),
-												characteristics : [Characteristic.On]
-											};
-										} else {
-											service = {
-												controlService : new Service.Lightbulb(_params.name),
-												characteristics : [Characteristic.On, Characteristic.Brightness]
-											};
+										} else if (cmd2.off) {
+											if (cmd2.off.value == cmd.state.id) {
+												cmd_off = cmd2.off.id;
+											}
+										} else if (cmd2.slider) {
+											if (cmd2.slider.value == cmd.state.id) {
+												cmd_slider = cmd2.slider.id;
+											}
 										}
-										service.controlService.cmd_id = cmds.light.id;
-										if (service.controlService.subtype == undefined)
-											service.controlService.subtype = '';
-										service.controlService.subtype = _params.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '|' + cmd_slider + '-' + service.controlService.subtype;
-										services.push(service);
-										service = null;
+									});
+									if (cmd_slider == 0) {
+										service = {
+											controlService : new Service.Lightbulb(_params.name),
+											characteristics : [Characteristic.On]
+										};
+									} else {
+										service = {
+											controlService : new Service.Lightbulb(_params.name),
+											characteristics : [Characteristic.On, Characteristic.Brightness]
+										};
 									}
+									service.controlService.cmd_id = cmds.light.id;
+									if (service.controlService.subtype == undefined)
+										service.controlService.subtype = '';
+									service.controlService.subtype = _params.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '|' + cmd_slider + '-' + service.controlService.subtype;
+									services.push(service);
+									service = null;
 								}
 							});
 						}
@@ -440,6 +438,44 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							service.controlService.subtype = _params.id + '-' + cmds.brightness.id + '-' + service.controlService.subtype;
 							services.push(service);
 							service = null;
+						}
+						if (cmds.GarageDoor) {
+							that.log("error","GarageDoorCreationS: "+JSON.stringify(cmds));
+							var cmds2 = cmds;
+							cmds.GarageDoor.forEach(function(cmd, index, array) {
+								that.log("error","GarageDoorCreation: "+JSON.stringify(cmd));
+								if (cmd.state) {
+									var cmd_on = 0;
+									var cmd_off = 0;
+									var cmd_toggle = 0;
+									cmds2.GarageDoor.forEach(function(cmd2, index2, array2) {
+										if (cmd2.on) {
+											if (cmd2.on.value == cmd.state.id) {
+												cmd_on = cmd2.on.id;
+											}
+										} else if (cmd2.off) {
+											if (cmd2.off.value == cmd.state.id) {
+												cmd_off = cmd2.off.id;
+											}
+										} else if (cmd2.toggle) {
+											if (cmd2.toggle.value == cmd.state.id) {
+												cmd_toggle = cmd2.toggle.id;
+											}
+										}
+									});
+									service = {
+										controlService : new Service.GarageDoorOpener(_params.name),
+										characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
+									};
+									service.controlService.cmd_id = cmd.state.id;
+									if (service.controlService.subtype == undefined)
+										service.controlService.subtype = '';
+									service.controlService.subtype = _params.id + '-' + cmd.state.id + '-' + service.controlService.subtype;
+									that.log("error","Service: "+JSON.stringify(service));
+									services.push(service);
+									service = null;
+								}
+							});
 						}
 						if (cmds.lock) {
 							cmds.lock.forEach(function(cmd, index, array) {
@@ -734,6 +770,9 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 						this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service, IDs);
 					} else if (characteristic.UUID == (new Characteristic.TargetHeatingCoolingState()).UUID) {
 						this.command('TargetHeatingCoolingState', value, service, IDs);
+					} else if (characteristic.UUID == (new Characteristic.TargetDoorState()).UUID) {
+						var action = 'GBtoggle';//value == Characteristic.TargetDoorState.OPEN ? 'GBopen' : 'GBclose';
+						this.command(action, 0, service, IDs);
 					} else if (characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 						var action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
 						this.command(action, 0, service, IDs);
@@ -761,11 +800,11 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		}
 		characteristic.on('get', function(callback) {
 			this.log('info','[Demande d\'Homekit] IDs:'+IDs,'onOff:'+onOff,'service:'+JSON.stringify(service),'characteristic:'+JSON.stringify(characteristic));
-			if (service.isVirtual) {
-				callback(undefined, false);
-			} else {
+		//	if (service.isVirtual) {
+		//		callback(undefined, false);
+		//	} else {
 				this.getAccessoryValue(callback, onOff, characteristic, service, IDs);
-			}
+		//	}
 		}.bind(this));
 	}
 	catch(e){
@@ -936,6 +975,33 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				callback(undefined, Characteristic.PositionState.STOPPED);
 			} else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 				callback(undefined, properties.value == 'true' ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED);
+			} else if (characteristic.UUID == (new Characteristic.CurrentDoorState()).UUID || characteristic.UUID == (new Characteristic.TargetDoorState()).UUID) {
+				that.log('debug','properties: '+JSON.stringify(properties));
+				properties.forEach(function(element, index, array) {
+					if (element.generic_type == 'GARAGE_STATE' || element.generic_type == 'BARRIER_STATE') {
+						var v=null;
+						switch(parseInt(element.currentValue)) {
+								case 255 :
+										v=Characteristic.CurrentDoorState.OPEN; //0
+								break;
+								case 0 :
+										v=Characteristic.CurrentDoorState.CLOSED; // 1
+								break;
+								case 254 :
+										v=Characteristic.CurrentDoorState.OPENING; // 2
+								break;
+								case 252 :
+										v=Characteristic.CurrentDoorState.CLOSING; // 3
+								break;
+								case 253 :
+										v=Characteristic.CurrentDoorState.STOPPED; // 4
+								break;
+						}
+						that.log('debug','GetState Homekit: '+v+' soit en Jeedom:'+element.currentValue);
+						callback(undefined, v);
+					}
+				});
+						
 			} else if (characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
 				var v = '';
 				properties.forEach(function(element, index, array) {
@@ -1041,6 +1107,12 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 				if (c == 'flapDown' && element.generic_type == 'FLAP_DOWN') {
 					cmdId = element.id;
 				} else if (c == 'flapUp' && element.generic_type == 'FLAP_UP') {
+					cmdId = element.id;
+				} else if (c == 'GBopen' && element.generic_type == 'GB_OPEN') {
+					cmdId = element.id;
+				} else if (c == 'GBclose' && element.generic_type == 'GB_CLOSE') {
+					cmdId = element.id;
+				} else if (c == 'GBtoggle' && element.generic_type == 'GB_TOGGLE') {
 					cmdId = element.id;
 				} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == 'LIGHT_SLIDER' || element.generic_type == 'FLAP_SLIDER')) {
 					cmdId = element.id;
@@ -1150,6 +1222,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 	
 	
 	if (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined) {
+		//that.log('debug','cmd : '+JSON.stringify(cmd));
 		for (var i = 0; i < that.updateSubscriptions.length; i++) {
 			var subscription = that.updateSubscriptions[i];
 			if (subscription.service.subtype != undefined) {
@@ -1185,6 +1258,33 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				}
 				else if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
 					subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
+				}
+				else if (subscription.characteristic.UUID == (new Characteristic.CurrentDoorState()).UUID) {
+					// c'est pas les currentdoorstate qu'il faut setter mais les Target : open ou close, 
+					var v = null;
+					
+					switch(parseInt(value)) {
+						case 255 :
+							v=Characteristic.CurrentDoorState.OPEN; // 0
+						break;
+						case 0 :
+							v=Characteristic.CurrentDoorState.CLOSED; // 1
+						break;
+						case 254 : 
+							v=Characteristic.CurrentDoorState.OPENING; // 2
+						break;
+						case 252 :
+							v=Characteristic.CurrentDoorState.CLOSING; // 3
+						break;
+						case 253 :
+							v=Characteristic.CurrentDoorState.STOPPED; // 4
+						break;
+					}
+					that.log('debug',"Transforme la valeur de Jeedom : "+value+" en valeur pour HomeKit : "+v);
+					subscription.characteristic.setValue(v, undefined, 'fromJeedom');
+				}
+				else if (subscription.characteristic.UUID == (new Characteristic.TargetDoorState()).UUID) {
+					subscription.characteristic.setValue(!value, undefined, 'fromJeedom');
 				}
 				else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 					subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
