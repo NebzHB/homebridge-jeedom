@@ -141,7 +141,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					function AccessoireCreateJeedom(_params) {
 						
 						var cmds = _params;
-						//console.log('PARAMS > '+JSON.stringify(_params));
+						that.log('debug','PARAMS > '+JSON.stringify(_params).replace("\n",''));
 						that.log('┌──── ' + that.rooms[_params.object_id] + ' > ' + _params.name + ' (' + _params.id + ')');
 						if (cmds.light) {
 							var cmds2 = cmds;
@@ -440,10 +440,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							service = null;
 						}
 						if (cmds.GarageDoor) {
-							that.log("error","GarageDoorCreationS: "+JSON.stringify(cmds));
 							var cmds2 = cmds;
 							cmds.GarageDoor.forEach(function(cmd, index, array) {
-								that.log("error","GarageDoorCreation: "+JSON.stringify(cmd));
 								if (cmd.state) {
 									var cmd_on = 0;
 									var cmd_off = 0;
@@ -471,7 +469,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 									if (service.controlService.subtype == undefined)
 										service.controlService.subtype = '';
 									service.controlService.subtype = _params.id + '-' + cmd.state.id + '-' + service.controlService.subtype;
-									that.log("error","Service: "+JSON.stringify(service));
 									services.push(service);
 									service = null;
 								}
@@ -518,6 +515,12 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							service = null;
 						}
 						if (services.length != 0) {
+							for (let s=0;s<services.length;s++) {
+								that.log('info','Services :'+services[s].controlService.displayName,'subtype:'+services[s].controlService.subtype,'cmd_id:'+services[s].controlService.cmd_id,'UUID:'+services[s].controlService.UUID);
+								for (let c=0;c<services[s].controlService.characteristics.length;c++) {
+									that.log('info','Characteristics :'+services[s].controlService.characteristics[c].displayName,'value:'+services[s].controlService.characteristics[c].value);
+								}
+							}
 							that.addAccessory(
 								that.createAccessory(services, device.id, device.name, device.object_id, device.eqType_name,device.logicalId)
 							);
@@ -1183,25 +1186,27 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		that.lastPoll = updates.datetime;
 		if (updates.result != undefined) {
 			updates.result.map(function(update) {
-				that.log('debug','CMD received: '+JSON.stringify(update));
+				that.log('debug','Evènement reçu de Jeedom: '+JSON.stringify(update));
 				if(update.name == 'eqLogic::update') {
-					that.log('debug','eqLogic::update : '+JSON.stringify(that.jeedomClient.getDeviceProperties(update.option.eqLogic_id)).replace('\n',''));
+					that.log('debug','[eqLogic::update] (non géré) : '+JSON.stringify(that.jeedomClient.getDeviceProperties(update.option.eqLogic_id)).replace('\n',''));
 				}
-				
-				if (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined) {
-					that.log('info','[Maj reçue de Jeedom] value:'+update.option.value,'update:'+JSON.stringify(update).replace('\n',''));
+				else if (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined) {
+					that.log('info','[Maj reçue de Jeedom] commande:'+update.option.cmd_id+' value:'+update.option.value);
 					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
 					setTimeout(function(){that.updateSubscribers(update)},500);
+				}
+				else {
+					that.log('debug','[Type inconnu]: '+update.name+' commande: '+update.option.cmd_id+' value:'+update.option.value);
 				}
 			});
 		}
 	}).then(function(){
 		that.pollingUpdateRunning = false;
-		that.pollingID = setTimeout(function(){ that.log('debug','RESTART POLLING');that.startPollingUpdate() }, that.pollerPeriod * 1000);
+		that.pollingID = setTimeout(function(){ that.log('debug','==RESTART POLLING==');that.startPollingUpdate() }, that.pollerPeriod * 1000);
 	}).catch(function(err, response) {
 		that.log('error','Error fetching updates: ', err, response);
 		that.pollingUpdateRunning = false;
-		that.pollingID = setTimeout(function(){ that.log('debug','RESTART POLLING AFTER ERROR');that.startPollingUpdate() }, that.pollerPeriod * 2 * 1000);
+		that.pollingID = setTimeout(function(){ that.log('debug','!!RESTART POLLING AFTER ERROR!!');that.startPollingUpdate() }, that.pollerPeriod * 2 * 1000);
 	});
 };
 
