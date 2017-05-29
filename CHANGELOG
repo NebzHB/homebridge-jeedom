@@ -1,6 +1,8 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.20 --
+    - Logs plus clairs et plus de verbosité sur la création des Characteristics
 v1.0.19 --
     - Support pour les portes de garage/barrières, N'utiliser que BARRIER_STATE ou GARAGE_STATE (même traitement, états 255,254,253,252,0) et GB_TOGGLE
 v1.0.18 --
