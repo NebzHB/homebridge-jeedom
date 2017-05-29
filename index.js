@@ -567,7 +567,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				that.log('│ │ Supprimé du cache !');
 				that.log('│ └─────────');
 				hasDeleted=true;
-			}else countA++;
+			}else if(that.accessories[a].reviewed && that.accessories[a].displayName) countA++;
 		}
 		if(!hasDeleted) that.log('│ Rien à supprimer');
 		that.log('└────────────────────────');
@@ -610,13 +610,14 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 		if (!jeedomAccessory) {
 			return;
 		}
-		var uniqueSeed = jeedomAccessory.UUID;
+
 		if(!silence) this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
-		var existingAccessory = this.existingAccessory(uniqueSeed,silence);
+		var existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
 		if(existingAccessory)
 		{
 			if(!silence) this.log('│ Suppression de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
+			delete this.accessories[jeedomAccessory.UUID];
 			existingAccessory.reviewed=true;
 		}
 		else
