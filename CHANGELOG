@@ -1,6 +1,9 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.21 --
+    - Corrigé la gestion des Serrures, elles fonctionnent
+        !!! si vous utilisez un iPad comme concentrateur HomeKit, pensez a désactiver Siri pour éviter à qqun de crier "siri ouvre la porte d'entrée" par la boite aux lettres (c'est arrivé !) !!!
 v1.0.20 --
     - Logs plus clairs et plus de verbosité sur la création des Characteristics
 v1.0.19 --
