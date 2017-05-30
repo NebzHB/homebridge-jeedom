@@ -1,6 +1,8 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.22 --
+    - Préparation des Sonnettes en prévision du support dans HomeKit par Apple
 v1.0.21 --
     - Corrigé la gestion des Serrures, elles fonctionnent
         !!! si vous utilisez un iPad comme concentrateur HomeKit, pensez a désactiver Siri pour éviter à qqun de crier "siri ouvre la porte d'entrée" par la boite aux lettres (c'est arrivé !) !!!
