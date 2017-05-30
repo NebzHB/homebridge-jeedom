@@ -475,16 +475,30 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							});
 						}
 						if (cmds.lock) {
+							var cmds2 = cmds;
 							cmds.lock.forEach(function(cmd, index, array) {
-								if (cmd.lock) {
+								if (cmd.state) {
+									var cmd_on = 0;
+									var cmd_off = 0;
+									cmds2.lock.forEach(function(cmd2, index2, array2) {
+										if (cmd2.on) {
+											if (cmd2.on.value == cmd.state.id) {
+												cmd_on = cmd2.on.id;
+											}
+										} else if (cmd2.off) {
+											if (cmd2.off.value == cmd.state.id) {
+												cmd_off = cmd2.off.id;
+											}
+										}
+									});
 									service = {
 										controlService : new Service.LockMechanism(_params.name),
 										characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
 									};
-									service.controlService.cmd_id = cmd.lock.id;
+									service.controlService.cmd_id = cmd.state.id;
 									if (service.controlService.subtype == undefined)
 										service.controlService.subtype = '';
-									service.controlService.subtype = _params.id + '-' + cmd.lock.id + '-' + service.controlService.subtype;
+									service.controlService.subtype = _params.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + service.controlService.subtype;
 									services.push(service);
 									service = null;
 								}
@@ -1117,6 +1131,10 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 				} else if (c == 'GBclose' && element.generic_type == 'GB_CLOSE') {
 					cmdId = element.id;
 				} else if (c == 'GBtoggle' && element.generic_type == 'GB_TOGGLE') {
+					cmdId = element.id;
+				} else if (c == 'unsecure' && element.generic_type == 'LOCK_OPEN') {
+					cmdId = element.id;
+				} else if (c == 'secure' && element.generic_type == 'LOCK_CLOSE') {
 					cmdId = element.id;
 				} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == 'LIGHT_SLIDER' || element.generic_type == 'FLAP_SLIDER')) {
 					cmdId = element.id;
