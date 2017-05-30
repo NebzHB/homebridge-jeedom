@@ -504,6 +504,20 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 						}
+						if (cmds.DoorBell) {
+							cmds.DoorBell.forEach(function(cmd, index, array) {
+								service = {
+									controlService : new Service.Doorbell (_params.name),
+									characteristics : [Characteristic.ProgrammableSwitchEvent]
+								};
+								service.controlService.cmd_id = cmd.state.id;
+								if (service.controlService.subtype == undefined)
+									service.controlService.subtype = '';
+								service.controlService.subtype = _params.id + '-' + cmd.state.id + '-' + service.controlService.subtype;
+								services.push(service);
+								service = null;
+							});
+						}
 						if (cmds.thermostat) {
 							service = {
 								controlService : new Service.Thermostat(_params.name),
@@ -991,6 +1005,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				callback(undefined, v);
 			} else if (characteristic.UUID == (new Characteristic.PositionState()).UUID) {
 				callback(undefined, Characteristic.PositionState.STOPPED);
+			} else if (characteristic.UUID == (new Characteristic.ProgrammableSwitchEvent()).UUID) {
+				that.log('debug','GetState ProgrammableSwitchEvent: '+properties.value);
+				callback(undefined, properties.value);
 			} else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 				callback(undefined, properties.value == 'true' ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED);
 			} else if (characteristic.UUID == (new Characteristic.CurrentDoorState()).UUID || characteristic.UUID == (new Characteristic.TargetDoorState()).UUID) {
@@ -1310,6 +1327,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				else if (subscription.characteristic.UUID == (new Characteristic.TargetDoorState()).UUID) {
 					subscription.characteristic.setValue(!value, undefined, 'fromJeedom');
 				}
+				else if (subscription.characteristic.UUID == (new Characteristic.ProgrammableSwitchEvent()).UUID) {
+					that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
+					subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+				}
 				else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
 					subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
 				}
@@ -1488,8 +1509,8 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 				characteristic.props.maxValue = 1000;
 				characteristic.props.minStep = 1;
 				characteristic.props.minValue = 1;
-		 }
-         		   if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
+			}
+         	if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
                 characteristic.props.minValue = -50;
 			}
 			this.platform.bindCharacteristicEvents(characteristic, service.controlService);
