@@ -1,6 +1,8 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.23 --
+    - si un volet est ouvert à 95% afficher 100% dans Maison (usure mécanique, recalibration)
 v1.0.22 --
     - Préparation des Sonnettes en prévision du support dans HomeKit par Apple
 v1.0.21 --
