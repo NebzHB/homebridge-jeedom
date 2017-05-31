@@ -1041,7 +1041,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				var v = '';
 				properties.forEach(function(element, index, array) {
 					if (element.generic_type == 'FLAP_STATE' && element.id == cmds[0]) {
-						v = parseInt(element.currentValue);
+						v = parseInt(element.currentValue) > 95 ? 100 : parseInt(element.currentValue); // >95% is 100% in home (flaps need yearly tunning)
 						//console.log("valeur " + element.generic_type + " : " + v);
 					}
 				});
