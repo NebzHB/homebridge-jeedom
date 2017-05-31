@@ -1,6 +1,8 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.24 --
+    - Optimisation (on break les boucles si on a trouvé l'élément, plus rapide sur les grosses installations)
 v1.0.23 --
     - si un volet est ouvert à 95% afficher 100% dans Maison (usure mécanique, recalibration)
 v1.0.22 --
