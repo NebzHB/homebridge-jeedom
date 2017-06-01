@@ -41,7 +41,7 @@ function JeedomPlatform(logger, config, api) {
 		this.config = config || {};
 		this.api = api;
 		this.accessories = [];
-		this.debugLevel = config['debugLevel'] || debug.ERROR;this.debugLevel=100;
+		this.debugLevel = config['debugLevel'] || debug.ERROR;
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		
