@@ -18,8 +18,8 @@
 'use strict';
 
 var Accessory, Service, Characteristic, UUIDGen;
-//var http = require('http');
 var inherits = require('util').inherits;
+var myLogger = require('./lib/myLogger').myLogger;
 var debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
@@ -35,7 +35,6 @@ module.exports = function(homebridge) {
 	RegisterCustomCharacteristics();
 	homebridge.registerPlatform('homebridge-jeedom', 'Jeedom', JeedomPlatform, true);
 };
-var myLogger=require('./lib/myLogger').myLogger;
 function JeedomPlatform(logger, config, api) {
 	try{
 		this.config = config || {};
@@ -54,7 +53,7 @@ function JeedomPlatform(logger, config, api) {
 		this.jeedomClient = require('./lib/jeedom-api').createClient(config['url'], config['apikey'], this);
 		this.rooms = {};
 		this.updateSubscriptions = [];
-		this.simplifiedUUID = true; // the accessories keep his UUID if the room is changed or if it's renamed
+		this.simplifiedUUID = true; // the accessories keep his UUID if the room is changed
 		
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
@@ -130,7 +129,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			
 			devices.map(function(device) {
 				//that.log('debug',device);
-				var goesToHomebridge = (device.isVisible == '1' && device.object_id != null && device.sendToHomebridge != '0'); // we dont receive not visible and empty room, so the only test here is sendToHomebridge
+				let goesToHomebridge = (device.isVisible == '1' && device.object_id != null && device.sendToHomebridge != '0'); // we dont receive not visible and empty room, so the only test here is sendToHomebridge
 				if (goesToHomebridge) { 
 
 					var resultEqL = that.jeedomClient.getDeviceProperties(device.id);
@@ -543,10 +542,10 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							service = null;
 						}
 						if (services.length != 0) {
-							for (let s=0;s<services.length;s++) {
-								that.log('info','Services :'+services[s].controlService.displayName,'subtype:'+services[s].controlService.subtype,'cmd_id:'+services[s].controlService.cmd_id,'UUID:'+services[s].controlService.UUID);
-								for (let c=0;c<services[s].controlService.characteristics.length;c++) {
-									that.log('info','Characteristics :'+services[s].controlService.characteristics[c].displayName,'value:'+services[s].controlService.characteristics[c].value);
+							for (const s of services) {//let s=0;s<services.length;s++) {
+								that.log('info','Services :'+s.controlService.displayName,'subtype:'+s.controlService.subtype,'cmd_id:'+s.controlService.cmd_id,'UUID:'+s.controlService.UUID);
+								for (const c of s.controlService.characteristics) {
+									that.log('info','Characteristics :'+c.displayName,'value:'+c.value);
 								}
 							}
 							that.addAccessory(
@@ -617,11 +616,14 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 		var accessory = new JeedomBridgedAccessory(services);
 		accessory.platform = this;
 		accessory.name = (name) ? name : this.rooms[currentRoomID] + '-Devices';
+
 		if (this.simplifiedUUID) accessory.UUID = UUIDGen.generate(id + accessory.name);
 		else accessory.UUID = UUIDGen.generate(id + accessory.name + currentRoomID);
+
 		accessory.context = {};
 		if (this.simplifiedUUID) accessory.context.uniqueSeed = id + accessory.name;
 		else accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
+
 		accessory.model = eqType_name;
 		accessory.manufacturer = 'Jeedom > '+ this.rooms[currentRoomID] +' > '+name;
 		accessory.serialNumber = '<'+id+'-'+logicalId+'>';
@@ -662,46 +664,56 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		if (!jeedomAccessory) {
 			return;
 		}
-		var isNewAccessory = false;
+		let isNewAccessory = false;
 		var uniqueSeed = jeedomAccessory.UUID;
-		var services = jeedomAccessory.services_add;
+		var servicesL = jeedomAccessory.services_add;
 		this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
-		var newAccessory = this.existingAccessory(uniqueSeed);
-		if (!newAccessory) {
+		var HBAccessory = this.existingAccessory(uniqueSeed);
+		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
 			isNewAccessory = true;
-			var newAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.UUID);
-			jeedomAccessory.initAccessory(newAccessory);
-			this.accessories[jeedomAccessory.UUID] = jeedomAccessory;
+			HBAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.UUID);
+			jeedomAccessory.initAccessory(HBAccessory);
+			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
-		newAccessory.reachable = true;
-
-
-		// Remove services existing in HomeKit accessory no more present in Jeedom
-		for (var t = 0; t < newAccessory.services.length; t++) {
-			var found = false;
-			for (var s = 0; s < services.length; s++) {
-				if (newAccessory.services[t].displayName == undefined || services[s].controlService.displayName == newAccessory.services[t].displayName) {
-					found = true;
-					break;	  		
+		HBAccessory.reachable = true;
+		
+		// delete and readd services
+		if(!isNewAccessory) {
+			var lenHB = HBAccessory.services.length;
+			var toRemove=[];
+			for(var t=1; t< lenHB;t++) { 
+				toRemove.push(HBAccessory.services[t]);
+			}		
+			for(var rem of toRemove){ // dont work in one loop
+				HBAccessory.removeService(rem);
+			}
+			for (var s=0;s<servicesL.length;s++) {
+				HBAccessory.addService(servicesL[s].controlService);
+				for (var i = 0; i < servicesL[s].characteristics.length; i++) { // rebind
+					var characteristic = servicesL[s].controlService.getCharacteristic(servicesL[s].characteristics[i]);
+					characteristic.props.needsBinding = true;
+					if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
+						characteristic.props.maxValue = 1000;
+						characteristic.props.minStep = 1;
+						characteristic.props.minValue = 1;
+					}
+					if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
+						characteristic.props.minValue = -50;
+					}
+					this.bindCharacteristicEvents(characteristic, servicesL[s].controlService);
 				}
 			}
-			if (!found) {
-				newAccessory.removeService(newAccessory.services[t]);
-				this.log('│ Supression des service (' + jeedomAccessory.name + '/' + newAccessory.services[t].displayName + ')');
-			}
 		}
-
-		
 		
 		if (isNewAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
-			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [newAccessory]);
+			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
-			this.api.updatePlatformAccessories([newAccessory]);
+			this.api.updatePlatformAccessories([HBAccessory]);
 		}
-		newAccessory.reviewed = true;
+		HBAccessory.reviewed = true;
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction addAccessory :'+e);
@@ -781,48 +793,61 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
 					this.log('info','[Commande d\'Homekit] value:'+value,'context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
 				
-					if (characteristic.UUID == (new Characteristic.On()).UUID && service.isVirtual) {
-						this.command('pressButton', IDs[1], service, IDs);
-						setTimeout(function() {
-							characteristic.setValue(false, undefined, 'fromSetValue');
-						}, 100);
-					} else if (characteristic.UUID == (new Characteristic.On()).UUID) {
-						this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.TargetTemperature()).UUID) {
-						if (Math.abs(value - characteristic.value) >= 0.5) {
-							value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
-							this.command('setTargetLevel', value, service, IDs);
-						} else {
-							value = characteristic.value;
-						}
-						setTimeout(function() {
-							characteristic.setValue(value, undefined, 'fromSetValue');
-						}, 100);
-					} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
-						this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.TargetHeatingCoolingState()).UUID) {
-						this.command('TargetHeatingCoolingState', value, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.TargetDoorState()).UUID) {
-						var action = 'GBtoggle';//value == Characteristic.TargetDoorState.OPEN ? 'GBopen' : 'GBclose';
-						this.command(action, 0, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
-						var action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
-						this.command(action, 0, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
-						var rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
-						this.syncColorCharacteristics(rgb, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
-						var rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
-						this.syncColorCharacteristics(rgb, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
-						if (service.HSBValue != null) {
-							var rgb = this.updateJeedomColorFromHomeKit(null, null, value, service);
+					switch (characteristic.UUID) {
+						case (new Characteristic.On()).UUID :
+							if(service.isVirtual) {
+								this.command('pressButton', IDs[1], service, IDs);
+								setTimeout(function() {
+									characteristic.setValue(false, undefined, 'fromSetValue');
+								}, 100);
+							} else {
+								this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
+							}
+						break;
+						case (new Characteristic.TargetTemperature()).UUID :
+							if (Math.abs(value - characteristic.value) >= 0.5) {
+								value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
+								this.command('setTargetLevel', value, service, IDs);
+							} else {
+								value = characteristic.value;
+							}
+							setTimeout(function() {
+								characteristic.setValue(value, undefined, 'fromSetValue');
+							}, 100);
+						break;
+						case (new Characteristic.TimeInterval()).UUID :
+							this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service, IDs);
+						break;
+						case (new Characteristic.TargetHeatingCoolingState()).UUID :
+							this.command('TargetHeatingCoolingState', value, service, IDs);
+						break;
+						case (new Characteristic.TargetDoorState()).UUID :
+							var action = 'GBtoggle';//value == Characteristic.TargetDoorState.OPEN ? 'GBopen' : 'GBclose';
+							this.command(action, 0, service, IDs);
+						break;
+						case (new Characteristic.LockTargetState()).UUID :
+							var action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
+							this.command(action, 0, service, IDs);
+						break;
+						case (new Characteristic.Hue()).UUID :
+							var rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
 							this.syncColorCharacteristics(rgb, service, IDs);
-						} else {
+						break;
+						case (new Characteristic.Saturation()).UUID :
+							var rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
+							this.syncColorCharacteristics(rgb, service, IDs);
+						break;
+						case (new Characteristic.Brightness()).UUID :
+							if (service.HSBValue != null) {
+								var rgb = this.updateJeedomColorFromHomeKit(null, null, value, service);
+								this.syncColorCharacteristics(rgb, service, IDs);
+							} else {
+								this.command('setValue', value, service, IDs);
+							}
+						break;
+						default :
 							this.command('setValue', value, service, IDs);
-						}
-					} else {
-						this.command('setValue', value, service, IDs);
+						break;
 					}
 				}
 				else
@@ -927,75 +952,42 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			break;
 			case (new Characteristic.Brightness()).UUID :
 				returnValue = undefined;
-				if (service.HSBValue != null) {
-					for (const element of properties) {
+				
+				for (const element of properties) {
+					if (service.HSBValue != null) {
 						if (element.generic_type == 'LIGHT_COLOR') {
 							//console.log("valeur " + element.generic_type + " : " + returnValue);
-							returnValue = element.currentValue;
+							var hsv = that.updateHomeKitColorFromJeedom(element.currentValue, service);
+							returnValue = Math.round(hsv.v);
 							break;
 						}
+					} else if (element.generic_type == 'LIGHT_STATE' && element.id == cmds[0]) {
+						returnValue = Math.round(parseInt(element.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
+						//console.log("valeur " + element.generic_type + " : " + returnValue);
+						break;
 					}
-					var hsv = that.updateHomeKitColorFromJeedom(returnValue, service);
-					returnValue = Math.round(hsv.v);
-				} else {
-					for (const element of properties) {
-						if (element.generic_type == 'LIGHT_STATE' && element.id == cmds[0]) {
-							// returnValue = parseInt(element.currentValue);
-							returnValue = Math.round(parseInt(element.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
-							//console.log("valeur " + element.generic_type + " : " + returnValue);
-							break;
-						}
-					}
-				}
-			break;
-			case (new Characteristic.SecuritySystemCurrentState()).UUID :
-				var alarm = 0;
-				for (const element of properties) {
-					if (element.generic_type == 'ALARM_ENABLE_STATE') {
-						if (parseInt(element.currentValue) == 0) {
-							//console.log("valeur " + element.generic_type + " : desarmé");
-							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
-						} else {
-							//console.log("valeur " + element.generic_type + " : armé");
-							returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-						}
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					}
-					if (element.generic_type == 'ALARM_STATE') {
-						if (parseInt(element.currentValue) == 1) {
-							//console.log("valeur " + element.generic_type + " : alarm");
-							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
-							break;
-						}
-					}
-				}
-				if (alarm != 0) {
-					returnValue=alarm;
 				}
 			break;
 			case (new Characteristic.SecuritySystemTargetState()).UUID :
-				var alarm = 0;
+			case (new Characteristic.SecuritySystemCurrentState()).UUID :
 				for (const element of properties) {
-					if (element.generic_type == 'ALARM_ENABLE_STATE') {
-						if (parseInt(element.currentValue) == 0) {
-							//console.log("valeur " + element.generic_type + " : desarmé");
-							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
-						} else {
-							//console.log("valeur " + element.generic_type + " : armé");
-							returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-						}
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+					let currentValue = parseInt(element.currentValue);
+					
+					if (element.generic_type == 'ALARM_STATE' && currentValue == 1) {
+						//console.log("valeur " + element.generic_type + " : alarm");
+						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+						break;
 					}
-					if (element.generic_type == 'ALARM_STATE') {
-						if (parseInt(element.currentValue) == 1) {
-							//console.log("valeur " + element.generic_type + " : alarm");
-							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+					if (element.generic_type == 'ALARM_ENABLE_STATE') {
+						switch (currentValue) {
+							case 0 :
+								returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
+							break;
+							default:
+								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;							
 							break;
 						}
 					}
-				}
-				if (alarm != 0) {
-					returnValue = alarm;
 				}
 			break;
 			case (new Characteristic.CurrentHeatingCoolingState()).UUID :
@@ -1120,22 +1112,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				}
 				returnValue = parseFloat(returnValue);
 			break;
-			default :
-				if (returnBoolean) {
-					for (const element of properties) {
-						if ((element.generic_type == 'LIGHT_STATE' && element.id == cmds[0]) || (element.generic_type == 'ENERGY_STATE' && element.id == cmds[0]) || (element.generic_type == 'PRESENCE' && element.id == cmds[0]) || (element.generic_type == 'OPENING' && element.id == cmds[0])) {
-							returnValue = element.currentValue;
-							break;
-						}
-					}
-					if (returnValue == 'true' || returnValue == 'false') {
-						returnValue = (returnValue == 'false') ? false : true;
-					} else {
-						returnValue = (parseInt(returnValue) == 0) ? false : true;
-					}
-				}
-			break;
 		}
+		if (returnBoolean) returnValue = toBool(returnValue);
 		callback(undefined, returnValue);
 	}
 	catch(e){
@@ -1255,17 +1233,12 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		that.lastPoll = updates.datetime;
 		if (updates.result != undefined) {
 			updates.result.map(function(update) {
-				that.log('debug','Evènement reçu de Jeedom: '+JSON.stringify(update));
-				if(update.name == 'eqLogic::update') {
-					that.log('debug','[eqLogic::update] (non géré) : '+JSON.stringify(that.jeedomClient.getDeviceProperties(update.option.eqLogic_id)).replace('\n',''));
-				}
-				else if (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined) {
-					that.log('info','[Maj reçue de Jeedom] commande:'+update.option.cmd_id+' value:'+update.option.value);
+				if (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined) {
 					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
 					setTimeout(function(){that.updateSubscribers(update)},500);
 				}
 				else {
-					that.log('debug','[Type inconnu]: '+update.name+' commande: '+update.option.cmd_id+' value:'+update.option.value);
+					that.log('debug','[Reçu Type non géré]: '+update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
 				}
 			});
 		}
@@ -1294,8 +1267,8 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 
 	if (update.color) that.log('debug','---AFTER corr:'+value+' ['+update.color+'[[' + JSON.stringify(update).replace('\n',''));
 	
-	
-	if (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined) {
+	let somethingToUpdate = (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined);
+	if (somethingToUpdate) {
 		//that.log('debug','cmd : '+JSON.stringify(cmd));
 		for (var i = 0; i < that.updateSubscriptions.length; i++) {
 			var subscription = that.updateSubscriptions[i];
@@ -1306,83 +1279,86 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				var cmd2_id = IDs[2];
 			}
 			if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id) {
-				var powerValue = false;
 				var intervalValue = false;
-				if (subscription.characteristic.UUID == (new Characteristic.OutletInUse()).UUID)
-					powerValue = true;
-				if (subscription.characteristic.UUID == (new Characteristic.TimeInterval()).UUID)
-					intervalValue = true;
-				if (subscription.characteristic.UUID == (new Characteristic.SmokeDetected()).UUID)
-					subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');
-				
-				else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
-					if (cmd2_id == update.option.cmd_id && value == 1) {
-						subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
-					} 
-					else {
+
+				switch(subscription.characteristic.UUID) {
+					case (new Characteristic.TimeInterval()).UUID :
+						intervalValue = true;
+					break;
+					case (new Characteristic.SmokeDetected()).UUID :
+						subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');		
+					break;
+					case (new Characteristic.SecuritySystemCurrentState()).UUID :
+						if (cmd2_id == update.option.cmd_id && value == 1) {
+							subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
+						} 
+						else {
+							subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+						}
+					break;
+					case (new Characteristic.SecuritySystemTargetState()).UUID :
 						subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
-					}
-				} 
-				else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
-					subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
-				} 
-				
-				else if (subscription.characteristic.UUID == (new Characteristic.LeakDetected()).UUID) {
-					subscription.characteristic.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
-				}
-				else if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
-					subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
-				}
-				else if (subscription.characteristic.UUID == (new Characteristic.CurrentDoorState()).UUID) {
-					// c'est pas les currentdoorstate qu'il faut setter mais les Target : open ou close, 
-					var v = null;
-					
-					switch(parseInt(value)) {
-						case 255 :
-							v=Characteristic.CurrentDoorState.OPEN; // 0
-						break;
-						case 0 :
-							v=Characteristic.CurrentDoorState.CLOSED; // 1
-						break;
-						case 254 : 
-							v=Characteristic.CurrentDoorState.OPENING; // 2
-						break;
-						case 252 :
-							v=Characteristic.CurrentDoorState.CLOSING; // 3
-						break;
-						case 253 :
-							v=Characteristic.CurrentDoorState.STOPPED; // 4
-						break;
-					}
-					that.log('debug',"Transforme la valeur de Jeedom : "+value+" en valeur pour HomeKit : "+v);
-					subscription.characteristic.setValue(v, undefined, 'fromJeedom');
-				}
-				else if (subscription.characteristic.UUID == (new Characteristic.TargetDoorState()).UUID) {
-					subscription.characteristic.setValue(!value, undefined, 'fromJeedom');
-				}
-				else if (subscription.characteristic.UUID == (new Characteristic.ProgrammableSwitchEvent()).UUID) {
-					that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
-					subscription.characteristic.setValue(value, undefined, 'fromJeedom');
-				}
-				else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
-					subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
-				}
-				else if (subscription.characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || subscription.characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
-					if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
+					break;
+					case (new Characteristic.LeakDetected()).UUID :
+						subscription.characteristic.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.ContactSensorState()).UUID :
+						subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.CurrentDoorState()).UUID :
+						var v = null;
+						switch(parseInt(value)) {
+							case 255 :
+								v=Characteristic.CurrentDoorState.OPEN; // 0
+							break;
+							case 0 :
+								v=Characteristic.CurrentDoorState.CLOSED; // 1
+							break;
+							case 254 : 
+								v=Characteristic.CurrentDoorState.OPENING; // 2
+							break;
+							case 252 :
+								v=Characteristic.CurrentDoorState.CLOSING; // 3
+							break;
+							case 253 :
+								v=Characteristic.CurrentDoorState.STOPPED; // 4
+							break;
+						}
+						that.log('debug',"Transforme la valeur de Jeedom : "+value+" en valeur pour HomeKit : "+v);
+						subscription.characteristic.setValue(v, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.TargetDoorState()).UUID :
+						subscription.characteristic.setValue(!value, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.ProgrammableSwitchEvent()).UUID :
+						that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
 						subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.LockCurrentState()).UUID :
+					case (new Characteristic.LockTargetState()).UUID :
+						subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.CurrentPosition()).UUID :
+					case (new Characteristic.TargetPosition()).UUID :
+						if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
+							subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.OutletInUse()).UUID :
+						if (update.power != undefined)
+							subscription.characteristic.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.Brightness()).UUID :
+						subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
+					break;
+					default :
+						if ((subscription.onOff && typeof (value) == 'boolean') || !subscription.onOff) {
+							subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+						} 
+						else {
+							subscription.characteristic.setValue(toBool(value), undefined, 'fromJeedom');
+						}	
+					break;
 				} 
-				else if (update.power != undefined && powerValue) {
-					subscription.characteristic.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
-				} // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %    
-				else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID) {                
-					subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
-				} 
-				else if ((subscription.onOff && typeof (value) == 'boolean') || !subscription.onOff) {
-					subscription.characteristic.setValue(value, undefined, 'fromJeedom');
-				} 
-				else {
-					subscription.characteristic.setValue(value == 0 ? false : true, undefined, 'fromJeedom');
-				}
 			}
 		}
 	}
@@ -1530,7 +1506,10 @@ function JeedomBridgedAccessory(services) {
 }
 
 JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
-	newAccessory.getService(Service.AccessoryInformation).setCharacteristic(Characteristic.Manufacturer, this.manufacturer).setCharacteristic(Characteristic.Model, this.model).setCharacteristic(Characteristic.SerialNumber, this.serialNumber);
+	newAccessory.getService(Service.AccessoryInformation)
+		.setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
+		.setCharacteristic(Characteristic.Model, this.model)
+		.setCharacteristic(Characteristic.SerialNumber, this.serialNumber);
 
 	for (var s = 0; s < this.services.length; s++) {
 		var service = this.services[s];
@@ -1648,4 +1627,11 @@ function RGBtoHSV(r, g, b) {
 		s : s * 100.0,
 		v : v * 100.0
 	};
+}
+function toBool(val) {
+	if (val == 'false' || val == '0') {
+		return false;
+	} else {
+		return Boolean(val);
+	}
 }
