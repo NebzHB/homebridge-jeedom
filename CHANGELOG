@@ -1,6 +1,9 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.25 --
+    - Nettoyage du code et simplification
+    - Meilleure gestion des services en cas de modification de ceux-ci (modification des types génériques)
 v1.0.24 --
     - Optimisation (on break les boucles si on a trouvé l'élément, plus rapide sur les grosses installations)
 v1.0.23 --
