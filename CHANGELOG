@@ -1,6 +1,10 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.26 --
+    - Gestion pourcentage batterie via le type générique "BATTERY"
+    - Si < 20% on set un flag "LowBattery" dans Homekit pour afficher dans Maison/Eve/...
+    - Gestion du "charge en cours" définit sur "non chargeable" pour l'instant car il faut voir comment on gère ca coté Jeedom
 v1.0.25 --
     - Nettoyage du code et simplification
     - Meilleure gestion des services en cas de modification de ceux-ci (modification des types génériques)
