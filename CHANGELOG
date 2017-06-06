@@ -1,6 +1,9 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.0.27 --
+    - Simplifié l'ajout/suppression des services
+    - Commencé à résoudre les problèmes LightBulbs mais pas terminé
 v1.0.26 --
     - Gestion pourcentage batterie via le type générique "BATTERY"
     - Si < 20% on set un flag "LowBattery" dans Homekit pour afficher dans Maison/Eve/...
