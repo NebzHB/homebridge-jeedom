@@ -542,12 +542,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							service = null;
 						}
 						if (services.length != 0) {
-							for (const s of services) {//let s=0;s<services.length;s++) {
-								that.log('info','Services :'+s.controlService.displayName,'subtype:'+s.controlService.subtype,'cmd_id:'+s.controlService.cmd_id,'UUID:'+s.controlService.UUID);
-								for (const c of s.controlService.characteristics) {
-									that.log('info','Characteristics :'+c.displayName,'value:'+c.value);
-								}
-							}
 							that.addAccessory(
 								that.createAccessory(services, device.id, device.name, device.object_id, device.eqType_name,device.logicalId)
 							);
@@ -613,7 +607,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 };
 JeedomPlatform.prototype.createAccessory = function(services, id, name, currentRoomID, eqType_name, logicalId) {
 	try{
-		var accessory = new JeedomBridgedAccessory(services);
+		var accessory = new JeedomBridgedAccessory(services,this.log,this.platform);
 		accessory.platform = this;
 		accessory.name = (name) ? name : this.rooms[currentRoomID] + '-Devices';
 
@@ -666,7 +660,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		let isNewAccessory = false;
 		var uniqueSeed = jeedomAccessory.UUID;
-		var servicesL = jeedomAccessory.services_add;
+		var services2Add = jeedomAccessory.services_add;
 		this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
 		var HBAccessory = this.existingAccessory(uniqueSeed);
 		if (!HBAccessory) {
@@ -678,38 +672,12 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		HBAccessory.reachable = true;
 		
-		// delete and readd services
-		if(!isNewAccessory) {
-			var lenHB = HBAccessory.services.length;
-			var toRemove=[];
-			for(var t=1; t< lenHB;t++) { 
-				toRemove.push(HBAccessory.services[t]);
-			}		
-			for(var rem of toRemove){ // dont work in one loop
-				HBAccessory.removeService(rem);
-			}
-			for (var s=0;s<servicesL.length;s++) {
-				HBAccessory.addService(servicesL[s].controlService);
-				for (var i = 0; i < servicesL[s].characteristics.length; i++) { // rebind
-					var characteristic = servicesL[s].controlService.getCharacteristic(servicesL[s].characteristics[i]);
-					characteristic.props.needsBinding = true;
-					if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
-						characteristic.props.maxValue = 1000;
-						characteristic.props.minStep = 1;
-						characteristic.props.minValue = 1;
-					}
-					if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
-						characteristic.props.minValue = -50;
-					}
-					this.bindCharacteristicEvents(characteristic, servicesL[s].controlService);
-				}
-			}
-		}
-		
 		if (isNewAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
+			jeedomAccessory.delServices(HBAccessory);
+			jeedomAccessory.addServices(HBAccessory,services2Add);
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
@@ -1273,15 +1241,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 
 	var FC = update.option.value[0];
 	
-	if(FC == '#') update.color=update.option.value;	
-	
-	if (update.color) that.log('debug','---BEFORE corr:'+update.option.value+' ['+update.color+'[[' + JSON.stringify(update).replace('\n',''));
+	if(FC == '#') update.color=update.option.value;
+	else update.color=undefined;
 	
 	var value = parseInt(update.option.value);
 	if (isNaN(value))
 		value = (update.option.value === 'true');
-
-	if (update.color) that.log('debug','---AFTER corr:'+value+' ['+update.color+'[[' + JSON.stringify(update).replace('\n',''));
 	
 	let somethingToUpdate = (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined);
 	if (somethingToUpdate) {
@@ -1379,19 +1344,36 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		}
 	}
 	if (update.color != undefined) {
-		that.log('debug','isColor',update.name == 'cmd::update',update.option.value != undefined,update.option.cmd_id != undefined);
+		var found=false;
 		for (var i = 0; i < that.updateSubscriptions.length; i++) {
 			var subscription = that.updateSubscriptions[i];
-			if (subscription.id == update.id && subscription.property == 'color') {
+			var IDs = subscription.service.subtype.split('-');
+			if (IDs[1] == update.option.cmd_id && subscription.property == 'color') {
 				var hsv = that.updateHomeKitColorFromJeedom(update.color, subscription.service);
-				if (subscription.characteristic.UUID == (new Characteristic.On()).UUID)
-					subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
-				else if (subscription.characteristic.UUID == (new Characteristic.Hue()).UUID)
-					subscription.characteristic.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
-				else if (subscription.characteristic.UUID == (new Characteristic.Saturation()).UUID)
-					subscription.characteristic.setValue(Math.round(hsv.s), undefined, 'fromJeedom');
-				else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID)
-					subscription.characteristic.setValue(Math.round(hsv.v), undefined, 'fromJeedom');
+				switch(subscription.characteristic.UUID)
+				{
+					/*case (new Characteristic.On()).UUID :
+						that.log('debug','update On :'+hsv.v == 0 ? false : true);
+						subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
+					break;*/
+					case (new Characteristic.Hue()).UUID :
+						//that.log('debug','update Hue :'+Math.round(hsv.h));
+						subscription.characteristic.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.Saturation()).UUID :
+						//that.log('debug','update Sat :'+Math.round(hsv.s));
+						subscription.characteristic.setValue(Math.round(hsv.s), undefined, 'fromJeedom');
+					break;
+					case (new Characteristic.Brightness()).UUID :
+						//that.log('debug','update Bright :'+Math.round(hsv.v));
+						subscription.characteristic.setValue(Math.round(hsv.v), undefined, 'fromJeedom');
+					break;
+				}
+				found=true;
+			}
+			else if (found==true) // after all founds
+			{
+				break;
 			}
 		}
 	}
@@ -1517,8 +1499,10 @@ function RegisterCustomCharacteristics() {
 
 	// End of custom Services and Characteristics	
 }
-function JeedomBridgedAccessory(services) {
+function JeedomBridgedAccessory(services,log,platform) {
 	this.services = services;
+	this.log = log;
+	this.platform=platform;
 }
 
 JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
@@ -1527,8 +1511,15 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 		.setCharacteristic(Characteristic.Model, this.model)
 		.setCharacteristic(Characteristic.SerialNumber, this.serialNumber);
 
-	for (var s = 0; s < this.services.length; s++) {
-		var service = this.services[s];
+	this.addServices(newAccessory,this.services);
+};
+JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services) {
+	for (var s = 0; s < services.length; s++) {
+		var service = services[s];
+		this.log('| Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+		for (const c of service.controlService.characteristics) {
+			this.log('|    Caractéristique :'+c.displayName+' valeur initiale:'+c.value);
+		}
 		newAccessory.addService(service.controlService);
 		for (var i = 0; i < service.characteristics.length; i++) {
 			var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
@@ -1538,14 +1529,27 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 				characteristic.props.minStep = 1;
 				characteristic.props.minValue = 1;
 			}
-         	if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
-                characteristic.props.minValue = -50;
+			if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
+				characteristic.props.minValue = -50;
 			}
 			this.platform.bindCharacteristicEvents(characteristic, service.controlService);
 		}
 	}
-};
-
+}
+JeedomBridgedAccessory.prototype.delServices = function(accessory) {
+			var lenHB = accessory.services.length;
+			var toRemove=[];
+			for(var t=1; t< lenHB;t++) { 
+				toRemove.push(accessory.services[t]);
+			}		
+			for(var rem of toRemove){ // dont work in one loop or with temp object :(
+				this.log('| Suppression service :'+rem.displayName+' subtype:'+rem.subtype+' UUID:'+rem.UUID);
+				for (const c of rem.characteristics) {
+					this.log('|    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+				}
+				accessory.removeService(rem);
+			}
+}
 function hexToR(h) {
 	return parseInt((cutHex(h)).substring(0, 2), 16);
 }
