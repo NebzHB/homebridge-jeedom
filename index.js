@@ -53,7 +53,6 @@ function JeedomPlatform(logger, config, api) {
 		this.jeedomClient = require('./lib/jeedom-api').createClient(config['url'], config['apikey'], this);
 		this.rooms = {};
 		this.updateSubscriptions = [];
-		this.simplifiedUUID = true; // the accessories keep his UUID if the room is changed
 		
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
@@ -607,16 +606,14 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 };
 JeedomPlatform.prototype.createAccessory = function(services, id, name, currentRoomID, eqType_name, logicalId) {
 	try{
-		var accessory = new JeedomBridgedAccessory(services,this.log,this.platform);
+		var accessory = new JeedomBridgedAccessory(services);
 		accessory.platform = this;
+		accessory.log = this.log;
 		accessory.name = (name) ? name : this.rooms[currentRoomID] + '-Devices';
 
-		if (this.simplifiedUUID) accessory.UUID = UUIDGen.generate(id + accessory.name);
-		else accessory.UUID = UUIDGen.generate(id + accessory.name + currentRoomID);
-
+		accessory.UUID = UUIDGen.generate(id + accessory.name);
 		accessory.context = {};
-		if (this.simplifiedUUID) accessory.context.uniqueSeed = id + accessory.name;
-		else accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
+		accessory.context.uniqueSeed = id + accessory.name;
 
 		accessory.model = eqType_name;
 		accessory.manufacturer = 'Jeedom > '+ this.rooms[currentRoomID] +' > '+name;
@@ -1499,10 +1496,8 @@ function RegisterCustomCharacteristics() {
 
 	// End of custom Services and Characteristics	
 }
-function JeedomBridgedAccessory(services,log,platform) {
+function JeedomBridgedAccessory(services) {
 	this.services = services;
-	this.log = log;
-	this.platform=platform;
 }
 
 JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
