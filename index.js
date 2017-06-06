@@ -303,7 +303,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								if (cmd.battery) {
 									service = {
 										controlService : new Service.BatteryService(_params.name),
-										characteristics : [Characteristic.BatteryLevel]
+										characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery]
 									};
 									service.controlService.cmd_id = cmd.battery.id;
 									if (service.controlService.subtype == undefined)
@@ -1091,6 +1091,22 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 					}
 				}
 				returnValue = parseInt(returnValue);
+			break;
+			case (new Characteristic.StatusLowBattery()).UUID :
+				for (const element of properties) {
+					if (element.generic_type == 'BATTERY' && element.id == cmds[0]) {
+						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						returnValue = element.currentValue;
+						break;
+					}
+				}
+				if(parseInt(returnValue) > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+				else returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
+			break;
+			case (new Characteristic.ChargingState()).UUID :
+				//Characteristic.ChargingState.NOT_CHARGING;
+				//Characteristic.ChargingState.CHARGING;
+				returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;
 			break;
 			case (new Characteristic.CurrentPowerConsumption()).UUID :
 				for (const element of properties) {
