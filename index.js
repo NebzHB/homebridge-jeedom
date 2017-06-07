@@ -1094,7 +1094,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				returnValue = parseFloat(returnValue);
 			break;
 		}
-		if (returnBoolean) returnValue = toBool(returnValue);
+		if (returnBoolean) {
+			for (const element of properties) {
+				if ((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])) {
+					returnValue = element.currentValue;
+					//console.log("valeur binary " + element.generic_type + " : " + v);
+				}
+			}
+			returnValue = toBool(returnValue);
+		}
 		callback(undefined, returnValue);
 	}
 	catch(e){
