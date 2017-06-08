@@ -594,8 +594,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		
 		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
 		that.log(endLog);
-		if(countA >= 95) that.log('warn','!!! ATTENTION !!! Vous avez '+countA+' accessoires et HomeKit en supporte 100 max !!');
-		else if(countA >= 85) that.log('warn','! Avertissement, vous avez '+countA+' accessoires et HomeKit en supporte 100 max !!');
+		if(countA >= 100) that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
+		else if(countA >= 90) that.log('warn','! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
 		
 		if (that.pollerPeriod <= 100)
 			that.startPollingUpdate();
