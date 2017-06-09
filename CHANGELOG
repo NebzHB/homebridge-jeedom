@@ -1,6 +1,10 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.1.0  --
+    - Support des Plateformes Homebridge en mode expert (Cameras, autre...)
+    - Documentation code
+    - Freeze des fonctionnalités, debugging à faire en vue de version stable
 v1.0.27 --
     - Simplifié l'ajout/suppression des services
     - Commencé à résoudre les problèmes LightBulbs mais pas terminé
@@ -29,7 +33,7 @@ v1.0.18 --
     - Ajout du Model (nom du type de l'eqLogic) et du Serial Number (id de l'objet + id logique) dans homebridge.
 v1.0.17 --
     - Prise en charge du niveau de debug du plugin mobile (il faut sauver le niveau et relancer le demon pour prise en charge)
-    - Simplification du code (retiré des choses inutiles comme la création d'un serveur http
+    - Simplification du code (retiré des choses inutiles comme la création d'un serveur http)
 v1.0.16 --
     - Activation d'un mode debug dans la plateforme, il sera lié au status du plugin.
     - Françisation des messages du log, plus de verbosité, plus de clareté et de détails pour encore mieux vous aider en cas de problème.
