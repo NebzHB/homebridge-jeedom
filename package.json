@@ -1,6 +1,6 @@
 {
   "name": "homebridge-jeedom",
-  "version": "v1.0.27",
+  "version": "v1.1.0",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "scripts": {
