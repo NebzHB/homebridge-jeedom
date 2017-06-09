@@ -26,6 +26,7 @@ debug.INFO = 200;
 debug.WARN = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
+var hasError = false;
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -40,7 +41,7 @@ function JeedomPlatform(logger, config, api) {
 		this.config = config || {};
 		this.api = api;
 		this.accessories = [];
-		this.debugLevel = config['debugLevel'] || debug.ERROR;
+		this.debugLevel = config['debugLevel'] || debug.ERROR;this.debugLevel=100;
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		
@@ -574,24 +575,26 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			});
 		}
 		
-		that.log('┌────RAMASSE-MIETTES─────');
-		that.log('│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))');
-		var hasDeleted = false
-		var countA=0;
-		for (var a in that.accessories) 
+		if(!hasError)
 		{
-			if(!that.accessories[a].reviewed && that.accessories[a].displayName)
+			that.log('┌────RAMASSE-MIETTES─────');
+			that.log('│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))');
+			var hasDeleted = false
+			var countA=0;
+			for (var a in that.accessories) 
 			{
-				that.log('│ ┌──── Trouvé: '+that.accessories[a].displayName);
-				that.delAccessory(that.accessories[a],true);
-				that.log('│ │ Supprimé du cache !');
-				that.log('│ └─────────');
-				hasDeleted=true;
-			}else if(that.accessories[a].reviewed && that.accessories[a].displayName) countA++;
+				if(!that.accessories[a].reviewed && that.accessories[a].displayName)
+				{
+					that.log('│ ┌──── Trouvé: '+that.accessories[a].displayName);
+					that.delAccessory(that.accessories[a],true);
+					that.log('│ │ Supprimé du cache !');
+					that.log('│ └─────────');
+					hasDeleted=true;
+				}else if(that.accessories[a].reviewed && that.accessories[a].displayName) countA++;
+			}
+			if(!hasDeleted) that.log('│ Rien à supprimer');
+			that.log('└────────────────────────');
 		}
-		if(!hasDeleted) that.log('│ Rien à supprimer');
-		that.log('└────────────────────────');
-		
 		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
 		that.log(endLog);
 		if(countA >= 100) that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
@@ -623,6 +626,7 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction createAccessory :'+e);
+		hasError=true;
 	}
 };
 JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
@@ -648,6 +652,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction delAccessory :'+e);
+		hasError=true;
 	}
 };
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
@@ -682,6 +687,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction addAccessory :'+e);
+		hasError=true;
 	}
 };
 
@@ -699,6 +705,7 @@ JeedomPlatform.prototype.existingAccessory = function(uniqueSeed,silence) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction existingAccessory :'+e);	
+		hasError=true;
 	}
 };
 
@@ -736,6 +743,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction configureAccessory :'+e);
+		hasError=true;
 	}
 };
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
@@ -831,6 +839,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction bindCharacteristicEvents :'+e);
+		hasError=true;
 	}
 };
 JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
@@ -1210,6 +1219,7 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction subscribeUpdate :'+e);
+		hasError=true;
 	}
 };
 
