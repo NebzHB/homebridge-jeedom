@@ -27,6 +27,7 @@ debug.WARN = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
 var hasError = false;
+var showDevDebug=false;
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -36,6 +37,14 @@ module.exports = function(homebridge) {
 	RegisterCustomCharacteristics();
 	homebridge.registerPlatform('homebridge-jeedom', 'Jeedom', JeedomPlatform, true);
 };
+
+// -- JeedomPlatform
+// -- Desc : Main Class, used by Homebridge to construct the platform object
+// -- Params --
+// -- logger : homebridge logger object, contain a prefix
+// -- config : homebridge's config.json file object
+// -- api : homebridge api
+// -- Return : nothing
 function JeedomPlatform(logger, config, api) {
 	try{
 		this.config = config || {};
@@ -45,12 +54,12 @@ function JeedomPlatform(logger, config, api) {
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		
-		config['url'] = 'http://127.0.0.1:80'; 
-		/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
-			this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
+		//config['url'] = 'http://127.0.0.1:80'; 
+		if (config["url"] == "undefined" || config["url"] == "http://:80") {
+			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 		}else{
-			this.log("Adresse Jeedom bien configurée :"+config["url"]);	
-		}*/
+			this.log('info',"Adresse Jeedom bien configurée :"+config["url"]);	
+		}
 		this.jeedomClient = require('./lib/jeedom-api').createClient(config['url'], config['apikey'], this);
 		this.rooms = {};
 		this.updateSubscriptions = [];
@@ -65,7 +74,7 @@ function JeedomPlatform(logger, config, api) {
 		else if (this.pollerPeriod == undefined)
 			this.pollerPeriod = 0.5; // 0.5 is Nice between 2 calls
 		this.pollerPeriod = 0.5; // FORCE 0.5
-
+		
 		if (api) {
 			// Save the API object as plugin needs to register new accessory via this object.
 			this.api = api;
@@ -83,6 +92,9 @@ function JeedomPlatform(logger, config, api) {
 	}
 }
 
+// -- addAccessories
+// -- Desc : Accessories creation, we get a full model from jeedom and put it in local cache
+// -- Return : nothing
 JeedomPlatform.prototype.addAccessories = function() {
 	try{
 		var that = this;
@@ -107,6 +119,12 @@ JeedomPlatform.prototype.addAccessories = function() {
 		this.log('error','Erreur de la fonction addAccessories :'+e);
 	}
 };
+
+// -- JeedomDevices2HomeKitAccessories
+// -- Desc : Translate JeedomDevices into Homebridge Accessories
+// -- Params --
+// -- devices : eqLogics from jeedom
+// -- Return : nothing
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	try{
 		var that = this;
@@ -595,18 +613,37 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			if(!hasDeleted) that.log('│ Rien à supprimer');
 			that.log('└────────────────────────');
 		}
+		else
+		{
+			that.log('!!! ERREUR DETECTEE, ON QUITTE HOMEBRIDGE !!!');
+			process.exit(1);
+		}
 		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
 		that.log(endLog);
 		if(countA >= 100) that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
-		else if(countA >= 90) that.log('warn','! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
+		else if(countA >= 90) that.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
 		
 		if (that.pollerPeriod <= 100)
+		{
+			that.log('debug','==START POLLING==');
 			that.startPollingUpdate();
+		}
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction JeedomDevices2HomeKitAccessories :'+e);
 	}
 };
+
+// -- createAccessory
+// -- Desc : Create the JeedomBridgedAccessory object
+// -- Params --
+// -- services : translated homebridge services
+// -- id : Jeedom id
+// -- name : Jeedom name
+// -- currentRoomID : Jeedom Room id
+// -- eqType_name : type of the eqLogic
+// -- logicalId : Jeedom logicalId
+// -- Return : a JeedomBridgedAccessory object
 JeedomPlatform.prototype.createAccessory = function(services, id, name, currentRoomID, eqType_name, logicalId) {
 	try{
 		var accessory = new JeedomBridgedAccessory(services);
@@ -629,6 +666,13 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 		hasError=true;
 	}
 };
+
+// -- delAccessory
+// -- Desc : deleting an Accessory from homebridge (if exists) and the local list
+// -- Params --
+// -- jeedomAccessory : JeedomBridgedAccessory to delete
+// -- silence : flag for logging or not
+// -- Return : nothing
 JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 	try{
 		silence = typeof silence  !== 'undefined' ? silence : false;
@@ -655,6 +699,12 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 		hasError=true;
 	}
 };
+
+// -- addAccessory
+// -- Desc : adding or updating an Accessory to homebridge and local list
+// -- Params --
+// -- jeedomAccessory : JeedomBridgedAccessory to add
+// -- Return : nothing
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	try{
 		if (!jeedomAccessory) {
@@ -691,6 +741,12 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	}
 };
 
+// -- existingAccessory
+// -- Desc : check if the accessory exists in the local list
+// -- Params --
+// -- uniqueSeed : UUID to find
+// -- silence : flag for logging or not
+// -- Return : nothing
 JeedomPlatform.prototype.existingAccessory = function(uniqueSeed,silence) {
 	try{
 		silence = typeof silence  !== 'undefined' ? silence : false;
@@ -709,7 +765,11 @@ JeedomPlatform.prototype.existingAccessory = function(uniqueSeed,silence) {
 	}
 };
 
-
+// -- configureAccessory
+// -- Desc : Launched by Homebridge on the beginning, bind the event to the accessory found in the cache
+// -- Params --
+// -- accessory : the accessory to configure
+// -- Return : nothing
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
 		for (var s = 0; s < accessory.services.length; s++) {
@@ -746,6 +806,13 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 		hasError=true;
 	}
 };
+
+// -- bindCharacteristicEvents
+// -- Desc : bind the set and get event to the characteristic
+// -- Params --
+// -- characteristic : characteristic to bind event to
+// -- service : service of the characteristic
+// -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
 		var onOff = characteristic.props.format == 'bool' ? true : false;
@@ -842,6 +909,16 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		hasError=true;
 	}
 };
+
+// -- getAccessoryValue
+// -- Desc : Get the value of an accessory in the jeedom local cache
+// -- Params --
+// -- callback : function to send the value to
+// -- returnBoolean : the return value should be boolean or not
+// -- characteristic : characteristic to get the value from
+// -- service : service in which the characteristic is
+// -- IDs : eqLogic ID
+// -- Return : nothing
 JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
 	try{
 		var that = this;
@@ -1118,6 +1195,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 		this.log('error','Erreur de la fonction getAccessoryValue :'+e);
 	}
 };
+
+// -- command
+// -- Desc : Command from Homebridge to execute in Jeedom
+// -- Params --
+// -- c : command type
+// -- value : value to set (if any)
+// -- service : from which Homebridge service
+// -- IDs : eqLogic ID
+// -- Return : nothing
 JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 	try{
 		var that = this;
@@ -1203,6 +1289,15 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 		this.log('error','Erreur de la fonction command :'+e);	
 	}
 };
+
+// -- subscribeUpdate
+// -- Desc : Populate the subscriptions to the characteristic. if the value is changed, the characteristic will be updated
+// -- Params --
+// -- service : service containing the characteristic to subscribe to
+// -- characteristic : characteristic to subscribe to
+// -- onOff : is it a boolean ?
+// -- propertyChanged : value or color
+// -- Return : nothing
 JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
 	try{
 		if (characteristic.UUID == (new Characteristic.PositionState()).UUID)
@@ -1223,21 +1318,24 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 	}
 };
 
+// -- startPollingUpdate
+// -- Desc : Get the last status from Jeedom and act on it (update model and subscribers)
+// -- Params --
+// -- Return : nothing
 JeedomPlatform.prototype.startPollingUpdate = function() {
 	var that = this;
 	if(that.pollingUpdateRunning) {return;}
 	that.pollingUpdateRunning = true;
-	
 	that.jeedomClient.refreshStates().then(function(updates) {
 		that.lastPoll = updates.datetime;
 		if (updates.result != undefined) {
 			updates.result.map(function(update) {
 				if (update.name == 'cmd::update' && update.option.value != undefined && update.option.cmd_id != undefined) {
 					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
-					setTimeout(function(){that.updateSubscribers(update)},500);
+					setTimeout(function(){that.updateSubscribers(update)},50);
 				}
 				else {
-					that.log('debug','[Reçu Type non géré]: '+update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
+					if(showDevDebug) that.log('debug','[Reçu Type non géré]: '+update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
 				}
 			});
 		}
@@ -1251,6 +1349,11 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 	});
 };
 
+// -- updateSubscribers
+// -- Desc : update subcribers populated by the subscribeUpdate method
+// -- Params --
+// -- update : the update received from Jeedom
+// -- Return : nothing
 JeedomPlatform.prototype.updateSubscribers = function(update) {
 	var that = this;
 
@@ -1367,10 +1470,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				var hsv = that.updateHomeKitColorFromJeedom(update.color, subscription.service);
 				switch(subscription.characteristic.UUID)
 				{
-					/*case (new Characteristic.On()).UUID :
+					case (new Characteristic.On()).UUID :
 						that.log('debug','update On :'+hsv.v == 0 ? false : true);
 						subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
-					break;*/
+					break;
 					case (new Characteristic.Hue()).UUID :
 						//that.log('debug','update Hue :'+Math.round(hsv.h));
 						subscription.characteristic.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
@@ -1393,6 +1496,15 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		}
 	}
 };
+
+// -- updateJeedomColorFromHomeKit
+// -- Desc : convert HSV value (Homebridge) to html value (Jeedom)
+// -- Params --
+// -- h : Hue
+// -- s : Saturation
+// -- v : Value (brightness)
+// -- service : service containing the color
+// -- Return : rgb object
 JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
 	if (h != null)
 		service.HSBValue.hue = h;
@@ -1406,6 +1518,13 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 	service.RGBValue.blue = rgb.b;
 	return rgb;
 };
+
+// -- updateHomeKitColorFromJeedom
+// -- Desc : convert html value (Jeedom) to HSV value (Homebridge)
+// -- Params --
+// -- color : html color #121212
+// -- service : service containing the color
+// -- Return : hsv object
 JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
 	if (color == undefined)
 		color = '0,0,0';
@@ -1424,6 +1543,13 @@ JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service)
 	return hsv;
 };
 
+// -- syncColorCharacteristics
+// -- Desc : set color in jeedom
+// -- Params --
+// -- rgb : rgb object
+// -- service : service to set color to
+// -- IDs : eqLogic ID
+// -- Return : nothing
 JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) {
 	switch (--service.countColorCharacteristics) {
 	case -1:
@@ -1448,6 +1574,11 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 		break;
 	}
 };
+
+// -- RegisterCustomCharacteristics
+// -- Desc : Register some custom characteristic in Homebridge
+// -- Params --
+// -- Return : nothing
 function RegisterCustomCharacteristics() {
 	// Custom Services and Characteristics
 	Characteristic.TimeInterval = function() {
@@ -1514,10 +1645,21 @@ function RegisterCustomCharacteristics() {
 
 	// End of custom Services and Characteristics	
 }
+
+// -- JeedomBridgedAccessory
+// -- Desc : Bridged Class, used by Homebridge to construct the Bridged platform object
+// -- Params --
+// -- services : Services of the Accessory
+// -- Return : nothing
 function JeedomBridgedAccessory(services) {
 	this.services = services;
 }
 
+// -- initAccessory
+// -- Desc : setting the main Characteristic of the Accessory (Manufacturer, ...) and adding services
+// -- Params --
+// -- newAccessory : the Accessory to add the services to
+// -- Return : nothing
 JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 	newAccessory.getService(Service.AccessoryInformation)
 		.setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
@@ -1526,13 +1668,22 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 
 	this.addServices(newAccessory,this.services);
 };
+
+// -- addServices
+// -- Desc : adding the services to the accessory and rebind event if needed
+// -- Params --
+// -- newAccessory : accessory to add the services too
+// -- services : services to be added
+// -- Return : nothing
 JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services) {
 	for (var s = 0; s < services.length; s++) {
 		var service = services[s];
-		this.log('| Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+		
+		this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
 		for (const c of service.controlService.characteristics) {
-			this.log('|    Caractéristique :'+c.displayName+' valeur initiale:'+c.value);
+			this.log('info','    Caractéristique :'+c.displayName+' valeur initiale:'+c.value);
 		}
+		
 		newAccessory.addService(service.controlService);
 		for (var i = 0; i < service.characteristics.length; i++) {
 			var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
@@ -1549,40 +1700,87 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services) {
 		}
 	}
 }
+
+// -- delServices
+// -- Desc : deleting the services from the accessory
+// -- Params --
+// -- accessory : accessory to delete the services from
+// -- Return : nothing
 JeedomBridgedAccessory.prototype.delServices = function(accessory) {
+	try {
 			var lenHB = accessory.services.length;
 			var toRemove=[];
 			for(var t=1; t< lenHB;t++) { 
 				toRemove.push(accessory.services[t]);
 			}		
 			for(var rem of toRemove){ // dont work in one loop or with temp object :(
-				this.log('| Suppression service :'+rem.displayName+' subtype:'+rem.subtype+' UUID:'+rem.UUID);
+
+				this.log('info',' Suppression service :'+rem.displayName+' subtype:'+rem.subtype+' UUID:'+rem.UUID);
 				for (const c of rem.characteristics) {
-					this.log('|    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
 				}
+
 				accessory.removeService(rem);
 			}
+	}
+	catch(e){
+		this.log('error','Erreur de la fonction delServices :'+e,JSON.stringify(rem));
+		hasError=true;
+	}
 }
+
+// -- hexToR
+// -- Desc : take the R value in a html color string
+// -- Params --
+// -- h : html color string
+// -- Return : R value
 function hexToR(h) {
 	return parseInt((cutHex(h)).substring(0, 2), 16);
 }
 
+// -- hexToG
+// -- Desc : take the G value in a html color string
+// -- Params --
+// -- h : html color string
+// -- Return : G value
 function hexToG(h) {
 	return parseInt((cutHex(h)).substring(2, 4), 16);
 }
 
+// -- hexToB
+// -- Desc : take the B value in a html color string
+// -- Params --
+// -- h : html color string
+// -- Return : B value
 function hexToB(h) {
 	return parseInt((cutHex(h)).substring(4, 6), 16);
 }
 
+// -- cutHex
+// -- Desc : trim the #
+// -- Params --
+// -- h : html color string
+// -- Return : numeric value of html color
 function cutHex(h) {
 	return (h.charAt(0) == '#') ? h.substring(1, 7) : h;
 }
 
+// -- rgbToHex
+// -- Desc : transform separated R G B into html color
+// -- Params --
+// -- R : Red value
+// -- G : Green value
+// -- B : Blue value
+// -- Return : html color
 function rgbToHex(R, G, B) {
 	return '#' + toHex(R) + toHex(G) + toHex(B);
 }
 
+// -- toHex
+// -- Desc : Transform to hex
+// -- Params --
+// -- n : number
+// -- Return : hex value
 function toHex(n) {
 	n = parseInt(n, 10);
 	if (isNaN(n))
@@ -1591,6 +1789,13 @@ function toHex(n) {
 	return '0123456789ABCDEF'.charAt((n - n % 16) / 16) + '0123456789ABCDEF'.charAt(n % 16);
 }
 
+// -- HSVtoRGB
+// -- Desc : Transofrm HSV to RGB
+// -- Params --
+// -- hue : Hue value
+// -- saturation : Saturation value
+// -- value : value (brightness) value
+// -- Return : RGB object
 function HSVtoRGB(hue, saturation, value) {
 	var h = hue / 360.0;
 	var s = saturation / 100.0;
@@ -1631,6 +1836,13 @@ function HSVtoRGB(hue, saturation, value) {
 	};
 }
 
+// -- RGBtoHSV
+// -- Desc : Transofrm RGB to HSV
+// -- Params --
+// -- r : Red value
+// -- g : Green value
+// -- b : Blue value
+// -- Return : HSV object
 function RGBtoHSV(r, g, b) {
 	if (arguments.length === 1) {
 		g = r.g, b = r.b, r = r.r;
@@ -1661,6 +1873,12 @@ function RGBtoHSV(r, g, b) {
 		v : v * 100.0
 	};
 }
+
+// -- toBool
+// -- Desc : transform to boolean a value
+// -- Params --
+// -- value : value to convert into boolean
+// -- Return : boolean value
 function toBool(val) {
 	if (val == 'false' || val == '0') {
 		return false;
