@@ -1117,7 +1117,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				for (const element of properties) {
 					if (element.generic_type == 'BRIGHTNESS' && element.id == cmds[0]) {
 						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = element.currentValue;
+						returnValue = parseInt(element.currentValue) == 0 ? 0.0001 : element.currentValue;
 						break;
 					}
 				}
