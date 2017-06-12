@@ -1,6 +1,9 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.1.1  --
+    - Bugfix : Restauration des valeurs en cache au redémarrage
+    - Bugfix : Bornage des valeurs du detecteur de lumière
 v1.1.0  --
     - Support des Plateformes Homebridge en mode expert (Cameras, autre...)
     - Documentation code
