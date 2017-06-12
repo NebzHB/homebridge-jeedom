@@ -728,8 +728,8 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			jeedomAccessory.delServices(HBAccessory);
-			jeedomAccessory.addServices(HBAccessory,services2Add);
+			var cachedValues=jeedomAccessory.delServices(HBAccessory);
+			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
@@ -896,7 +896,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
-			this.log('info','[Demande d\'Homekit] IDs:'+IDs,'onOff:'+onOff,'service:'+JSON.stringify(service),'characteristic:'+JSON.stringify(characteristic));
+			this.log('info','[Demande d\'Homekit] IDs:'+IDs,'onOff:'+onOff,'Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 		//	if (service.isVirtual) {
 		//		callback(undefined, false);
 		//	} else {
@@ -1068,7 +1068,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			case (new Characteristic.CurrentDoorState()).UUID :
 			case (new Characteristic.TargetDoorState()).UUID :
 				returnValue=undefined;
-				that.log('debug','properties: '+JSON.stringify(properties));
 				for (const element of properties) {
 					if (element.generic_type == 'GARAGE_STATE' || element.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(element.currentValue)) {
@@ -1088,7 +1087,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 										returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 								break;
 						}
-						that.log('debug','GetState Homekit: '+returnValue+' soit en Jeedom:'+element.currentValue);
+						that.log('debug','GetState Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+element.currentValue);
 						break;
 					}
 				}
@@ -1117,11 +1116,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				for (const element of properties) {
 					if (element.generic_type == 'BRIGHTNESS' && element.id == cmds[0]) {
 						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = parseInt(element.currentValue) == 0 ? 0.0001 : element.currentValue;
+						returnValue = prepareValue(element.currentValue,characteristic);
 						break;
 					}
 				}
-				returnValue = parseInt(returnValue);
 			break;
 			case (new Characteristic.CurrentRelativeHumidity()).UUID :
 				for (const element of properties) {
@@ -1195,6 +1193,49 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 		this.log('error','Erreur de la fonction getAccessoryValue :'+e);
 	}
 };
+
+// -- prepareValue
+// -- Desc : limit the value to the min and max characteristic + round the float to the same precision than the minStep
+// -- Params --
+// -- currentValue : value to prepare
+// -- characteristic : characteristic containing the props
+// -- Return : prepared value
+function prepareValue(currentValue,characteristic) {
+	let val;
+	switch(characteristic.props.format) {
+			case "int" :
+				val = parseInt(currentValue);
+			break;
+			case "float" :
+				val = minStepRound(parseFloat(currentValue),characteristic);
+			break;
+			case "bool" :
+				val = toBool(currentValue);
+			break;
+			default : // uint8, string
+				val = currentValue;
+			break;
+	}
+	if(characteristic.props.minValue != null && val < characteristic.props.minValue) val = characteristic.props.minValue;
+	if(characteristic.props.maxValue != null && val > characteristic.props.maxValue) val = characteristic.props.maxValue;
+	return val;
+}
+
+// -- minStepRound
+// -- Desc : round the value to the same precision than the minStep
+// -- Params --
+// -- val : value to round
+// -- characteristic : characteristic containing the props
+// -- Return : rounded value
+function minStepRound(val,characteristic) {
+	if(characteristic.props.minStep != null) {
+		let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length
+		val = val * Math.pow(10, prec);
+		val = Math.round(val); // round to the minStep precision
+		val = val / Math.pow(10, prec);
+	}	
+	return val;
+}
 
 // -- command
 // -- Desc : Command from Homebridge to execute in Jeedom
@@ -1666,7 +1707,7 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 		.setCharacteristic(Characteristic.Model, this.model)
 		.setCharacteristic(Characteristic.SerialNumber, this.serialNumber);
 
-	this.addServices(newAccessory,this.services);
+	this.addServices(newAccessory,this.services,[]);
 };
 
 // -- addServices
@@ -1675,18 +1716,20 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 // -- newAccessory : accessory to add the services too
 // -- services : services to be added
 // -- Return : nothing
-JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services) {
+JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,cachedValues) {
 	for (var s = 0; s < services.length; s++) {
 		var service = services[s];
 		
 		this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
-		for (const c of service.controlService.characteristics) {
-			this.log('info','    Caractéristique :'+c.displayName+' valeur initiale:'+c.value);
-		}
-		
 		newAccessory.addService(service.controlService);
 		for (var i = 0; i < service.characteristics.length; i++) {
 			var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
+			
+			var cachedValue = cachedValues[service.controlService.subtype+'>'+characteristic.displayName];
+			if(cachedValue){
+				characteristic.setValue(cachedValue, undefined, 'fromCache');
+			}
+			
 			characteristic.props.needsBinding = true;
 			if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
 				characteristic.props.maxValue = 1000;
@@ -1697,6 +1740,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services) {
 				characteristic.props.minValue = -50;
 			}
 			this.platform.bindCharacteristicEvents(characteristic, service.controlService);
+			this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 		}
 	}
 }
@@ -1710,6 +1754,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	try {
 			var lenHB = accessory.services.length;
 			var toRemove=[];
+			var cachedValues=[];
 			for(var t=1; t< lenHB;t++) { 
 				toRemove.push(accessory.services[t]);
 			}		
@@ -1718,10 +1763,12 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 				this.log('info',' Suppression service :'+rem.displayName+' subtype:'+rem.subtype+' UUID:'+rem.UUID);
 				for (const c of rem.characteristics) {
 					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+					cachedValues[rem.subtype+'>'+c.displayName]=c.value;
 				}
 
 				accessory.removeService(rem);
 			}
+			return cachedValues;
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction delServices :'+e,JSON.stringify(rem));
