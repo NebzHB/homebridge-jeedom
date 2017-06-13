@@ -27,7 +27,7 @@ debug.WARN = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
 var hasError = false;
-var showDevDebug=false;
+const DEV_DEBUG=false;
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -708,10 +708,10 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			return;
 		}
 		let isNewAccessory = false;
-		var uniqueSeed = jeedomAccessory.UUID;
-		var services2Add = jeedomAccessory.services_add;
+		let uniqueSeed = jeedomAccessory.UUID;
+		let services2Add = jeedomAccessory.services_add;
 		this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
-		var HBAccessory = this.existingAccessory(uniqueSeed);
+		let HBAccessory = this.existingAccessory(uniqueSeed);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
 			isNewAccessory = true;
@@ -725,7 +725,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			var cachedValues=jeedomAccessory.delServices(HBAccessory);
+			let cachedValues=jeedomAccessory.delServices(HBAccessory);
 			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
@@ -816,93 +816,30 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 // -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
-		var onOff = characteristic.props.format == 'bool' ? true : false;
 		var readOnly = true;
 		for (var i = 0; i < characteristic.props.perms.length; i++)
 			if (characteristic.props.perms[i] == 'pw')
 				readOnly = false;
 		var IDs = service.subtype.split('-');
-		var propertyChanged = 'value';
+		let propertyChanged = 'value';
 		if (service.HSBValue != undefined)
 			propertyChanged = 'color';
-		this.subscribeUpdate(service, characteristic, onOff, propertyChanged);
+		this.subscribeUpdate(service, characteristic, propertyChanged);
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
-				if (characteristic.UUID == '00000033-0000-1000-8000-0026BB765291') {
-					this.log('set target mode');
-				}
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
-					this.log('info','[Commande d\'Homekit] value:'+value,'context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
-				
-					switch (characteristic.UUID) {
-						case (new Characteristic.On()).UUID :
-							if(service.isVirtual) {
-								this.command('pressButton', IDs[1], service, IDs);
-								setTimeout(function() {
-									characteristic.setValue(false, undefined, 'fromSetValue');
-								}, 100);
-							} else {
-								this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
-							}
-						break;
-						case (new Characteristic.TargetTemperature()).UUID :
-							if (Math.abs(value - characteristic.value) >= 0.5) {
-								value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
-								this.command('setTargetLevel', value, service, IDs);
-							} else {
-								value = characteristic.value;
-							}
-							setTimeout(function() {
-								characteristic.setValue(value, undefined, 'fromSetValue');
-							}, 100);
-						break;
-						case (new Characteristic.TimeInterval()).UUID :
-							this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service, IDs);
-						break;
-						case (new Characteristic.TargetHeatingCoolingState()).UUID :
-							this.command('TargetHeatingCoolingState', value, service, IDs);
-						break;
-						case (new Characteristic.TargetDoorState()).UUID :
-							var action = 'GBtoggle';//value == Characteristic.TargetDoorState.OPEN ? 'GBopen' : 'GBclose';
-							this.command(action, 0, service, IDs);
-						break;
-						case (new Characteristic.LockTargetState()).UUID :
-							var action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
-							this.command(action, 0, service, IDs);
-						break;
-						case (new Characteristic.Hue()).UUID :
-							var rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
-							this.syncColorCharacteristics(rgb, service, IDs);
-						break;
-						case (new Characteristic.Saturation()).UUID :
-							var rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
-							this.syncColorCharacteristics(rgb, service, IDs);
-						break;
-						case (new Characteristic.Brightness()).UUID :
-							if (service.HSBValue != null) {
-								var rgb = this.updateJeedomColorFromHomeKit(null, null, value, service);
-								this.syncColorCharacteristics(rgb, service, IDs);
-							} else {
-								this.command('setValue', value, service, IDs);
-							}
-						break;
-						default :
-							this.command('setValue', value, service, IDs);
-						break;
-					}
+					this.log('info','[Commande d\'Homekit] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+					this.setAccessoryValue(value,characteristic,service,IDs);
 				}
 				else
-					this.log('info','[Commande de Jeedom] value:'+value,'context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
+					this.log('info','[Commande de Jeedom] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
 				callback();
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
-			this.log('info','[Demande d\'Homekit] IDs:'+IDs,'onOff:'+onOff,'Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
-		//	if (service.isVirtual) {
-		//		callback(undefined, false);
-		//	} else {
-				this.getAccessoryValue(callback, onOff, characteristic, service, IDs);
-		//	}
+			this.log('info','[Demande d\'Homekit] IDs:'+IDs,'Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+			let returnValue = this.getAccessoryValue(characteristic, service, IDs);
+			callback(undefined, returnValue);
 		}.bind(this));
 	}
 	catch(e){
@@ -911,16 +848,89 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 	}
 };
 
-// -- getAccessoryValue
-// -- Desc : Get the value of an accessory in the jeedom local cache
+// -- setAccessoryValue
+// -- Desc : set the value of an accessory in Jeedom
 // -- Params --
-// -- callback : function to send the value to
-// -- returnBoolean : the return value should be boolean or not
+// -- value : the value to set
 // -- characteristic : characteristic to get the value from
 // -- service : service in which the characteristic is
 // -- IDs : eqLogic ID
 // -- Return : nothing
-JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
+JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, service, IDs) {
+	try{
+		//var that = this;
+		switch (characteristic.UUID) {
+			case (new Characteristic.On()).UUID :
+				if(service.isVirtual) {
+					this.command('pressButton', IDs[1], service, IDs);
+					setTimeout(function() {
+						characteristic.setValue(false, undefined, 'fromSetValue');
+					}, 100);
+				} else {
+					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
+				}
+			break;
+			case (new Characteristic.TargetTemperature()).UUID :
+				if (Math.abs(value - characteristic.value) >= 0.5) {
+					value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
+					this.command('setTargetLevel', value, service, IDs);
+				} else {
+					value = characteristic.value;
+				}
+				setTimeout(function() {
+					characteristic.setValue(value, undefined, 'fromSetValue');
+				}, 100);
+			break;
+			case (new Characteristic.TimeInterval()).UUID :
+				this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service, IDs);
+			break;
+			case (new Characteristic.TargetHeatingCoolingState()).UUID :
+				this.log('set target mode');
+				this.command('TargetHeatingCoolingState', value, service, IDs);
+			break;
+			case (new Characteristic.TargetDoorState()).UUID :
+				var action = 'GBtoggle';//value == Characteristic.TargetDoorState.OPEN ? 'GBopen' : 'GBclose';
+				this.command(action, 0, service, IDs);
+			break;
+			case (new Characteristic.LockTargetState()).UUID :
+				var action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
+				this.command(action, 0, service, IDs);
+			break;
+			case (new Characteristic.Hue()).UUID :
+				var rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
+				this.syncColorCharacteristics(rgb, service, IDs);
+			break;
+			case (new Characteristic.Saturation()).UUID :
+				var rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
+				this.syncColorCharacteristics(rgb, service, IDs);
+			break;
+			case (new Characteristic.Brightness()).UUID :
+				if (service.HSBValue != null) {
+					var rgb = this.updateJeedomColorFromHomeKit(null, null, value, service);
+					this.syncColorCharacteristics(rgb, service, IDs);
+				} else {
+					this.command('setValue', value, service, IDs);
+				}
+			break;
+			default :
+				this.command('setValue', value, service, IDs);
+			break;
+		}
+	
+	}
+	catch(e){
+		this.log('error','Erreur de la fonction setAccessoryValue :'+e);
+	}
+};
+
+// -- getAccessoryValue
+// -- Desc : Get the value of an accessory in the jeedom local cache
+// -- Params --
+// -- characteristic : characteristic to get the value from
+// -- service : service in which the characteristic is
+// -- IDs : eqLogic ID
+// -- Return : nothing
+JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, IDs) {
 	try{
 		var that = this;
 		var cmds = IDs[1].split('|');
@@ -1179,7 +1189,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 				returnValue = parseFloat(returnValue);
 			break;
 		}
-		if (returnBoolean) {
+		if (characteristic.props.format == 'bool') {
 			for (const element of properties) {
 				if ((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])) {
 					returnValue = element.currentValue;
@@ -1188,7 +1198,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, c
 			}
 			returnValue = toBool(returnValue);
 		}
-		callback(undefined, returnValue);
+		return returnValue;
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction getAccessoryValue :'+e);
@@ -1334,10 +1344,9 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 // -- Params --
 // -- service : service containing the characteristic to subscribe to
 // -- characteristic : characteristic to subscribe to
-// -- onOff : is it a boolean ?
 // -- propertyChanged : value or color
 // -- Return : nothing
-JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
+JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, propertyChanged) {
 	try{
 		if (characteristic.UUID == (new Characteristic.PositionState()).UUID)
 			return;
@@ -1347,7 +1356,6 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onO
 			'id' : IDs[0],
 			'service' : service,
 			'characteristic' : characteristic,
-			'onOff' : onOff,
 			'property' : propertyChanged
 		});
 	}
@@ -1374,7 +1382,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 					setTimeout(function(){that.updateSubscribers(update)},50);
 				}
 				else {
-					if(showDevDebug) that.log('debug','[Reçu Type non géré]: '+update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
+					if(DEV_DEBUG) that.log('debug','[Reçu Type non géré]: '+update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
 				}
 			});
 		}
@@ -1489,7 +1497,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
 					break;
 					default :
-						if ((subscription.onOff && typeof (value) == 'boolean') || !subscription.onOff) {
+						if ((subscription.characteristic.props.format == 'bool' && typeof (value) == 'boolean') || subscription.characteristic.props.format != 'bool') {
 							subscription.characteristic.setValue(value, undefined, 'fromJeedom');
 						} 
 						else {
