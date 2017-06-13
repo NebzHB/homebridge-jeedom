@@ -57,6 +57,7 @@ function JeedomPlatform(logger, config, api) {
 		//config['url'] = 'http://127.0.0.1:80'; 
 		if (config["url"] == "undefined" || config["url"] == "http://:80") {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
+			process.exit(1);
 		}else{
 			this.log('info',"Adresse Jeedom bien configurée :"+config["url"]);	
 		}
@@ -103,7 +104,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 			.then(function(model){ // we got the base Model from the API
 				that.lastPoll=model.config.datetime;
 				that.log('Enumération des objets Jeedom (Pièces)...');
-				model.objects.map(function(r, i, a){
+				model.objects.map(function(r){
 					that.rooms[r.id] = r.name;
 					that.log('Pièce > ' + r.name);
 				});
@@ -152,7 +153,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 
 					var resultEqL = that.jeedomClient.getDeviceProperties(device.id);
 					var resultCMD = that.jeedomClient.getDeviceCmd(device.id);
-					
 					AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
 					
 					function AccessoireCreateJeedom(_params) {
@@ -615,7 +615,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		}
 		else
 		{
-			that.log('!!! ERREUR DETECTEE, ON QUITTE HOMEBRIDGE !!!');
+			that.log('error','!!! ERREUR DETECTEE, ON QUITTE HOMEBRIDGE !!!');
 			process.exit(1);
 		}
 		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
@@ -623,11 +623,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		if(countA >= 100) that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
 		else if(countA >= 90) that.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
 		
-		if (that.pollerPeriod <= 100)
-		{
-			that.log('debug','==START POLLING==');
-			that.startPollingUpdate();
-		}
+		that.log('debug','==START POLLING==');
+		that.startPollingUpdate();
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction JeedomDevices2HomeKitAccessories :'+e);
@@ -656,7 +653,7 @@ JeedomPlatform.prototype.createAccessory = function(services, id, name, currentR
 		accessory.context.uniqueSeed = id + accessory.name;
 
 		accessory.model = eqType_name;
-		accessory.manufacturer = 'Jeedom > '+ this.rooms[currentRoomID] +' > '+name;
+		accessory.manufacturer = 'Jeedom>'+ this.rooms[currentRoomID] +'>'+name;
 		accessory.serialNumber = '<'+id+'-'+logicalId+'>';
 		accessory.services_add = services;
 		return accessory;
@@ -733,6 +730,10 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
+		HBAccessory.on('identify', function(paired, callback) {
+			this.log(HBAccessory.displayName, "->Identify!!!");
+			callback();
+		}.bind(this));
 		HBAccessory.reviewed = true;
 	}
 	catch(e){
@@ -1282,16 +1283,13 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 				break;
 			} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == 'LIGHT_SLIDER' || element.generic_type == 'FLAP_SLIDER')) {
 				cmdId = element.id;
-				if (value == undefined) {
-					if (c == 'turnOn') {
-						value = 99;
-					} else if (c == 'turnOff') {
-						value = 0;
-					}
-				} else {
-					// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
-					value =	Math.round(value * 99/100);
+				if (c == 'turnOn' && cmds[1]) {
+					cmdId=cmds[1];
+				} else if (c == 'turnOff' && cmds[2]) {
+					cmdId=cmds[2];
 				}
+				// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
+				value =	Math.round(value * 99/100);
 				break;
 			} else if ((value == 255 || c == 'turnOn') && element.id == cmds[1] && (element.generic_type == 'LIGHT_ON' || element.generic_type == 'ENERGY_ON')) {
 				cmdId = element.id;
