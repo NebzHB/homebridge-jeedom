@@ -1038,7 +1038,7 @@ JeedomPlatform.prototype.command = function(c, value, service, IDs) {
 					cmdId = element.id;
 					if (value == undefined) {
 						if (c == "turnOn") {
-							value = 99;
+							value = (element.generic_type == "LIGHT_SLIDER") ? 255 : 99;
 						} else if (c == "turnOff") {
 							value = 0;
 						}
