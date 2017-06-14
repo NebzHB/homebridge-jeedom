@@ -1,19 +1,5 @@
 // Jeedom Platform plugin for HomeBridge
 //
-// Remember to add platform to config.json. Example:
-// "platforms": [
-//     {
-//             "platform": "Jeedom",
-//             "url": "PUT URL OF YOUR JEEDOM HERE",
-//             "apikey": "PUT APIKEY OF YOUR JEEDOM HERE",
-//             "grouping": "PUT none OR room",
-//             "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 100 INTERVAL IN SECONDS. 2 SECONDS IS THE DEFAULT",
-//			   "debugLevel": "PUT DEBUG LEVEL : debug, info, warn, error, "
-//     }
-// ],
-//
-// When you attempt to add a device, it will ask for a "PIN code".
-// The default code for all HomeBridge accessories is 031-45-154.
 
 'use strict';
 
@@ -48,13 +34,11 @@ module.exports = function(homebridge) {
 function JeedomPlatform(logger, config, api) {
 	try{
 		this.config = config || {};
-		this.api = api;
 		this.accessories = [];
 		this.debugLevel = config['debugLevel'] || debug.ERROR;
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		
-		//config['url'] = 'http://127.0.0.1:80'; 
 		if (config["url"] == "undefined" || config["url"] == "http://:80") {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
@@ -74,15 +58,9 @@ function JeedomPlatform(logger, config, api) {
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		else if (this.pollerPeriod == undefined)
 			this.pollerPeriod = 0.5; // 0.5 is Nice between 2 calls
-		this.pollerPeriod = 0.5; // FORCE 0.5
 		
 		if (api) {
-			// Save the API object as plugin needs to register new accessory via this object.
 			this.api = api;
-
-			// Listen to event "didFinishLaunching", this means homebridge already finished loading cached accessories
-			// Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
-			// Or start discover new accessories
 			this.api.on('didFinishLaunching',function(){
 				this.addAccessories();
 			}.bind(this));
@@ -147,7 +125,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			var service = null;
 			
 			devices.map(function(device) {
-				//that.log('debug',device);
 				let goesToHomebridge = (device.isVisible == '1' && device.object_id != null && device.sendToHomebridge != '0'); // we dont receive not visible and empty room, so the only test here is sendToHomebridge
 				if (goesToHomebridge) { 
 
@@ -524,7 +501,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						if (cmds.DoorBell) {
 							cmds.DoorBell.forEach(function(cmd, index, array) {
 								service = {
-									controlService : new Service.Doorbell (_params.name),
+									controlService : new Service.Doorbell(_params.name),
 									characteristics : [Characteristic.ProgrammableSwitchEvent]
 								};
 								service.controlService.cmd_id = cmd.state.id;
@@ -615,7 +592,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		}
 		else
 		{
-			that.log('error','!!! ERREUR DETECTEE, ON QUITTE HOMEBRIDGE !!!');
+			that.log('error','!!! ERREUR DETECTÉE, ON QUITTE HOMEBRIDGE !!!');
 			process.exit(1);
 		}
 		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
@@ -935,32 +912,32 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		var that = this;
 		var cmds = IDs[1].split('|');
 		let returnValue = 0;
-		var properties = that.jeedomClient.getDeviceCmd(IDs[0]);
+		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]);
 		
 		switch (characteristic.UUID) {
 			case (new Characteristic.OutletInUse()).UUID :
-				returnValue = parseFloat(properties.power) > 1.0 ? true : false;
+				returnValue = parseFloat(cmdList.power) > 1.0 ? true : false;
 			break;
 			case (new Characteristic.TimeInterval()).UUID :
 				returnValue = Date.now();
-				returnValue = parseInt(properties.timestamp) - returnValue;
+				returnValue = parseInt(cmdList.timestamp) - returnValue;
 				if (returnValue < 0) returnValue = 0;
 			break;
 			case (new Characteristic.TargetTemperature()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'THERMOSTAT_SETPOINT') {
-						returnValue = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
+						returnValue = parseInt(cmd.currentValue);
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						break;
 					}
 				}
 			break;
 			case (new Characteristic.Hue()).UUID :
 				returnValue = undefined;
-				for (const element of properties) {
-					if (element.generic_type == 'LIGHT_COLOR') {
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LIGHT_COLOR') {
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -969,10 +946,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case (new Characteristic.Saturation()).UUID :
 				returnValue = undefined;
-				for (const element of properties) {
-					if (element.generic_type == 'LIGHT_COLOR') {
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LIGHT_COLOR') {
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -981,10 +958,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case (new Characteristic.SmokeDetected()).UUID :
 				returnValue = '';
-				for (const element of properties) {
-					if (element.generic_type == 'SMOKE' && element.id == cmds[0]) {
-						returnValue = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SMOKE' && cmd.id == cmds[0]) {
+						returnValue = parseInt(cmd.currentValue);
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						break;
 					}
 				}
@@ -992,10 +969,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case (new Characteristic.LeakDetected()).UUID :
 				returnValue = '';
-				for (const element of properties) {
-					if (element.generic_type == 'FLOOD' && element.id == cmds[0]) {
-						returnValue = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FLOOD' && cmd.id == cmds[0]) {
+						returnValue = parseInt(cmd.currentValue);
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						break;
 					}
 				}
@@ -1003,10 +980,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case (new Characteristic.ContactSensorState()).UUID :
 				returnValue = '';
-				for (const element of properties) {
-					if (element.generic_type == 'OPENING' && element.id == cmds[0]) {
-						returnValue = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'OPENING' && cmd.id == cmds[0]) {
+						returnValue = parseInt(cmd.currentValue);
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						break;
 					}
 				}
@@ -1015,32 +992,32 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case (new Characteristic.Brightness()).UUID :
 				returnValue = undefined;
 				
-				for (const element of properties) {
+				for (const cmd of cmdList) {
 					if (service.HSBValue != null) {
-						if (element.generic_type == 'LIGHT_COLOR') {
-							//console.log("valeur " + element.generic_type + " : " + returnValue);
-							var hsv = that.updateHomeKitColorFromJeedom(element.currentValue, service);
+						if (cmd.generic_type == 'LIGHT_COLOR') {
+							//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+							var hsv = that.updateHomeKitColorFromJeedom(cmd.currentValue, service);
 							returnValue = Math.round(hsv.v);
 							break;
 						}
-					} else if (element.generic_type == 'LIGHT_STATE' && element.id == cmds[0]) {
-						returnValue = Math.round(parseInt(element.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
+					} else if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == cmds[0]) {
+						returnValue = Math.round(parseInt(cmd.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						break;
 					}
 				}
 			break;
 			case (new Characteristic.SecuritySystemTargetState()).UUID :
 			case (new Characteristic.SecuritySystemCurrentState()).UUID :
-				for (const element of properties) {
-					let currentValue = parseInt(element.currentValue);
+				for (const cmd of cmdList) {
+					let currentValue = parseInt(cmd.currentValue);
 					
-					if (element.generic_type == 'ALARM_STATE' && currentValue == 1) {
-						//console.log("valeur " + element.generic_type + " : alarm");
+					if (cmd.generic_type == 'ALARM_STATE' && currentValue == 1) {
+						//console.log("valeur " + cmd.generic_type + " : alarm");
 						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 						break;
 					}
-					if (element.generic_type == 'ALARM_ENABLE_STATE') {
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE') {
 						switch (currentValue) {
 							case 0 :
 								returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
@@ -1053,15 +1030,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 			break;
 			case (new Characteristic.CurrentHeatingCoolingState()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'THERMOSTAT_MODE') {
-						if (element.currentValue == 'Off') {
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'THERMOSTAT_MODE') {
+						if (cmd.currentValue == 'Off') {
 							returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
 						} else {
 							returnValue = Characteristic.CurrentHeatingCoolingState.AUTO;
 						}
 						break;
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
 					}
 				}
 			break;
@@ -1069,19 +1046,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = Characteristic.PositionState.STOPPED;
 			break;
 			case (new Characteristic.ProgrammableSwitchEvent()).UUID :
-				returnValue = properties.value;
+				returnValue = cmdList.value;
 				that.log('debug','GetState ProgrammableSwitchEvent: '+returnValue);
 			break;
 			case (new Characteristic.LockCurrentState()).UUID :
 			case (new Characteristic.LockTargetState()).UUID :
-				returnValue = properties.value == 'true' ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+				returnValue = cmdList.value == 'true' ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 			break;
 			case (new Characteristic.CurrentDoorState()).UUID :
 			case (new Characteristic.TargetDoorState()).UUID :
 				returnValue=undefined;
-				for (const element of properties) {
-					if (element.generic_type == 'GARAGE_STATE' || element.generic_type == 'BARRIER_STATE') {
-						switch(parseInt(element.currentValue)) {
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'GARAGE_STATE' || cmd.generic_type == 'BARRIER_STATE') {
+						switch(parseInt(cmd.currentValue)) {
 								case 255 :
 										returnValue=Characteristic.CurrentDoorState.OPEN; //0
 								break;
@@ -1098,65 +1075,65 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 										returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 								break;
 						}
-						that.log('debug','GetState Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+element.currentValue);
+						that.log('debug','GetState Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
 						break;
 					}
 				}
 			break;
 			case (new Characteristic.CurrentPosition()).UUID :
 			case (new Characteristic.TargetPosition()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'FLAP_STATE' && element.id == cmds[0]) {
-						returnValue = parseInt(element.currentValue) > 95 ? 100 : parseInt(element.currentValue); // >95% is 100% in home (flaps need yearly tunning)
-						//console.log("valeur " + element.generic_type + " : " + returnValue);
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == cmds[0]) {
+						returnValue = parseInt(cmd.currentValue) > 95 ? 100 : parseInt(cmd.currentValue); // >95% is 100% in home (flaps need yearly tunning)
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						break;
 					}
 				}
 			break;
 			case (new Characteristic.CurrentTemperature()).UUID :
-				for (const element of properties) {
-					if ((element.generic_type == 'TEMPERATURE' && element.id == cmds[0]) || element.generic_type == 'THERMOSTAT_TEMPERATURE') {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == cmds[0]) || cmd.generic_type == 'THERMOSTAT_TEMPERATURE') {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
 				returnValue = parseFloat(returnValue);
 			break;
 			case (new Characteristic.CurrentAmbientLightLevel()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'BRIGHTNESS' && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = prepareValue(element.currentValue,characteristic);
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == cmds[0]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = prepareValue(cmd.currentValue,characteristic);
 						break;
 					}
 				}
 			break;
 			case (new Characteristic.CurrentRelativeHumidity()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'HUMIDITY' && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'HUMIDITY' && cmd.id == cmds[0]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
 				returnValue = parseInt(returnValue);
 			break;
 			case (new Characteristic.BatteryLevel()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'BATTERY' && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BATTERY' && cmd.id == cmds[0]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
 				returnValue = parseInt(returnValue);
 			break;
 			case (new Characteristic.StatusLowBattery()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'BATTERY' && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BATTERY' && cmd.id == cmds[0]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1169,20 +1146,20 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;
 			break;
 			case (new Characteristic.CurrentPowerConsumption()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'POWER' && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'POWER' && cmd.id == cmds[0]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
 				returnValue = parseFloat(returnValue);
 			break;
 			case (new Characteristic.TotalPowerConsumption()).UUID :
-				for (const element of properties) {
-					if (element.generic_type == 'CONSUMPTION' && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						returnValue = element.currentValue;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == cmds[0]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1190,10 +1167,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 		}
 		if (characteristic.props.format == 'bool') {
-			for (const element of properties) {
-				if ((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])) {
-					returnValue = element.currentValue;
-					//console.log("valeur binary " + element.generic_type + " : " + v);
+			for (const cmd of cmdList) {
+				if (	(cmd.generic_type == "LIGHT_STATE" && cmd.id == cmds[0]) || 
+						(cmd.generic_type == "ENERGY_STATE" && cmd.id == cmds[0]) || 
+						(cmd.generic_type == "PRESENCE" && cmd.id == cmds[0]) || 
+						(cmd.generic_type == "OPENING" && cmd.id == cmds[0])
+					) {
+					returnValue = cmd.currentValue;
+					//console.log("valeur binary " + cmd.generic_type + " : " + v);
 				}
 			}
 			returnValue = toBool(returnValue);
@@ -1251,86 +1232,86 @@ function minStepRound(val,characteristic) {
 // -- command
 // -- Desc : Command from Homebridge to execute in Jeedom
 // -- Params --
-// -- c : command type
+// -- action : command type
 // -- value : value to set (if any)
 // -- service : from which Homebridge service
 // -- IDs : eqLogic ID
 // -- Return : nothing
-JeedomPlatform.prototype.command = function(c, value, service, IDs) {
+JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 	try{
 		var that = this;
 		var cmds = IDs[1].split('|');
 		if (service.UUID == (new Service.SecuritySystem()).UUID) {
-			c = 'SetAlarmMode';
+			action = 'SetAlarmMode';
 		} else if (value == 0 && service.UUID == (new Service.WindowCovering).UUID) {
-			c = 'flapDown';
+			action = 'flapDown';
 		} else if ((value == 99 || value == 100) && service.UUID == (new Service.WindowCovering).UUID) {
-			c = 'flapUp';
+			action = 'flapUp';
 		}
-		var resultCMD = that.jeedomClient.getDeviceCmd(IDs[0]); 
+		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]); 
 		var cmdId = cmds[0];
-		for (const element of resultCMD) {
-			if (c == 'flapDown' && element.generic_type == 'FLAP_DOWN') {
-				cmdId = element.id;
+		for (const cmd of cmdList) {
+			if (action == 'flapDown' && cmd.generic_type == 'FLAP_DOWN') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'flapUp' && element.generic_type == 'FLAP_UP') {
-				cmdId = element.id;
+			} else if (action == 'flapUp' && cmd.generic_type == 'FLAP_UP') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'GBopen' && element.generic_type == 'GB_OPEN') {
-				cmdId = element.id;
+			} else if (action == 'GBopen' && cmd.generic_type == 'GB_OPEN') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'GBclose' && element.generic_type == 'GB_CLOSE') {
-				cmdId = element.id;
+			} else if (action == 'GBclose' && cmd.generic_type == 'GB_CLOSE') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'GBtoggle' && element.generic_type == 'GB_TOGGLE') {
-				cmdId = element.id;
+			} else if (action == 'GBtoggle' && cmd.generic_type == 'GB_TOGGLE') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'unsecure' && element.generic_type == 'LOCK_OPEN') {
-				cmdId = element.id;
+			} else if (action == 'unsecure' && cmd.generic_type == 'LOCK_OPEN') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'secure' && element.generic_type == 'LOCK_CLOSE') {
-				cmdId = element.id;
+			} else if (action == 'secure' && cmd.generic_type == 'LOCK_CLOSE') {
+				cmdId = cmd.id;
 				break;
-			} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == 'LIGHT_SLIDER' || element.generic_type == 'FLAP_SLIDER')) {
-				cmdId = element.id;
-				if (c == 'turnOn' && cmds[1]) {
+			} else if (value >= 0 && cmd.id == cmds[3] && (cmd.generic_type == 'LIGHT_SLIDER' || cmd.generic_type == 'FLAP_SLIDER')) { // don't like... need to change...
+				cmdId = cmd.id;
+				if (action == 'turnOn' && cmds[1]) {
 					cmdId=cmds[1];
-				} else if (c == 'turnOff' && cmds[2]) {
+				} else if (action == 'turnOff' && cmds[2]) {
 					cmdId=cmds[2];
 				}
 				// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
 				value =	Math.round(value * 99/100);
 				break;
-			} else if ((value == 255 || c == 'turnOn') && element.id == cmds[1] && (element.generic_type == 'LIGHT_ON' || element.generic_type == 'ENERGY_ON')) {
-				cmdId = element.id;
+			} else if ((value == 255 || action == 'turnOn') && cmd.id == cmds[1] && (cmd.generic_type == 'LIGHT_ON' || cmd.generic_type == 'ENERGY_ON')) {
+				cmdId = cmd.id;
 				break;
-			} else if ((value == 0 || c == 'turnOff') && element.id == cmds[2] && (element.generic_type == 'LIGHT_OFF' || (element.generic_type == 'ENERGY_OFF' && element.id == cmds[2]) )) {
-				cmdId = element.id;
+			} else if ((value == 0 || action == 'turnOff') && cmd.id == cmds[2] && (cmd.generic_type == 'LIGHT_OFF' || (cmd.generic_type == 'ENERGY_OFF' && cmd.id == cmds[2]) )) {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'setRGB' && element.generic_type == 'LIGHT_SET_COLOR') {
-				cmdId = element.id;
+			} else if (action == 'setRGB' && cmd.generic_type == 'LIGHT_SET_COLOR') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'SetAlarmMode' && element.generic_type == 'ALARM_ARMED' && value < 3) {
-				cmdId = element.id;
+			} else if (action == 'SetAlarmMode' && cmd.generic_type == 'ALARM_ARMED' && value < 3) {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'SetAlarmMode' && element.generic_type == 'ALARM_RELEASED' && value == 3) {
-				cmdId = element.id;
+			} else if (action == 'SetAlarmMode' && cmd.generic_type == 'ALARM_RELEASED' && value == 3) {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'setTargetLevel' && value > 0 && element.generic_type == 'THERMOSTAT_SET_SETPOINT') {
-				cmdId = element.id;
+			} else if (action == 'setTargetLevel' && value > 0 && cmd.generic_type == 'THERMOSTAT_SET_SETPOINT') {
+				cmdId = cmd.id;
 				break;
-			} else if (c == 'TargetHeatingCoolingState') {
-				if (element.generic_type == 'THERMOSTAT_SET_MODE' && element.name == 'Off') {
-					cmdId = element.id;
+			} else if (action == 'TargetHeatingCoolingState') {
+				if (cmd.generic_type == 'THERMOSTAT_SET_MODE' && cmd.name == 'Off') {
+					cmdId = cmd.id;
 					break;
 				}
 			}
 		}
 		
-		that.jeedomClient.executeDeviceAction(cmdId, c, value).then(function(response) {
-			that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + c,'value: '+value,'response:'+JSON.stringify(response));
+		that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+			that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 		}).catch(function(err, response) {
-			that.log('error','Erreur à l\'envoi de la commande ' + c + ' vers ' + IDs[0] + ' | ' + err + ' - ' + response);
+			that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] + ' | ' + err + ' - ' + response);
 		});
 
 	}
