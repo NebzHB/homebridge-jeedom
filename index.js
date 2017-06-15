@@ -696,7 +696,8 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			jeedomAccessory.initAccessory(HBAccessory);
 			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
-		HBAccessory.reachable = true;
+		//HBAccessory.reachable = true;
+		HBAccessory.updateReachability(true);
 		
 		if (isNewAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
@@ -1697,32 +1698,39 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 // -- services : services to be added
 // -- Return : nothing
 JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,cachedValues) {
-	for (var s = 0; s < services.length; s++) {
-		var service = services[s];
-		
-		this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
-		newAccessory.addService(service.controlService);
-		for (var i = 0; i < service.characteristics.length; i++) {
-			var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
+	try {
+		for (var s = 0; s < services.length; s++) {
+			var service = services[s];
 			
-			var cachedValue = cachedValues[service.controlService.subtype+'>'+characteristic.displayName];
-			if(cachedValue){
-				characteristic.setValue(cachedValue, undefined, 'fromCache');
+			this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+			newAccessory.addService(service.controlService);
+			for (var i = 0; i < service.characteristics.length; i++) {
+				var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
+				//this.log('debug','    Deb Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
+				
+				var cachedValue = cachedValues[service.controlService.subtype+'>'+characteristic.displayName];
+				if(cachedValue){
+					characteristic.setValue(cachedValue, undefined, 'fromCache');
+				}
+				
+				characteristic.props.needsBinding = true;
+				/*if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
+					characteristic.props.maxValue = 1000;
+					characteristic.props.minStep = 1;
+					characteristic.props.minValue = 1;
+				}*/
+				if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
+					characteristic.props.minValue = -50;
+					characteristic.props.minStep = 0.01;
+				}
+				this.platform.bindCharacteristicEvents(characteristic, service.controlService);
+				this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 			}
-			
-			characteristic.props.needsBinding = true;
-			/*if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
-				characteristic.props.maxValue = 1000;
-				characteristic.props.minStep = 1;
-				characteristic.props.minValue = 1;
-			}*/
-			if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
-				characteristic.props.minValue = -50;
-				characteristic.props.minStep = 0.01;
-			}
-			this.platform.bindCharacteristicEvents(characteristic, service.controlService);
-			this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 		}
+	}
+	catch(e){
+		this.log('error','Erreur de la fonction addServices :'+e,JSON.stringify(service.controlService));
+		hasError=true;
 	}
 }
 
@@ -1733,26 +1741,26 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 // -- Return : nothing
 JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	try {
-			var lenHB = accessory.services.length;
-			var toRemove=[];
+			var serviceList=[];
 			var cachedValues=[];
-			for(var t=1; t< lenHB;t++) { 
-				toRemove.push(accessory.services[t]);
+			for(var t=0; t< accessory.services.length;t++) { 
+				if(accessory.services[t].UUID != Service.AccessoryInformation.UUID && accessory.services[t].UUID != Service.BridgingState.UUID)
+					serviceList.push(accessory.services[t]);
 			}		
-			for(var rem of toRemove){ // dont work in one loop or with temp object :(
-
-				this.log('info',' Suppression service :'+rem.displayName+' subtype:'+rem.subtype+' UUID:'+rem.UUID);
-				for (const c of rem.characteristics) {
-					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
-					cachedValues[rem.subtype+'>'+c.displayName]=c.value;
+			for(var service of serviceList){ // dont work in one loop or with temp object :(
+				if(service.UUID != Service.AccessoryInformation.UUID && service.UUID != Service.BridgingState.UUID) {
+					this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
+					for (const c of service.characteristics) {
+						this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+						cachedValues[service.subtype+'>'+c.displayName]=c.value;
+					}
+					accessory.removeService(service);
 				}
-
-				accessory.removeService(rem);
 			}
 			return cachedValues;
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction delServices :'+e,JSON.stringify(rem));
+		this.log('error','Erreur de la fonction delServices :'+e,JSON.stringify(service));
 		hasError=true;
 	}
 }
