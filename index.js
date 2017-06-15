@@ -838,14 +838,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 		//var that = this;
 		switch (characteristic.UUID) {
 			case (new Characteristic.On()).UUID :
-				if(service.isVirtual) {
-					this.command('pressButton', IDs[1], service, IDs);
-					setTimeout(function() {
-						characteristic.setValue(false, undefined, 'fromSetValue');
-					}, 100);
-				} else {
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
-				}
 			break;
 			case (new Characteristic.TargetTemperature()).UUID :
 				if (Math.abs(value - characteristic.value) >= 0.5) {
