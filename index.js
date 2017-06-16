@@ -1240,77 +1240,123 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 	try{
 		var that = this;
 		var cmds = IDs[1].split('|');
-		if (service.UUID == Service.SecuritySystem.UUID) {
-			action = 'SetAlarmMode';
-		} else if (value == 0 && service.UUID == Service.WindowCovering.UUID) {
-			action = 'flapDown';
-		} else if ((value == 99 || value == 100) && service.UUID == Service.WindowCovering.UUID) {
-			action = 'flapUp';
+		switch (service.UUID) {
+				case Service.SecuritySystem.UUID :
+					action = 'SetAlarmMode';
+				break;
+				case Service.WindowCovering.UUID :
+					if(value == 0)
+						action = 'flapDown';
+					else if (value == 99 || value == 100)
+						action = 'flapUp';
+				break;
 		}
 		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]); 
 		var cmdId = cmds[0];
+		let found=false;
 		for (const cmd of cmdList) {
-			if (action == 'flapDown' && cmd.generic_type == 'FLAP_DOWN') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'flapUp' && cmd.generic_type == 'FLAP_UP') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'GBopen' && cmd.generic_type == 'GB_OPEN') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'GBclose' && cmd.generic_type == 'GB_CLOSE') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'GBtoggle' && cmd.generic_type == 'GB_TOGGLE') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'unsecure' && cmd.generic_type == 'LOCK_OPEN') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'secure' && cmd.generic_type == 'LOCK_CLOSE') {
-				cmdId = cmd.id;
-				break;
-			} else if (value >= 0 && 
-				   cmd.id == cmds[3] && 
-				   (cmd.generic_type == 'LIGHT_SLIDER' || cmd.generic_type == 'FLAP_SLIDER')) { // don't like... need to change...
-				
-				cmdId = cmd.id;
-				if (action == 'turnOn' && cmds[1]) {
-					cmdId=cmds[1];
-				} else if (action == 'turnOff' && cmds[2]) {
-					cmdId=cmds[2];
-				}
-				// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
-				value =	Math.round(value * 99/100);
-				break;
-			} else if ((value == 255 || action == 'turnOn') && 
-				    cmd.id == cmds[1] && 
-				   (cmd.generic_type == 'LIGHT_ON' || cmd.generic_type == 'ENERGY_ON')) {
-				cmdId = cmd.id;
-				break;
-			} else if ((value == 0 || action == 'turnOff') && 
-				    cmd.id == cmds[2] && 
-				   (cmd.generic_type == 'LIGHT_OFF' || cmd.generic_type == 'ENERGY_OFF')) {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'setRGB' && cmd.generic_type == 'LIGHT_SET_COLOR') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'SetAlarmMode' && cmd.generic_type == 'ALARM_ARMED' && value < 3) {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'SetAlarmMode' && cmd.generic_type == 'ALARM_RELEASED' && value == 3) {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'setTargetLevel' && 
-				   value > 0 && 
-				   cmd.generic_type == 'THERMOSTAT_SET_SETPOINT') {
-				cmdId = cmd.id;
-				break;
-			} else if (action == 'TargetHeatingCoolingState') {
-				if (cmd.generic_type == 'THERMOSTAT_SET_MODE' && cmd.name == 'Off') {
-					cmdId = cmd.id;
+			if(!found) {
+				switch (cmd.generic_type) {
+					case 'FLAP_DOWN' :
+						if(action == 'flapDown') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'FLAP_UP' :
+						if(action == 'flapUp') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'GB_OPEN' :
+						if(action == 'GBopen') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'GB_CLOSE' :
+						if(action == 'GBclose') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'GB_TOGGLE' :
+						if(action == 'GBtoggle') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'LOCK_OPEN' :
+						if(action == 'unsecure') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'LOCK_CLOSE' :
+						if(action == 'secure') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'LIGHT_SLIDER' :
+					case 'FLAP_SLIDER' :
+						if(value >= 0 && cmd.id == cmds[3]) {
+							cmdId = cmd.id;
+							if (action == 'turnOn' && cmds[1]) {
+								cmdId=cmds[1];
+							} else if (action == 'turnOff' && cmds[2]) {
+								cmdId=cmds[2];
+							}		
+							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
+							value =	Math.round(value * 99/100);							
+							found = true;
+						}
+					break;
+					case 'LIGHT_ON' :
+					case 'ENERGY_ON' :
+						if((value == 255 || action == 'turnOn') && cmd.id == cmds[1]) {
+							cmdId = cmd.id;					
+							found = true;
+						}
+					break;
+					case 'LIGHT_OFF' :
+					case 'ENERGY_OFF' :
+						if((value == 0 || action == 'turnOff') && cmd.id == cmds[2]) {
+							cmdId = cmd.id;					
+							found = true;
+						}
+					break;
+					case 'LIGHT_SET_COLOR' :
+						if(action == 'setRGB') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'ALARM_ARMED' :
+					case 'ALARM_RELEASED' :
+						if(action == 'SetAlarmMode') {
+							if(value <= 3) {
+								cmdId = cmd.id;
+								found = true;
+							}
+						}
+					break;
+					case 'THERMOSTAT_SET_SETPOINT' :
+						if(action == 'setTargetLevel') {
+							if(value > 0) {
+								cmdId = cmd.id;
+								found = true;
+							}
+						}
+					break;
+					case 'THERMOSTAT_SET_MODE' :
+						if(action == 'TargetHeatingCoolingState') {
+							if(cmd.name == 'Off') {
+								cmdId = cmd.id;
+								found = true;
+							}
+						}
 					break;
 				}
 			}
@@ -1321,7 +1367,6 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 		}).catch(function(err, response) {
 			that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] + ' | ' + err + ' - ' + response);
 		});
-
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction command :'+e);	
