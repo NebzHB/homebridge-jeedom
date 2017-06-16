@@ -142,7 +142,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						if (cmds.light) {
 							var cmds2 = cmds;
 							cmds.light.forEach(function(cmd, index, array) {
-								if (cmd.color) {
+								if (cmd.color) { // don't work fine
 									service = {
 										controlService : new Service.Lightbulb(_params.name),
 										characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
@@ -228,6 +228,9 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
+									if(!cmd_up) that.log('warn','Pas de type générique FLAP_UP ou reférence à l\'état non définie sur la commande Up');
+									if(!cmd_down) that.log('warn','Pas de type générique FLAP_DOWN ou reférence à l\'état non définie sur la commande Down');
+									if(!cmd_slider) that.log('warn','Pas de type générique FLAP_SLIDER ou reférence à l\'état non définie sur la commande Slider');
 									service = {
 										controlService : new Service.WindowCovering(_params.name),
 										characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
@@ -259,6 +262,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
+									if(!cmd_on) that.log('warn','Pas de type générique ENERGY_ON ou reférence à l\'état non définie sur la commande On');
+									if(!cmd_off) that.log('warn','Pas de type générique ENERGY_OFF ou reférence à l\'état non définie sur la commande Off');
 									service = {
 										controlService : new Service.Switch(_params.name),
 										characteristics : [Characteristic.On]
@@ -457,6 +462,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
+									if(!cmd_toggle) that.log('warn','Pas de type générique GB_TOGGLE ou reférence à l\'état non définie sur la commande Toggle');
 									service = {
 										controlService : new Service.GarageDoorOpener(_params.name),
 										characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
@@ -487,6 +493,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
+									if(!cmd_on) that.log('warn','Pas de type générique LOCK_ON ou reférence à l\'état non définie sur la commande On');
+									if(!cmd_off) that.log('warn','Pas de type générique LOCK_OFF ou reférence à l\'état non définie sur la commande Off');
 									service = {
 										controlService : new Service.LockMechanism(_params.name),
 										characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
