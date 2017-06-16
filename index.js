@@ -696,10 +696,9 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			return;
 		}
 		let isNewAccessory = false;
-		let uniqueSeed = jeedomAccessory.UUID;
 		let services2Add = jeedomAccessory.services_add;
 		this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
-		let HBAccessory = this.existingAccessory(uniqueSeed);
+		let HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
 			isNewAccessory = true;
@@ -734,14 +733,14 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 // -- existingAccessory
 // -- Desc : check if the accessory exists in the local list
 // -- Params --
-// -- uniqueSeed : UUID to find
+// -- UUID : UUID to find
 // -- silence : flag for logging or not
 // -- Return : nothing
-JeedomPlatform.prototype.existingAccessory = function(uniqueSeed,silence) {
+JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 	try{
 		silence = typeof silence  !== 'undefined' ? silence : false;
 		for (var a in this.accessories) {
-			if (this.accessories[a].UUID == uniqueSeed) {
+			if (this.accessories[a].UUID == UUID) {
 				if(!silence) this.log('│ Accessoire déjà existant dans Homebridge');
 				return this.accessories[a];
 			}
@@ -810,17 +809,13 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 			if (characteristic.props.perms[i] == 'pw')
 				readOnly = false;
 		var IDs = service.subtype.split('-');
-		let propertyChanged = 'value';
-		if (service.HSBValue != undefined)
-			propertyChanged = 'color';
-		this.subscribeUpdate(service, characteristic, propertyChanged);
+		this.subscribeUpdate(service, characteristic);
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
 					this.log('info','[Commande d\'Homekit] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 					this.setAccessoryValue(value,characteristic,service,IDs);
-				}
-				else
+				} else
 					this.log('info','[Commande de Jeedom] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
 				callback();
 			}.bind(this));
@@ -996,7 +991,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.Brightness.UUID :
 				returnValue = undefined;
-				
 				for (const cmd of cmdList) {
 					if (service.HSBValue != null) {
 						if (cmd.generic_type == 'LIGHT_COLOR') {
@@ -1386,9 +1380,8 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 // -- Params --
 // -- service : service containing the characteristic to subscribe to
 // -- characteristic : characteristic to subscribe to
-// -- propertyChanged : value or color
 // -- Return : nothing
-JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, propertyChanged) {
+JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic) {
 	try{
 		if (characteristic.UUID == Characteristic.PositionState.UUID)
 			return;
@@ -1397,9 +1390,8 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, pro
 		this.updateSubscriptions.push({
 			'id' : IDs[0],
 			'service' : service,
-			'characteristic' : characteristic,
-			'property' : propertyChanged
-		});
+			'characteristic' : characteristic
+			});
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction subscribeUpdate :'+e);
@@ -1469,32 +1461,33 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				var cmd_id = cmds[0];
 				var cmd2_id = IDs[2];
 			}
+			var subCharact = subscription.characteristic;
 			if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id) {
 				var intervalValue = false;
 
-				switch(subscription.characteristic.UUID) {
+				switch(subCharact.UUID) {
 					case Characteristic.TimeInterval.UUID :
 						intervalValue = true;
 					break;
 					case Characteristic.SmokeDetected.UUID :
-						subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');		
+						subCharact.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');		
 					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
 						if (cmd2_id == update.option.cmd_id && value == 1) {
-							subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
+							subCharact.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
 						} 
 						else {
-							subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+							subCharact.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
 						}
 					break;
 					case Characteristic.SecuritySystemTargetState.UUID :
-						subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+						subCharact.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
 					break;
 					case Characteristic.LeakDetected.UUID :
-						subscription.characteristic.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
+						subCharact.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
-						subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
+						subCharact.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
 						var v = null;
@@ -1516,37 +1509,37 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							break;
 						}
 						that.log('debug',"Transforme la valeur de Jeedom : "+value+" en valeur pour HomeKit : "+v);
-						subscription.characteristic.setValue(v, undefined, 'fromJeedom');
+						subCharact.setValue(v, undefined, 'fromJeedom');
 					break;
 					case Characteristic.TargetDoorState.UUID :
-						subscription.characteristic.setValue(!value, undefined, 'fromJeedom');
+						subCharact.setValue(!value, undefined, 'fromJeedom');
 					break;
 					case Characteristic.ProgrammableSwitchEvent.UUID :
 						that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
-						subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+						subCharact.setValue(value, undefined, 'fromJeedom');
 					break;
 					case Characteristic.LockCurrentState.UUID :
 					case Characteristic.LockTargetState.UUID :
-						subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
+						subCharact.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentPosition.UUID :
 					case Characteristic.TargetPosition.UUID :
-						if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
-							subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+						if (value >= subCharact.props.minValue && value <= subCharact.props.maxValue)
+							subCharact.setValue(value, undefined, 'fromJeedom');
 					break;
 					case Characteristic.OutletInUse.UUID :
 						if (update.power != undefined)
-							subscription.characteristic.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
+							subCharact.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
 					break;
 					case Characteristic.Brightness.UUID :
-						subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
+						subCharact.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
 					break;
 					default :
-						if ((subscription.characteristic.props.format == 'bool' && typeof (value) == 'boolean') || subscription.characteristic.props.format != 'bool') {
-							subscription.characteristic.setValue(value, undefined, 'fromJeedom');
+						if ((subCharact.props.format == 'bool' && typeof (value) == 'boolean') || subCharact.props.format != 'bool') {
+							subCharact.setValue(value, undefined, 'fromJeedom');
 						} 
 						else {
-							subscription.characteristic.setValue(toBool(value), undefined, 'fromJeedom');
+							subCharact.setValue(toBool(value), undefined, 'fromJeedom');
 						}	
 					break;
 				} 
@@ -1558,25 +1551,26 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		for (var i = 0; i < that.updateSubscriptions.length; i++) {
 			var subscription = that.updateSubscriptions[i];
 			var IDs = subscription.service.subtype.split('-');
-			if (IDs[1] == update.option.cmd_id && subscription.property == 'color') {
+			if (IDs[1] == update.option.cmd_id && subscription.service.HSBValue != undefined) {
 				var hsv = that.updateHomeKitColorFromJeedom(update.color, subscription.service);
-				switch(subscription.characteristic.UUID)
+				var subCharact =  subscription.characteristic;
+				switch(subCharact.UUID)
 				{
 					case Characteristic.On.UUID :
-						that.log('debug','update On :'+hsv.v == 0 ? false : true);
-						subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
+						//that.log('debug','update On :'+hsv.v == 0 ? false : true);
+						subCharact.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
 					break;
 					case Characteristic.Hue.UUID :
 						//that.log('debug','update Hue :'+Math.round(hsv.h));
-						subscription.characteristic.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
+						subCharact.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
 					break;
 					case Characteristic.Saturation.UUID :
 						//that.log('debug','update Sat :'+Math.round(hsv.s));
-						subscription.characteristic.setValue(Math.round(hsv.s), undefined, 'fromJeedom');
+						subCharact.setValue(Math.round(hsv.s), undefined, 'fromJeedom');
 					break;
 					case Characteristic.Brightness.UUID :
 						//that.log('debug','update Bright :'+Math.round(hsv.v));
-						subscription.characteristic.setValue(Math.round(hsv.v), undefined, 'fromJeedom');
+						subCharact.setValue(Math.round(hsv.v), undefined, 'fromJeedom');
 					break;
 				}
 				found=true;
