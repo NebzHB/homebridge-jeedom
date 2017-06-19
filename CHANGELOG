@@ -56,20 +56,17 @@ v1.0.16 --
     - Corrections diverses, simplifications et optimisations.
 
 PROBLEMES CONNUS / KNOWN ISSUES
-  - Possible problème si on change les Infos/Commandes de type .. pas certain que homebridge retouve tout... (mais on gère le passage de "Aucun/Ne pas tenir compte" à un type et inversément) : si problème : voir TIPS plus haut.
   - Possibles problèmes sur les ampoules (voir todo) mais il existait déjà.
   - Possibles problèmes sur certains types génériques plus rares.
   
 A FAIRE / TODO | ROADMAP
-  - Champ textfield custom dans la configuration pour ceux qui veullent rajouter des accessories manuellement dans homebridge (Sonos etc).
+  V Champ textfield custom dans la configuration pour ceux qui veullent rajouter des accessories manuellement dans homebridge (Sonos etc).
   - Modulariser les périphériques : afin de clarifier et de simplifier l'ajout de gestions de nouveaux types.
   - Corriger un bug dans les lightbulbs, set à false la color (pré-existant).
-  - Modifier un perif (ajout modif supp services) et reparser ses services (reuse function ?)
+  V Modifier un perif (ajout modif supp services) et reparser ses services (reuse function ?)
   - Ajouter des accessoires supportés (Camera, double relay, etc)
   - Comme les pièces ne sont pas portée dans Maison, donner l'option d'un préfix ou sufix nom de la pièce pour avoir facile à les ranger dans Maison (mais il faut renommer pour siri... donc on laisse le choix)
-  - Créer un accèssoire du style CUSTOM_HOMEBRIDGE, dans lequel on peut mixer différents types générique et faire sa petite config en connaissance de cause (connaître les types génériques de HAP-NodeJS (Homekit Application Protocol reverse-engineerd) qui est la base de homebridge)
-  - Investiguer pour activer ENERGY2 pour avoir une prise avec la consommation electrique dans Maison (ATTENTION à la gestion des multiprises)
   - Investiguer pour recharger les accessoires sans relancer le daemon.
   - la vérification du status de dépendances homebridge doit inclure la version homebridge required et HAP-NodeJS etc
-  - lors d'un update du plugin, relancer les dépendances et relancer le daemon
+  V lors d'un update du plugin, relancer les dépendances et relancer le daemon
   - ...
