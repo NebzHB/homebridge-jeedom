@@ -885,6 +885,21 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				var action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
 				this.command(action, 0, service, IDs);
 			break;
+			case Characteristic.SecuritySystemTargetState.UUID:
+			case Characteristic.SecuritySystemCurrentState.UUID:
+				this.command('SetAlarmMode', value, service, IDs);
+			break;
+			case Characteristic.CurrentPosition.UUID:
+			case Characteristic.TargetPosition.UUID:
+			case Characteristic.PositionState.UUID: // could be Service.Window or Service.Door too so we check
+				if (service.UUID == Service.WindowCovering.UUID) {
+					if(value == 0)
+						var action = 'flapDown';
+					else if (value == 99 || value == 100)
+						var action = 'flapUp';
+					this.command('setValue', value, service, IDs);
+				}
+			break;
 			case Characteristic.Hue.UUID :
 				var rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
 				this.syncColorCharacteristics(rgb, service, IDs);
@@ -1254,17 +1269,6 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 	try{
 		var that = this;
 		var cmds = IDs[1].split('|');
-		switch (service.UUID) {
-				case Service.SecuritySystem.UUID :
-					action = 'SetAlarmMode';
-				break;
-				case Service.WindowCovering.UUID :
-					if(value == 0)
-						action = 'flapDown';
-					else if (value == 99 || value == 100)
-						action = 'flapUp';
-				break;
-		}
 		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]); 
 		var cmdId = cmds[0];
 		let found=false;
@@ -1779,29 +1783,33 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 		for (var s = 0; s < services.length; s++) {
 			var service = services[s];
 			
-			this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
-			newAccessory.addService(service.controlService);
-			for (var i = 0; i < service.characteristics.length; i++) {
-				var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
-				
-				var cachedValue = cachedValues[service.controlService.subtype+'>'+characteristic.displayName];
-				if(cachedValue){
-					characteristic.setValue(cachedValue, undefined, 'fromCache');
+			if(!newAccessory.getService(service.controlService)){// not exist ?
+				this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+				newAccessory.addService(service.controlService);
+				for (var i = 0; i < service.characteristics.length; i++) {
+					var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
+					
+					var cachedValue = cachedValues[service.controlService.subtype+'>'+characteristic.displayName];
+					if(cachedValue){
+						characteristic.setValue(cachedValue, undefined, 'fromCache');
+					}
+					
+					characteristic.props.needsBinding = true;
+					/*if (characteristic.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
+						characteristic.props.maxValue = 1000;
+						characteristic.props.minStep = 1;
+						characteristic.props.minValue = 1;
+					}*/
+					if (characteristic.UUID == Characteristic.CurrentTemperature.UUID) {
+						characteristic.props.minValue = -50;
+						characteristic.props.minStep = 0.01;
+					}
+					this.platform.bindCharacteristicEvents(characteristic, service.controlService);
+					this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 				}
-				
-				characteristic.props.needsBinding = true;
-				/*if (characteristic.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
-					characteristic.props.maxValue = 1000;
-					characteristic.props.minStep = 1;
-					characteristic.props.minValue = 1;
-				}*/
-				if (characteristic.UUID == Characteristic.CurrentTemperature.UUID) {
-					characteristic.props.minValue = -50;
-					characteristic.props.minStep = 0.01;
-				}
-				this.platform.bindCharacteristicEvents(characteristic, service.controlService);
-				this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 			}
+			else
+				this.log('debug','Trying to add a service but already exists : ',service.controlService);
 		}
 	}
 	catch(e){
@@ -1825,15 +1833,12 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 					serviceList.push(accessory.services[t]);
 			}		
 			for(var service of serviceList){ // dont work in one loop or with temp object :(
-				if(service.UUID != Service.AccessoryInformation.UUID && 
-				   service.UUID != Service.BridgingState.UUID) {
-					this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
-					for (const c of service.characteristics) {
-						this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
-						cachedValues[service.subtype+'>'+c.displayName]=c.value;
-					}
-					accessory.removeService(service);
+				this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
+				for (const c of service.characteristics) {
+					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+					cachedValues[service.subtype+'>'+c.displayName]=c.value;
 				}
+				accessory.removeService(service);
 			}
 			return cachedValues;
 	}
