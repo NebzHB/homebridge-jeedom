@@ -1,5 +1,18 @@
-// Jeedom Platform plugin for HomeBridge
-//
+/* This file is part of Jeedom.
+ *
+ * Jeedom is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Jeedom is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 'use strict';
 
@@ -201,7 +214,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 							if(!HBservice) {
-								that.log('warn','Pas de type générique LIGHT_STATE ou LIGHT_COLOR');
+								that.log('warn','Pas de type générique "Info/Lumière Etat" ou "Info/Lumière Couleur"');
 							} else {
 								HBservice = null;
 							}
@@ -228,9 +241,9 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
-									if(!cmd_up) that.log('warn','Pas de type générique FLAP_UP ou reférence à l\'état non définie sur la commande Up');
-									if(!cmd_down) that.log('warn','Pas de type générique FLAP_DOWN ou reférence à l\'état non définie sur la commande Down');
-									if(!cmd_slider) that.log('warn','Pas de type générique FLAP_SLIDER ou reférence à l\'état non définie sur la commande Slider');
+									if(!cmd_up) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
+									if(!cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down');
+									if(!cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou reférence à l\'état non définie sur la commande Slider');
 									HBservice = {
 										controlService : new Service.WindowCovering(eqLogic.name),
 										characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
@@ -244,7 +257,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 							if(!HBservice) {
-								that.log('warn','Pas de type générique FLAP_STATE');
+								that.log('warn','Pas de type générique "Info/Volet Etat"');
 							} else {
 								HBservice = null;
 							}
@@ -265,8 +278,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
-									if(!cmd_on) that.log('warn','Pas de type générique ENERGY_ON ou reférence à l\'état non définie sur la commande On');
-									if(!cmd_off) that.log('warn','Pas de type générique ENERGY_OFF ou reférence à l\'état non définie sur la commande Off');
+									if(!cmd_on) that.log('warn','Pas de type générique "Action/Prise Bouton On" ou reférence à l\'état non définie sur la commande On');
+									if(!cmd_off) that.log('warn','Pas de type générique "Action/Prise Bouton Off" ou reférence à l\'état non définie sur la commande Off');
 									HBservice = {
 										controlService : new Service.Switch(eqLogic.name),
 										characteristics : [Characteristic.On]
@@ -279,7 +292,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 							if(!HBservice) {
-								that.log('warn','Pas de type générique ENERGY_STATE');
+								that.log('warn','Pas de type générique "Info/Prise Etat"');
 							} else {
 								HBservice = null;
 							}
@@ -467,7 +480,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
-									if(!cmd_toggle) that.log('warn','Pas de type générique GB_TOGGLE ou reférence à l\'état non définie sur la commande Toggle');
+									if(!cmd_toggle) that.log('warn','Pas de type générique "Action/Portail ou garage bouton toggle" ou reférence à l\'état non définie sur la commande Toggle');
 									HBservice = {
 										controlService : new Service.GarageDoorOpener(eqLogic.name),
 										characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
@@ -480,7 +493,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 							if(!HBservice) {
-								that.log('warn','Pas de type générique GARAGE_STATE ou BARRIER_STATE');
+								that.log('warn','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
 							} else {
 								HBservice = null;
 							}
@@ -501,8 +514,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 											}
 										}
 									});
-									if(!cmd_on) that.log('warn','Pas de type générique LOCK_ON ou reférence à l\'état non définie sur la commande On');
-									if(!cmd_off) that.log('warn','Pas de type générique LOCK_OFF ou reférence à l\'état non définie sur la commande Off');
+									if(!cmd_on) that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir" ou reférence à l\'état non définie sur la commande On');
+									if(!cmd_off) that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer" ou reférence à l\'état non définie sur la commande Off');
 									HBservice = {
 										controlService : new Service.LockMechanism(eqLogic.name),
 										characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
@@ -515,7 +528,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 							if(!HBservice) {
-								that.log('warn','Pas de type générique LOCK_STATE');
+								that.log('warn','Pas de type générique "Info/Serrure Etat"');
 							} else {
 								HBservice = null;
 							}
@@ -534,7 +547,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								HBservice = null;
 							});
 						}
-						if (eqLogic.services.thermostat) {
+						if (eqLogic.services.thermostat) { // only one -> will change
 							HBservice = {
 								controlService : new Service.Thermostat(eqLogic.name),
 								characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
@@ -546,7 +559,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							HBservices.push(HBservice);
 							HBservice = null;
 						}
-						if (eqLogic.services.alarm) {
+						if (eqLogic.services.alarm) { // only one -> will change
 							HBservice = {
 								controlService : new Service.SecuritySystem(eqLogic.name),
 								characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
@@ -731,7 +744,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
 		HBAccessory.on('identify', function(paired, callback) {
-			this.log(HBAccessory.displayName, "->Identify!!!");
+			this.log(HBAccessory.displayName, "->Identifié!!!");
 			callback();
 		}.bind(this));
 		HBAccessory.reviewed = true;
@@ -1102,7 +1115,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 										returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 								break;
 						}
-						that.log('debug','GetState Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
+						that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
 						break;
 					}
 				}
@@ -1442,7 +1455,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','==RESTART POLLING==');that.startPollingUpdate() }, that.pollerPeriod * 1000);
 	}).catch(function(err, response) {
-		that.log('error','Error fetching updates: ', err, response);
+		that.log('error','Erreur de récupération des évènements de mise à jour: ', err, response);
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','!!RESTART POLLING AFTER ERROR!!');that.startPollingUpdate() }, that.pollerPeriod * 2 * 1000);
 	});
@@ -1809,7 +1822,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 				}
 			}
 			else
-				this.log('debug','Trying to add a service but already exists : ',service.controlService);
+				this.log('debug','On essaye d\'ajouter un service mais il existe déjà : ',service.controlService);
 		}
 	}
 	catch(e){
