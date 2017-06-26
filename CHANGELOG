@@ -58,6 +58,7 @@ v1.0.16 --
 PROBLEMES CONNUS / KNOWN ISSUES
   - Possibles problèmes sur les ampoules (voir todo) mais il existait déjà.
   - Possibles problèmes sur certains types génériques plus rares.
+  - Alarme et Thermostat peuvent ne pas fonctionné comme désiré, correction prochaines version
   
 A FAIRE / TODO | ROADMAP
   V Champ textfield custom dans la configuration pour ceux qui veullent rajouter des accessories manuellement dans homebridge (Sonos etc).
