@@ -619,7 +619,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 									HBservices.push(HBservice);
 									HBservice = null;
 								}
-							});
+							}
 						}
 						if (HBservices.length != 0) {
 							that.addAccessory(
