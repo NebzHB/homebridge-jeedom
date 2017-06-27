@@ -582,44 +582,40 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 							HBservice = null;
 						}
 						if (eqLogic.services.alarm) { // only one -> will change
-							eqLogic.services.alarm.forEach(function(cmd) {
-								if(cmd.enable_state) {
-									HBservice = {
-										controlService : new Service.SecuritySystem(eqLogic.name),
-										characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
-									};
-									HBservice.controlService.cmd_id = cmd.state.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									var thisAlarm = that.alarms[cmd.state.id];
-									if(thisAlarm) {
-										if(thisAlarm.mode_away) {
-											var away_mode_label = thisAlarm.mode_away.name;
-											var away_mode_id = thisAlarm.mode_away.id;
-										}
-										else
-											that.log('warn','Pas de config du mode Absent');
-										if(thisAlarm.mode_present) {
-											var present_mode_label = thisAlarm.mode_present.name;
-											var present_mode_id = thisAlarm.mode_present.id;
-										}
-										else
-											that.log('warn','Pas de config du mode Présent');
-										if(thisAlarm.mode_night) {
-											var night_mode_label = thisAlarm.mode_night.name;
-											var night_mode_id =thisAlarm.mode_night.id;
-										}
-										else
-											that.log('warn','Pas de config du mode Nuit');
-									}
-									/*else {
-										that.log('warn','Pas de config de l\'alarme'); // NOT YET DONE
-									}*/
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.enable_state.id + '-' + cmd.state.id + '-' + cmd.mode.id + '-' + present_mode_id+'='+present_mode_label+'|'+away_mode_id+'='+away_mode_label+'|'+night_mode_id+'='+night_mode_label;
-									HBservices.push(HBservice);
-									HBservice = null;
+							HBservice = {
+								controlService : new Service.SecuritySystem(eqLogic.name),
+								characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
+							};
+							HBservice.controlService.cmd_id = eqLogic.services.alarm.enable_state.id;
+							if (HBservice.controlService.subtype == undefined)
+								HBservice.controlService.subtype = '';
+							var thisAlarm = that.alarms[eqLogic.services.alarm.state.id];
+							if(thisAlarm) {
+								if(thisAlarm.mode_away) {
+									var away_mode_label = thisAlarm.mode_away.name;
+									var away_mode_id = thisAlarm.mode_away.id;
 								}
+								else
+									that.log('warn','Pas de config du mode Absent');
+								if(thisAlarm.mode_present) {
+									var present_mode_label = thisAlarm.mode_present.name;
+									var present_mode_id = thisAlarm.mode_present.id;
+								}
+								else
+									that.log('warn','Pas de config du mode Présent');
+								if(thisAlarm.mode_night) {
+									var night_mode_label = thisAlarm.mode_night.name;
+									var night_mode_id =thisAlarm.mode_night.id;
+								}
+								else
+									that.log('warn','Pas de config du mode Nuit');
 							}
+							/*else {
+								that.log('warn','Pas de config de l\'alarme'); // NOT YET DONE
+							}*/
+							HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.alarm.enable_state.id + '-' + eqLogic.services.alarm.state.id + '-' + eqLogic.services.alarm.mode.id + '-' + present_mode_id+'='+present_mode_label+'|'+away_mode_id+'='+away_mode_label+'|'+night_mode_id+'='+night_mode_label;
+							HBservices.push(HBservice);
+							HBservice = null;
 						}
 						if (HBservices.length != 0) {
 							that.addAccessory(
