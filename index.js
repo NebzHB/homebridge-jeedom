@@ -354,6 +354,22 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 						}
+						if (eqLogic.services.uv) {
+							eqLogic.services.uv.forEach(function(cmd) {
+								if (cmd.uv) {
+									HBservice = {
+										controlService : new Service.TemperatureSensor(eqLogic.name),
+										characteristics : [Characteristic.UVIndex]
+									};
+									HBservice.controlService.cmd_id = cmd.uv.id;
+									if (HBservice.controlService.subtype == undefined)
+										HBservice.controlService.subtype = '';
+									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.uv.id + '-' + HBservice.controlService.subtype;
+									HBservices.push(HBservice);
+									HBservice = null;
+								}
+							});
+						}						
 						if (eqLogic.services.temperature) {
 							eqLogic.services.temperature.forEach(function(cmd) {
 								if (cmd.temperature) {
@@ -451,7 +467,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								}
 							});
 						}
-						if (eqLogic.services.energy2) {
+						if (eqLogic.services.energy2) { // not used
 							HBservice = {
 								controlService : new Service.Outlet(eqLogic.name),
 								characteristics : [Characteristic.On, Characteristic.OutletInUse]
@@ -538,16 +554,18 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 						}
 						if (eqLogic.services.DoorBell) {
 							eqLogic.services.DoorBell.forEach(function(cmd) {
-								HBservice = {
-									controlService : new Service.Doorbell(eqLogic.name),
-									characteristics : [Characteristic.ProgrammableSwitchEvent]
-								};
-								HBservice.controlService.cmd_id = cmd.state.id;
-								if (HBservice.controlService.subtype == undefined)
-									HBservice.controlService.subtype = '';
-								HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
-								HBservices.push(HBservice);
-								HBservice = null;
+								if(cmd.state) {
+									HBservice = {
+										controlService : new Service.Doorbell(eqLogic.name),
+										characteristics : [Characteristic.ProgrammableSwitchEvent]
+									};
+									HBservice.controlService.cmd_id = cmd.state.id;
+									if (HBservice.controlService.subtype == undefined)
+										HBservice.controlService.subtype = '';
+									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+									HBservices.push(HBservice);
+									HBservice = null;
+								}
 							});
 						}
 						if (eqLogic.services.thermostat) { // only one -> will change
@@ -1144,6 +1162,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 				returnValue = parseFloat(returnValue);
 			break;
+			case Characteristic.UVIndex.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'UV' && cmd.id == cmds[0]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+				returnValue = parseInt(returnValue);
+			break;			
 			case Characteristic.CurrentAmbientLightLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == cmds[0]) {
@@ -1755,6 +1783,35 @@ function RegisterCustomCharacteristics() {
 	inherits(Characteristic.TotalPowerConsumption, Characteristic);
 	Characteristic.TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
 
+	Characteristic.UVIndex = function() {
+		Characteristic.call(this, 'UV Index', '05ba0fe0-b848-4226-906d-5b64272e05ce');
+		this.setProps({
+			format: Characteristic.Formats.UINT8,
+			maxValue: 10,
+			minValue: 0,
+			minStep: 1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.UVIndex, Characteristic);	
+	Characteristic.UVIndex.UUID = '05ba0fe0-b848-4226-906d-5b64272e05ce';
+
+	Characteristic.AirPressure = function() {
+		Characteristic.call(this, 'Air Pressure', 'E863F10F-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.UINT16,
+			unit: "hPa",
+			maxValue: 1100,
+			minValue: 700,
+			minStep: 1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.AirPressure, Characteristic);	
+	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+
 	/**
 	 * Custom Service 'Power Monitor'
 	 */
@@ -1771,7 +1828,7 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Service.PowerMonitor, Service);
 	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
-
+	
 	// End of custom Services and Characteristics	
 }
 
