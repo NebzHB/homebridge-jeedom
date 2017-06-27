@@ -1816,7 +1816,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 				for (var i = 0; i < service.characteristics.length; i++) {
 					var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
 					
-					var cachedValue = cachedValues[service.controlService.subtype+'>'+characteristic.displayName];
+					var cachedValue = cachedValues[service.controlService.subtype];
 					if(cachedValue){
 						characteristic.setValue(cachedValue, undefined, 'fromCache');
 					}
@@ -1863,7 +1863,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 				this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
 				for (const c of service.characteristics) {
 					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
-					cachedValues[service.subtype+'>'+c.displayName]=c.value;
+					cachedValues[service.subtype]=c.value;
 				}
 				accessory.removeService(service);
 			}
