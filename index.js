@@ -49,6 +49,7 @@ function JeedomPlatform(logger, config, api) {
 		this.config = config || {};
 		this.accessories = [];
 		this.debugLevel = config['debugLevel'] || debug.ERROR;
+		this.alarms = config['alarms'] || [];
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		
@@ -585,10 +586,34 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 								controlService : new Service.SecuritySystem(eqLogic.name),
 								characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
 							};
-							HBservice.controlService.cmd_id = eqLogic.services.alarm.id;
+							HBservice.controlService.cmd_id = eqLogic.services.alarm.enable_state.id;
 							if (HBservice.controlService.subtype == undefined)
 								HBservice.controlService.subtype = '';
-							HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.alarm.enable_state.id + '-' + eqLogic.services.alarm.state.id;
+							var thisAlarm = that.alarms[eqLogic.services.alarm.state.id];
+							if(thisAlarm) {
+								if(thisAlarm.mode_away) {
+									var away_mode_label = thisAlarm.mode_away.name;
+									var away_mode_id = thisAlarm.mode_away.id;
+								}
+								else
+									that.log('warn','Pas de config du mode Absent');
+								if(thisAlarm.mode_present) {
+									var present_mode_label = thisAlarm.mode_present.name;
+									var present_mode_id = thisAlarm.mode_present.id;
+								}
+								else
+									that.log('warn','Pas de config du mode Présent');
+								if(thisAlarm.mode_night) {
+									var night_mode_label = thisAlarm.mode_night.name;
+									var night_mode_id =thisAlarm.mode_night.id;
+								}
+								else
+									that.log('warn','Pas de config du mode Nuit');
+							}
+							/*else {
+								that.log('warn','Pas de config de l\'alarme'); // NOT YET DONE
+							}*/
+							HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.alarm.enable_state.id + '-' + eqLogic.services.alarm.state.id + '-' + eqLogic.services.alarm.mode.id + '-' + present_mode_id+'='+present_mode_label+'|'+away_mode_id+'='+away_mode_label+'|'+night_mode_id+'='+night_mode_label;
 							HBservices.push(HBservice);
 							HBservice = null;
 						}
@@ -920,7 +945,6 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				this.command(action, 0, service, IDs);
 			break;
 			case Characteristic.SecuritySystemTargetState.UUID:
-			case Characteristic.SecuritySystemCurrentState.UUID:
 				this.command('SetAlarmMode', value, service, IDs);
 			break;
 			case Characteristic.CurrentPosition.UUID:
@@ -1070,20 +1094,51 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.SecuritySystemTargetState.UUID :
 			case Characteristic.SecuritySystemCurrentState.UUID :
 				for (const cmd of cmdList) {
-					let currentValue = parseInt(cmd.currentValue);
+					let currentValue = cmd.currentValue;
 					
 					if (cmd.generic_type == 'ALARM_STATE' && currentValue == 1) {
-						//console.log("valeur " + cmd.generic_type + " : alarm");
+						that.log('debug',"Alarm_State=",currentValue);
 						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 						break;
 					}
-					if (cmd.generic_type == 'ALARM_ENABLE_STATE') {
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
+						that.log('debug',"Alarm_enable_state=",currentValue);
+						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED; // or DISARM but same value
+						break;
+					}
+					if (cmd.generic_type == 'ALARM_MODE') {
+						that.log('debug',"alarm_mode=",currentValue);
+						var modesCmd = IDs[4].split('|');
+						for(const c in modesCmd) {
+							var t = modesCmd[c].split('=');
+							switch (parseInt(c)) {
+									case 0:
+										var mode_PRESENT = t[1];
+									break;
+									case 1:
+										var mode_AWAY = t[1];
+									break;
+									case 2:
+										var mode_NIGHT = t[1];
+									break;
+							}
+						}
 						switch (currentValue) {
-							case 0 :
-								returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
+							case mode_PRESENT:
+								that.log('debug',"renvoie present",Characteristic.SecuritySystemCurrentState.STAY_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.STAY_ARM;
 							break;
-							default:
-								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;							
+							case mode_AWAY:
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+							break;
+							case mode_NIGHT:
+								that.log('debug',"renvoie nuit",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+							break;
+							default: // back compatibility
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 							break;
 						}
 					}
@@ -1327,6 +1382,25 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]); 
 		var cmdId = cmds[0];
 		let found=false;
+		// ALARM
+		if(action == 'SetAlarmMode') {
+			var modesCmd = IDs[4].split('|');
+			for(const c in modesCmd) {
+				var t = modesCmd[c].split('=');
+				switch (parseInt(c)) {
+						case 0:
+							var id_PRESENT = t[0];
+						break;
+						case 1:
+							var id_AWAY = t[0];
+						break;
+						case 2:
+							var id_NIGHT = t[0];
+						break;
+				}
+			}
+		}
+		// /ALARM		
 		for (const cmd of cmdList) {
 			if(!found) {
 				switch (cmd.generic_type) {
@@ -1406,15 +1480,31 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							found = true;
 						}
 					break;
-					case 'ALARM_ARMED' :
 					case 'ALARM_RELEASED' :
-						if(action == 'SetAlarmMode') {
-							if(value <= 3) {
-								cmdId = cmd.id;
-								found = true;
-							}
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.DISARM) {
+								that.log('debug',"setAlarmMode",value,cmd.id);
+ 								cmdId = cmd.id;
+ 								found = true;
 						}
 					break;
+					case 'ALARM_SET_MODE' :
+						console.log("ALARM_SET_MODE","SetAlarmMode=",action,value);
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.NIGHT_ARM) {
+							cmdId = id_NIGHT;
+							console.log("set nuit");
+							found = true;
+						}
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.AWAY_ARM) {
+							cmdId = id_AWAY;
+							console.log("set absent");
+							found = true;
+						}
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.STAY_ARM) {
+							cmdId = id_PRESENT;
+							console.log("set present");
+							found = true;
+ 						}
+ 					break;					
 					case 'THERMOSTAT_SET_SETPOINT' :
 						if(action == 'setTargetLevel') {
 							if(value > 0) {
@@ -1508,6 +1598,8 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 // -- Params --
 // -- update : the update received from Jeedom
 // -- Return : nothing
+var alarmMode = null;
+var alarmModeTarget = null;
 JeedomPlatform.prototype.updateSubscribers = function(update) {
 	var that = this;
 
@@ -1531,9 +1623,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				var cmds = IDs[1].split('|');
 				var cmd_id = cmds[0];
 				var cmd2_id = IDs[2];
+				var cmd3_id = IDs[3];
 			}
 			var subCharact = subscription.characteristic;
-			if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id) {
+			if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id) {
 				var intervalValue = false;
 
 				switch(subCharact.UUID) {
@@ -1544,15 +1637,109 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');		
 					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
-						if (cmd2_id == update.option.cmd_id && value == 1) {
-							subCharact.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
-						} 
-						else {
-							subCharact.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
-						}
+						that.log('debug',"Current",alarmMode);
+						if (cmd2_id == update.option.cmd_id) { 
+							if(value == 1) {// if ALARM_STATE == 1 : RING !
+								that.log('debug',"ALARM !!!");
+								subCharact.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
+								alarmMode = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+							} else {
+								alarmMode = null;
+							}
+						} else if (cmd_id == update.option.cmd_id) { 
+							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
+								if(alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
+									that.log('debug',"disarmed");
+									subCharact.setValue(Characteristic.SecuritySystemCurrentState.DISARMED, undefined, 'fromJeedom');
+									alarmMode = Characteristic.SecuritySystemCurrentState.DISARMED;
+								}
+							} else {
+								alarmMode = null;
+							}
+						} else if(cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
+							if(alarmMode != Characteristic.SecuritySystemCurrentState.DISARMED && alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
+								that.log('debug',"value : ",update.option.display_value);
+								// we set the mode Strings
+								var modesCmd = IDs[4].split('|');
+								for(const c in modesCmd) {
+									var t = modesCmd[c].split('=');
+									switch (parseInt(c)) {
+											case 0:
+												var mode_PRESENT = t[1];
+											break;
+											case 1:
+												var mode_AWAY = t[1];
+											break;
+											case 2:
+												var mode_NIGHT = t[1];
+											break;
+									}
+								}
+								var v=null;
+								switch(update.option.display_value) {
+									case mode_PRESENT :
+										v=Characteristic.SecuritySystemCurrentState.STAY_ARM;
+									break;
+									case mode_AWAY :
+										v=Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+									break;
+									case mode_NIGHT :
+										v=Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+									break;
+								}
+								subCharact.setValue(v, undefined, 'fromJeedom');
+								alarmMode = null;
+							}
+ 						}
 					break;
 					case Characteristic.SecuritySystemTargetState.UUID :
-						subCharact.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
+						that.log('debug',"Target",alarmModeTarget);
+						if (cmd_id == update.option.cmd_id) { 
+							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
+								that.log('debug',"disarm");
+								subCharact.setValue(Characteristic.SecuritySystemTargetState.DISARM, undefined, 'fromJeedom');
+								alarmModeTarget = Characteristic.SecuritySystemTargetState.DISARM;
+							} else {
+								alarmModeTarget = null;
+							}
+						} else if (cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
+							if(alarmModeTarget != Characteristic.SecuritySystemTargetState.DISARM) {
+								that.log('debug',"value : ",update.option.display_value);
+								// we set the mode Strings)
+								var modesCmd = IDs[4].split('|');
+								for(const c in modesCmd) {
+									var t = modesCmd[c].split('=');
+									switch (parseInt(c)) {
+											case 0:
+												var mode_PRESENT = t[1];
+											break;
+											case 1:
+												var mode_AWAY = t[1];
+											break;
+											case 2:
+												var mode_NIGHT = t[1];
+											break;
+									}
+								}
+								var v=null;
+								switch(update.option.display_value) {
+									case mode_PRESENT :
+										v=Characteristic.SecuritySystemTargetState.STAY_ARM;
+									break;
+									case mode_AWAY :
+										v=Characteristic.SecuritySystemTargetState.AWAY_ARM;
+									break;
+									case mode_NIGHT :
+										v=Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+									break;
+									case 0 : // if ALARM RING
+										v=alarmModeTarget; // display previous mode
+									break;
+								}
+								subCharact.setValue(v, undefined, 'fromJeedom');
+								alarmModeTarget = v;
+							}
+						}			
 					break;
 					case Characteristic.LeakDetected.UUID :
 						subCharact.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
