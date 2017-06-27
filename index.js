@@ -326,10 +326,13 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.BatteryService(eqLogic.name),
 										characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery]
 									};
+									var cmd_charging='NOT';
+									if (cmd.batteryCharging)
+										cmd_charging = cmd.batteryCharging.id;
 									HBservice.controlService.cmd_id = cmd.battery.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.battery.id + '-' + HBservice.controlService.subtype;
+									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.battery.id +'|'+ cmd_charging + '-' + HBservice.controlService.subtype;
 									HBservices.push(HBservice);
 									HBservice = null;
 								}
@@ -1182,9 +1185,20 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				else returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
 			break;
 			case Characteristic.ChargingState.UUID :
-				//Characteristic.ChargingState.NOT_CHARGING;
-				//Characteristic.ChargingState.CHARGING;
-				returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;
+				var hasFound = false;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BATTERY_CHARGING' && cmd.id == cmds[1]) {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						if(parseInt(cmd.currentValue) == 0) {
+							returnValue = Characteristic.ChargingState.NOT_CHARGING;
+						} else {
+							returnValue = Characteristic.ChargingState.CHARGING;
+						}
+						hasFound = true;
+						break;
+					}
+				}
+				if(!hasFound) returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;
 			break;
 			case Characteristic.CurrentPowerConsumption.UUID :
 				for (const cmd of cmdList) {
