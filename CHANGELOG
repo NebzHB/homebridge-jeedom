@@ -3,7 +3,7 @@ NOTES DE SORTIE / REALEASE NOTES
 CHANGEMENTS / CHANGELOG
 v1.1.2  --
     - Support basique Alarme : besoin d'une config coté plugin pour mapper les modes NUIT, ABSENT, PRESENT avec des ALARM_SET_MODE jeedom
-    - Support alpha de UV-Index à tester
+    - Support alpha de UV-Index à tester (risque de tout casser)
 v1.1.1  --
     - Bugfix : Restauration des valeurs en cache au redémarrage
     - Bugfix : Bornage des valeurs du detecteur de lumière
