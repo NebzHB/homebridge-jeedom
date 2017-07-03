@@ -2134,6 +2134,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction addServices :'+e,JSON.stringify(service.controlService));
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [newAccessory]);
 		hasError=true;
 	}
 }
@@ -2164,6 +2165,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction delServices :'+e,JSON.stringify(service));
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);
 		hasError=true;
 	}
 }
