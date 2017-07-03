@@ -1312,7 +1312,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE') {
 						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
-						if(parseInt(cmd.currentValue) == 0) {
+						if(parseInt(cmd.currentValue) == 0 || cmd.currentValue == null) {
 							returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						} else {
 							returnValue=Characteristic.StatusTampered.TAMPERED;
@@ -1783,7 +1783,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
 					break;
 					case Characteristic.StatusTampered.UUID :
-						subCharact.setValue(value == 0 ? Characteristic.StatusTampered.NOT_TAMPERED : Characteristic.StatusTampered.TAMPERED, undefined, 'fromJeedom');
+						if(value == 0 || value == null)
+							subCharact.setValue(Characteristic.StatusTampered.NOT_TAMPERED, undefined, 'fromJeedom');
+						else
+							subCharact.setValue(Characteristic.StatusTampered.TAMPERED, undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
 						subCharact.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
