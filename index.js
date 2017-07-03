@@ -801,8 +801,9 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			jeedomAccessory.initAccessory(HBAccessory);
 			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
+		//no more supported by HAP-NodeJS
 		//HBAccessory.reachable = true;
-		HBAccessory.updateReachability(true);
+		//HBAccessory.updateReachability(true); 
 		
 		if (isNewAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
