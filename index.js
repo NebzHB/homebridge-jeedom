@@ -363,7 +363,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.TemperatureSensor(eqLogic.name),
 										characteristics : [Characteristic.UVIndex]
 									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.uv.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -380,6 +379,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.TemperatureSensor(eqLogic.name),
 										characteristics : [Characteristic.CurrentTemperature]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.temperature.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
