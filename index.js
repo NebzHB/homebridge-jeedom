@@ -1233,6 +1233,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 					}
 				}
 				returnValue = parseFloat(returnValue);
+				if(isNaN(returnValue)) returnValue=0;
 			break;
 			case Characteristic.UVIndex.UUID :
 				for (const cmd of cmdList) {
