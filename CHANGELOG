@@ -1,6 +1,11 @@
 NOTES DE SORTIE / REALEASE NOTES
 
 CHANGEMENTS / CHANGELOG
+v1.1.4  --
+    - Bugfix : unregister Accessories si on a une erreur
+    - Update Homebridge & HAP-NodeJS
+    - Bugfix : Temperature isNaN -> 0
+    - pré-support Sabotage
 v1.1.2  --
     - Support basique Alarme : besoin d'une config coté plugin pour mapper les modes NUIT, ABSENT, PRESENT avec des ALARM_SET_MODE jeedom
 v1.1.1  --
