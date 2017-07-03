@@ -346,6 +346,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.MotionSensor(eqLogic.name),
 										characteristics : [Characteristic.MotionDetected]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.presence.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -362,6 +363,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.TemperatureSensor(eqLogic.name),
 										characteristics : [Characteristic.UVIndex]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.uv.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -395,6 +397,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.HumiditySensor(eqLogic.name),
 										characteristics : [Characteristic.CurrentRelativeHumidity]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.humidity.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -411,6 +414,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.SmokeSensor(eqLogic.name),
 										characteristics : [Characteristic.SmokeDetected]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.smoke.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -427,6 +431,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.LeakSensor(eqLogic.name),
 										characteristics : [Characteristic.LeakDetected]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.flood.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -459,6 +464,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.LightSensor(eqLogic.name),
 										characteristics : [Characteristic.CurrentAmbientLightLevel]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.brightness.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -601,6 +607,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 										controlService : new Service.SecuritySystem(eqLogic.name),
 										characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
 									};
+									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 									HBservice.controlService.cmd_id = cmd.enable_state.id;
 									if (HBservice.controlService.subtype == undefined)
 										HBservice.controlService.subtype = '';
@@ -1301,6 +1308,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 				if(!hasFound) returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;
 			break;
+			case Characteristic.StatusTampered.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SABOTAGE') {
+						//console.log("valeur " + cmd.generic_type + " : " + cmd.currentValue);
+						if(parseInt(cmd.currentValue) == 0) {
+							returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
+						} else {
+							returnValue=Characteristic.StatusTampered.TAMPERED;
+						}
+						break;
+					}
+				}
+			break;
 			case Characteristic.CurrentPowerConsumption.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'POWER' && cmd.id == cmds[0]) {
@@ -1761,6 +1781,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					break;
 					case Characteristic.LeakDetected.UUID :
 						subCharact.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
+					break;
+					case Characteristic.StatusTampered.UUID :
+						subCharact.setValue(value == 0 ? Characteristic.StatusTampered.NOT_TAMPERED : Characteristic.StatusTampered.TAMPERED, undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
 						subCharact.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
