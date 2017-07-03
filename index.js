@@ -776,6 +776,8 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction delAccessory :'+e);
+		// force to unregister the accessory before quitting (avoid cache or persist corruption)
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
 		hasError=true;
 	}
 };
@@ -822,6 +824,8 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction addAccessory :'+e);
+		// unregister the accessory before quitting (avoid cache or persist corruption)
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		hasError=true;
 	}
 };
