@@ -6,6 +6,7 @@ v1.1.4  --
     - Update Homebridge & HAP-NodeJS
     - Bugfix : Temperature isNaN -> 0
     - pré-support Sabotage
+    - Bugfix : Interdire une valeur Null ou Undefined d'être envoyée à homekit
 v1.1.2  --
     - Support basique Alarme : besoin d'une config coté plugin pour mapper les modes NUIT, ABSENT, PRESENT avec des ALARM_SET_MODE jeedom
 v1.1.1  --
@@ -77,4 +78,5 @@ A FAIRE / TODO | ROADMAP
   - Investiguer pour recharger les accessoires sans relancer le daemon.
   - la vérification du status de dépendances homebridge doit inclure la version homebridge required et HAP-NodeJS etc
   V lors d'un update du plugin, relancer les dépendances et relancer le daemon
+  - interdire ces codes pin : 000-00-000, 111-11-111 -> 999-99-999, 123-45-678, 876-54-321
   - ...
