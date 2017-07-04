@@ -1857,6 +1857,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					break;
 					default :
 						if ((subCharact.props.format == 'bool' && typeof (value) == 'boolean') || subCharact.props.format != 'bool') {
+							if(value == null || value == undefined) value=0;
 							subCharact.setValue(value, undefined, 'fromJeedom');
 						} 
 						else {
