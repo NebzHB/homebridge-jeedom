@@ -1731,7 +1731,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 											break;
 									}
 								}
-								var v=null;
+								var v=Characteristic.SecuritySystemCurrentState.DISARMED;
 								switch(update.option.display_value) {
 									case mode_PRESENT :
 										v=Characteristic.SecuritySystemCurrentState.STAY_ARM;
@@ -1777,7 +1777,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 											break;
 									}
 								}
-								var v=null;
+								var v=Characteristic.SecuritySystemTargetState.DISARM;
 								switch(update.option.display_value) {
 									case mode_PRESENT :
 										v=Characteristic.SecuritySystemTargetState.STAY_ARM;
@@ -1810,7 +1810,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
-						var v = null;
+						var v=Characteristic.CurrentDoorState.OPEN; // if not -> OPEN
 						switch(parseInt(value)) {
 							case 255 :
 								v=Characteristic.CurrentDoorState.OPEN; // 0
@@ -1832,6 +1832,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(v, undefined, 'fromJeedom');
 					break;
 					case Characteristic.TargetDoorState.UUID :
+						if (value == null || value == undefined) value = 0;
 						subCharact.setValue(!value, undefined, 'fromJeedom');
 					break;
 					case Characteristic.ProgrammableSwitchEvent.UUID :
