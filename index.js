@@ -54,7 +54,8 @@ function JeedomPlatform(logger, config, api) {
 		this.log('debugLevel:'+this.debugLevel);
 		
 		if (config["url"] == "undefined" || 
-		    config["url"] == "http://:80") {
+		    config["url"] == "http://:80" ||
+			config["url"] == 'https://:80') {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
 		}else{
@@ -923,7 +924,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		characteristic.on('get', function(callback) {
 			this.log('info','[Demande d\'Homekit] IDs:'+IDs,'Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 			let returnValue = this.getAccessoryValue(characteristic, service, IDs);
-			callback(undefined, returnValue);
+			callback(undefined, sanitizeValue(returnValue,characteristic));
 		}.bind(this));
 	}
 	catch(e){
@@ -955,7 +956,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					value = characteristic.value;
 				}
 				setTimeout(function() {
-					characteristic.setValue(value, undefined, 'fromSetValue');
+					characteristic.setValue(sanitizeValue(value,characteristic), undefined, 'fromSetValue');
 				}, 100);
 			break;
 			case Characteristic.TimeInterval.UUID :
@@ -1040,13 +1041,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.TargetTemperature.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
 			break;
 			case Characteristic.Hue.UUID :
-				returnValue = undefined;
+				returnValue = 0;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR') {
 						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
@@ -1058,7 +1059,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = Math.round(hsv.h);
 			break;
 			case Characteristic.Saturation.UUID :
-				returnValue = undefined;
+				returnValue = 0;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR') {
 						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
@@ -1072,7 +1073,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.SmokeDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SMOKE' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						if(returnValue == 1) returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
 						else returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
 						break;
@@ -1082,7 +1083,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.LeakDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLOOD' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						if(returnValue == 1) returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
 						else returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
 						break;
@@ -1092,7 +1093,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.MotionDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1100,7 +1101,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'OPENING' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						if(returnValue == 1) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						break;
@@ -1108,7 +1109,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 			break;
 			case Characteristic.Brightness.UUID :
-				returnValue = undefined;
+				returnValue = 0;
 				for (const cmd of cmdList) {
 					if (service.HSBValue != null) {
 						if (cmd.generic_type == 'LIGHT_COLOR') {
@@ -1127,7 +1128,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.SecuritySystemTargetState.UUID :
 			case Characteristic.SecuritySystemCurrentState.UUID :
 				for (const cmd of cmdList) {
-					let currentValue = prepareValue(cmd.currentValue,characteristic);
+					let currentValue = cmd.currentValue;
 					
 					if (cmd.generic_type == 'ALARM_STATE' && currentValue == 1) {
 						that.log('debug',"Alarm_State=",currentValue);
@@ -1232,7 +1233,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.TargetPosition.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						break;
 					}
@@ -1242,7 +1243,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == cmds[0]) || 
 					    cmd.generic_type == 'THERMOSTAT_TEMPERATURE') {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1250,7 +1251,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.UVIndex.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'UV' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1258,7 +1259,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.CurrentAmbientLightLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1266,7 +1267,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.CurrentRelativeHumidity.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'HUMIDITY' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1274,7 +1275,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.BatteryLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1282,7 +1283,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.StatusLowBattery.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						if(returnValue > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
 						else returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
 						break;
@@ -1293,7 +1294,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				var hasFound = false;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY_CHARGING' && cmd.id == cmds[1]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						if(returnValue == 0) returnValue = Characteristic.ChargingState.NOT_CHARGING;
 						else returnValue = Characteristic.ChargingState.CHARGING;
 						hasFound = true;
@@ -1305,7 +1306,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE') {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						if(returnValue == 0) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						else returnValue=Characteristic.StatusTampered.TAMPERED;
 						break;
@@ -1315,7 +1316,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.CurrentPowerConsumption.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'POWER' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1323,7 +1324,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.TotalPowerConsumption.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == cmds[0]) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1331,8 +1332,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.On.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'LIGHT_STATE' && cmd.id == cmds[0]) || 
-					(cmd.generic_type == "ENERGY_STATE" && cmd.id == cmds[0])) {
-						returnValue = prepareValue(cmd.currentValue,characteristic);
+						(cmd.generic_type == "ENERGY_STATE" && cmd.id == cmds[0])) {
+						returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1345,29 +1346,33 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 	}
 };
 
-// -- prepareValue
+// -- sanitizeValue
 // -- Desc : limit the value to the min and max characteristic + round the float to the same precision than the minStep
 // -- Params --
 // -- currentValue : value to prepare
 // -- characteristic : characteristic containing the props
 // -- Return : prepared value
-function prepareValue(currentValue,characteristic) {
-	let val;
+function sanitizeValue(currentValue,characteristic) {
+	let val=0;
 	if(!characteristic) // just return the value if no characteristic
-		return currentValue;
+		return val;
 	else
 		if(!characteristic.props) 
-			return currentValue;
+			return val;
 		else 
 			if(!characteristic.props.format) 
-				return currentValue;
+				return val;
 
 	switch(characteristic.props.format) {
-			case "int" :
 			case "uint8" :
 			case "uint16":
 			case "uint32" :
 			case "uint64" :
+				val = parseInt(currentValue);
+				if(val == undefined || val == null || isNaN(val)) val = 0;
+				val = Math.abs(val); // unsigned
+			break;
+			case "int" :
 				val = parseInt(currentValue);
 				if(val == undefined || val == null || isNaN(val)) val = 0;
 			break;
@@ -1382,14 +1387,11 @@ function prepareValue(currentValue,characteristic) {
 			case "tlv8" :
 				val = currentValue;
 				if(val == undefined || val == null) val = '';
-			break;
-			default :
-				val = currentValue;
-				if(val == undefined || val == null) val = 0;
+				val = val.toString();
 			break;
 	}
-	if(characteristic.props.minValue != null && val < characteristic.props.minValue) val = characteristic.props.minValue;
-	if(characteristic.props.maxValue != null && val > characteristic.props.maxValue) val = characteristic.props.maxValue;
+	if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < characteristic.props.minValue) val = characteristic.props.minValue;
+	if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > characteristic.props.maxValue) val = characteristic.props.maxValue;
 	return val;
 }
 
@@ -1665,6 +1667,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 	else update.color=undefined;
 	
 	var value = parseInt(update.option.value);
+	var newValue=0;
 	if (isNaN(value))
 		value = (update.option.value === 'true');
 	
@@ -1690,14 +1693,15 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						intervalValue = true;
 					break;
 					case Characteristic.SmokeDetected.UUID :
-						subCharact.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');		
+						newValue = value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');		
 					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
 						that.log('debug',"Current",alarmMode);
 						if (cmd2_id == update.option.cmd_id) { 
 							if(value == 1) {// if ALARM_STATE == 1 : RING !
 								that.log('debug',"ALARM !!!");
-								subCharact.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
+								subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,subCharact), undefined, 'fromJeedom');
 								alarmMode = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 							} else {
 								alarmMode = null;
@@ -1706,7 +1710,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
 								if(alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
 									that.log('debug',"disarmed");
-									subCharact.setValue(Characteristic.SecuritySystemCurrentState.DISARMED, undefined, 'fromJeedom');
+									subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.DISARMED,subCharact), undefined, 'fromJeedom');
 									alarmMode = Characteristic.SecuritySystemCurrentState.DISARMED;
 								}
 							} else {
@@ -1743,7 +1747,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 										v=Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
 									break;
 								}
-								subCharact.setValue(v, undefined, 'fromJeedom');
+								subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 								alarmMode = null;
 							}
  						}
@@ -1753,7 +1757,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						if (cmd_id == update.option.cmd_id) { 
 							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
 								that.log('debug',"disarm");
-								subCharact.setValue(Characteristic.SecuritySystemTargetState.DISARM, undefined, 'fromJeedom');
+								subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemTargetState.DISARM,subCharact), undefined, 'fromJeedom');
 								alarmModeTarget = Characteristic.SecuritySystemTargetState.DISARM;
 							} else {
 								alarmModeTarget = null;
@@ -1792,22 +1796,24 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 										v=alarmModeTarget; // display previous mode
 									break;
 								}
-								subCharact.setValue(v, undefined, 'fromJeedom');
+								subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 								alarmModeTarget = v;
 							}
 						}			
 					break;
 					case Characteristic.LeakDetected.UUID :
-						subCharact.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
+						newValue = value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.StatusTampered.UUID :
 						if(value == 0 || isNaN(value))
-							subCharact.setValue(Characteristic.StatusTampered.NOT_TAMPERED, undefined, 'fromJeedom');
+							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.NOT_TAMPERED,subCharact), undefined, 'fromJeedom');
 						else
-							subCharact.setValue(Characteristic.StatusTampered.TAMPERED, undefined, 'fromJeedom');
+							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
-						subCharact.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
+						newValue = value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
 						var v=Characteristic.CurrentDoorState.OPEN; // if not -> OPEN
@@ -1829,40 +1835,41 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							break;
 						}
 						that.log('debug',"Transforme la valeur de Jeedom : "+value+" en valeur pour HomeKit : "+v);
-						subCharact.setValue(v, undefined, 'fromJeedom');
+						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.TargetDoorState.UUID :
 						if (value == null || value == undefined) value = 0;
-						subCharact.setValue(!value, undefined, 'fromJeedom');
+						subCharact.setValue(sanitizeValue(!value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ProgrammableSwitchEvent.UUID :
 						that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
-						subCharact.setValue(value, undefined, 'fromJeedom');
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.LockCurrentState.UUID :
 					case Characteristic.LockTargetState.UUID :
-						subCharact.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
+						newValue = value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentPosition.UUID :
 					case Characteristic.TargetPosition.UUID :
 						if (value >= subCharact.props.minValue && value <= subCharact.props.maxValue)
-							subCharact.setValue(value, undefined, 'fromJeedom');
+							subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.OutletInUse.UUID :
-						if (update.power != undefined)
-							subCharact.setValue(parseFloat(update.power) > 1.0 ? true : false, undefined, 'fromJeedom');
+						if (update.power != undefined) {
+							newValue = parseFloat(update.power) > 1.0 ? true : false;
+							subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+						}
 					break;
 					case Characteristic.Brightness.UUID :
-						subCharact.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
+						newValue = Math.round(value * 100/99);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.On.UUID :
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 					default :
-						if ((subCharact.props.format == 'bool' && typeof (value) == 'boolean') || subCharact.props.format != 'bool') {
-							if(value == null || value == undefined) value=0;
-							subCharact.setValue(value, undefined, 'fromJeedom');
-						} 
-						else {
-							subCharact.setValue(toBool(value), undefined, 'fromJeedom');
-						}	
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 				} 
 			}
@@ -1880,19 +1887,23 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				{
 					case Characteristic.On.UUID :
 						//that.log('debug','update On :'+hsv.v == 0 ? false : true);
-						subCharact.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
+						newValue = hsv.v == 0 ? false : true;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.Hue.UUID :
 						//that.log('debug','update Hue :'+Math.round(hsv.h));
-						subCharact.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
+						newValue = Math.round(hsv.h);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.Saturation.UUID :
 						//that.log('debug','update Sat :'+Math.round(hsv.s));
-						subCharact.setValue(Math.round(hsv.s), undefined, 'fromJeedom');
+						newValue = Math.round(hsv.s);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.Brightness.UUID :
 						//that.log('debug','update Bright :'+Math.round(hsv.v));
-						subCharact.setValue(Math.round(hsv.v), undefined, 'fromJeedom');
+						newValue = Math.round(hsv.v);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 				}
 				found=true;
@@ -2126,7 +2137,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 					
 					var cachedValue = cachedValues[service.controlService.subtype];
 					if(cachedValue){
-						characteristic.setValue(cachedValue, undefined, 'fromCache');
+						characteristic.setValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
 					}
 					
 					characteristic.props.needsBinding = true;
