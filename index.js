@@ -1026,7 +1026,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 	try{
 		var that = this;
 		var cmds = IDs[1].split('|');
-		let returnValue = 0;
+		var returnValue = 0;
 		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]);
 		
 		switch (characteristic.UUID) {
