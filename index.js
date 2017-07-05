@@ -1247,8 +1247,33 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.LockTargetState.UUID :
 				returnValue = cmdList.value == 'true' ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 			break;
-			case Characteristic.CurrentDoorState.UUID :
 			case Characteristic.TargetDoorState.UUID :
+				returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'GARAGE_STATE' || 
+					    cmd.generic_type == 'BARRIER_STATE') {
+						switch(parseInt(cmd.currentValue)) {
+								case 255 :
+										returnValue=Characteristic.TargetDoorState.OPEN; //0
+								break;
+								case 0 :
+										returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+								break;
+								case 254 :
+										returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+								break;
+								case 252 :
+										returnValue=Characteristic.TargetDoorState.OPEN; // 0
+								break;
+								case 253 :
+										returnValue=Characteristic.TargetDoorState.OPEN; // 0
+								break;
+						}
+						that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
+						break;
+					}
+				}			
+			case Characteristic.CurrentDoorState.UUID :
 				returnValue=Characteristic.CurrentDoorState.OPEN; // if don't know -> OPEN
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
