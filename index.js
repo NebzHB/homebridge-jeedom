@@ -1126,6 +1126,52 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 			break;
 			case Characteristic.SecuritySystemTargetState.UUID :
+				for (const cmd of cmdList) {
+					let currentValue = cmd.currentValue;
+					
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
+						that.log('debug',"Alarm_enable_state=",currentValue);
+						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
+						break;
+					}
+					if (cmd.generic_type == 'ALARM_MODE') {
+						that.log('debug',"alarm_mode=",currentValue);
+						var modesCmd = IDs[4].split('|');
+						for(const c in modesCmd) {
+							var t = modesCmd[c].split('=');
+							switch (parseInt(c)) {
+									case 0:
+										var mode_PRESENT = t[1];
+									break;
+									case 1:
+										var mode_AWAY = t[1];
+									break;
+									case 2:
+										var mode_NIGHT = t[1];
+									break;
+							}
+						}
+						switch (currentValue) {
+							case mode_PRESENT:
+								that.log('debug',"renvoie present",Characteristic.SecuritySystemTargetState.STAY_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.STAY_ARM;
+							break;
+							case mode_AWAY:
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+							break;
+							case mode_NIGHT:
+								that.log('debug',"renvoie nuit",Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+							break;
+							default: // back compatibility
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+							break;
+						}
+					}
+				}
+			break;
 			case Characteristic.SecuritySystemCurrentState.UUID :
 				for (const cmd of cmdList) {
 					let currentValue = cmd.currentValue;
