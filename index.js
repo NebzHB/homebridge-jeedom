@@ -1047,7 +1047,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 			break;
 			case Characteristic.Hue.UUID :
-				returnValue = 0;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR') {
 						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
@@ -1059,7 +1058,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = Math.round(hsv.h);
 			break;
 			case Characteristic.Saturation.UUID :
-				returnValue = 0;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR') {
 						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
@@ -1183,7 +1181,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 					}
 					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
 						that.log('debug',"Alarm_enable_state=",currentValue);
-						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED; // or DISARM but same value
+						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
@@ -1244,8 +1242,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				that.log('debug','GetState ProgrammableSwitchEvent: '+returnValue);
 			break;
 			case Characteristic.LockCurrentState.UUID :
-			case Characteristic.LockTargetState.UUID :
+				that.log('debug','LockCurrentState : ',JSON.stringify(cmdList));
 				returnValue = cmdList.value == 'true' ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+			case Characteristic.LockTargetState.UUID :
+				that.log('debug','LockTargetState : ',JSON.stringify(cmdList));
+				returnValue = cmdList.value == 'true' ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 			break;
 			case Characteristic.TargetDoorState.UUID :
 				returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
