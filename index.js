@@ -2197,6 +2197,8 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 // -- Return : nothing
 JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,cachedValues) {
 	try {
+		var cachedValue;
+		var characteristic;
 		for (var s = 0; s < services.length; s++) {
 			var service = services[s];
 			
@@ -2204,9 +2206,9 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 				this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
 				newAccessory.addService(service.controlService);
 				for (var i = 0; i < service.characteristics.length; i++) {
-					var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
+					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
 					
-					var cachedValue = cachedValues[service.controlService.subtype];
+					cachedValue = cachedValues[service.controlService.subtype+characteristic.displayName];
 					if(cachedValue){
 						characteristic.setValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
 					}
@@ -2254,7 +2256,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 				this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
 				for (const c of service.characteristics) {
 					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
-					cachedValues[service.subtype]=c.value;
+					cachedValues[service.subtype+c.displayName]=c.value;
 				}
 				accessory.removeService(service);
 			}
