@@ -1243,10 +1243,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.LockCurrentState.UUID :
 				that.log('debug','LockCurrentState : ',JSON.stringify(cmdList));
-				returnValue = cmdList.value == 'true' ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+				returnValue = toBool(cmdList.value) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 			case Characteristic.LockTargetState.UUID :
 				that.log('debug','LockTargetState : ',JSON.stringify(cmdList));
-				returnValue = cmdList.value == 'true' ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+				returnValue = toBool(cmdList.value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 			break;
 			case Characteristic.TargetDoorState.UUID :
 				returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
