@@ -84,6 +84,7 @@ function JeedomPlatform(logger, config, api) {
 	}
 	catch (e) {
 		this.log('error','Erreur de la Fonction JeedomPlatform : ',e);	
+		console.error(e.stack);
 	}
 }
 
@@ -108,10 +109,12 @@ JeedomPlatform.prototype.addAccessories = function() {
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 			}).catch(function(err, response) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err , ' (' + response + ')');
+				console.error(err.stack);
 			});
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction addAccessories :',e);
+		console.error(e.stack);
 	}
 };
 
@@ -136,528 +139,18 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				}
 				return 0;
 			});
-			var HBservices = [];
-			var HBservice = null;
 			
 			devices.map(function(device) {
 				if (device.isVisible == '1' && 
 				    device.object_id != null && 
 				    device.sendToHomebridge != '0') { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
 
-					var resultEqL = that.jeedomClient.getDeviceProperties(device.id);
-					var resultCMD = that.jeedomClient.getDeviceCmd(device.id);
-					AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
-					
-					function AccessoireCreateJeedom(eqLogic) {
-						var eqServicesCopy = eqLogic.services;
-						that.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
-						that.log('┌──── ' + that.rooms[eqLogic.object_id] + ' > ' + eqLogic.name + ' (' + eqLogic.id + ')');
-						if (eqLogic.services.light) {
-							eqLogic.services.light.forEach(function(cmd) {
-								if (cmd.color) { // don't work fine
-									HBservice = {
-										controlService : new Service.Lightbulb(eqLogic.name),
-										characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
-									};
-									HBservice.controlService.cmd_id = cmd.color.id;
-									HBservice.controlService.HSBValue = {
-										hue : 0,
-										saturation : 0,
-										brightness : 0
-									};
-									HBservice.controlService.RGBValue = {
-										red : 0,
-										green : 0,
-										blue : 0
-									};
-									HBservice.controlService.countColorCharacteristics = 0;
-									HBservice.controlService.timeoutIdColorCharacteristics = 0;
-									HBservice.controlService.subtype = 'RGB';
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.color.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-								} else if (cmd.state) {
-									var cmd_on = 0;
-									var cmd_off = 0;
-									var cmd_slider = 0;
-									eqServicesCopy.light.forEach(function(cmd2) {
-										if (cmd2.on) {
-											if (cmd2.on.value == cmd.state.id) {
-												cmd_on = cmd2.on.id;
-											}
-										} else if (cmd2.off) {
-											if (cmd2.off.value == cmd.state.id) {
-												cmd_off = cmd2.off.id;
-											}
-										} else if (cmd2.slider) {
-											if (cmd2.slider.value == cmd.state.id) {
-												cmd_slider = cmd2.slider.id;
-											}
-										}
-									});
-									if (cmd_slider == 0) {
-										HBservice = {
-											controlService : new Service.Lightbulb(eqLogic.name),
-											characteristics : [Characteristic.On]
-										};
-									} else {
-										HBservice = {
-											controlService : new Service.Lightbulb(eqLogic.name),
-											characteristics : [Characteristic.On, Characteristic.Brightness]
-										};
-									}
-									HBservice.controlService.cmd_id = eqLogic.services.light.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-								}
-							});
-							if(!HBservice) {
-								that.log('warn','Pas de type générique "Info/Lumière Etat" ou "Info/Lumière Couleur"');
-							} else {
-								HBservice = null;
-							}
-						}
-						if (eqLogic.services.flap) {
-							eqLogic.services.flap.forEach(function(cmd) {
-								if (cmd.state) {
-									var cmd_up = 0;
-									var cmd_down = 0;
-									var cmd_slider = 0;
-									//var cmd_stop = 0;
-									eqServicesCopy.flap.forEach(function(cmd2) {
-										if (cmd2.up) {
-											if (cmd2.up.value == cmd.state.id) {
-												cmd_up = cmd2.up.id;
-											}
-										} else if (cmd2.down) {
-											if (cmd2.down.value == cmd.state.id) {
-												cmd_down = cmd2.down.id;
-											}
-										} else if (cmd2.slider) {
-											if (cmd2.slider.value == cmd.state.id) {
-												cmd_slider = cmd2.slider.id;
-											}
-										}
-									});
-									if(!cmd_up) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
-									if(!cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down');
-									if(!cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou reférence à l\'état non définie sur la commande Slider');
-									HBservice = {
-										controlService : new Service.WindowCovering(eqLogic.name),
-										characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
-									};
-									HBservice.controlService.cmd_id = cmd.state.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_down + '|' + cmd_up + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
-
-									HBservices.push(HBservice);
-								}
-							});
-							if(!HBservice) {
-								that.log('warn','Pas de type générique "Info/Volet Etat"');
-							} else {
-								HBservice = null;
-							}
-						}
-						if (eqLogic.services.energy) {
-							eqLogic.services.energy.forEach(function(cmd) {
-								if (cmd.state) {
-									var cmd_on = 0;
-									var cmd_off = 0;
-									eqServicesCopy.energy.forEach(function(cmd2) {
-										if (cmd2.on) {
-											if (cmd2.on.value == cmd.state.id) {
-												cmd_on = cmd2.on.id;
-											}
-										} else if (cmd2.off) {
-											if (cmd2.off.value == cmd.state.id) {
-												cmd_off = cmd2.off.id;
-											}
-										}
-									});
-									if(!cmd_on) that.log('warn','Pas de type générique "Action/Prise Bouton On" ou reférence à l\'état non définie sur la commande On');
-									if(!cmd_off) that.log('warn','Pas de type générique "Action/Prise Bouton Off" ou reférence à l\'état non définie sur la commande Off');
-									HBservice = {
-										controlService : new Service.Switch(eqLogic.name),
-										characteristics : [Characteristic.On]
-									};
-									HBservice.controlService.cmd_id = cmd.state.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-								}
-							});
-							if(!HBservice) {
-								that.log('warn','Pas de type générique "Info/Prise Etat"');
-							} else {
-								HBservice = null;
-							}
-						}
-						if (eqLogic.services.power || eqLogic.services.consumption) {
-							eqLogic.services.power.forEach(function(cmd) {
-								if (cmd.power || cmd.consumption) {
-									HBservice = {
-										controlService : new Service.PowerMonitor(eqLogic.name),
-										characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
-									};
-									var cmd_id;
-									if (cmd.power) {
-										cmd_id = cmd.power.id;
-									} else {
-										cmd_id = cmd.consumption.id;
-									}
-
-									HBservice.controlService.cmd_id = cmd_id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.battery) {
-							eqLogic.services.battery.forEach(function(cmd) {
-								if (cmd.battery) {
-									HBservice = {
-										controlService : new Service.BatteryService(eqLogic.name),
-										characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery]
-									};
-									var cmd_charging='NOT';
-									if (cmd.batteryCharging)
-										cmd_charging = cmd.batteryCharging.id;
-									HBservice.controlService.cmd_id = cmd.battery.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.battery.id +'|'+ cmd_charging + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.presence) {
-							eqLogic.services.presence.forEach(function(cmd) {
-								if (cmd.presence) {
-									HBservice = {
-										controlService : new Service.MotionSensor(eqLogic.name),
-										characteristics : [Characteristic.MotionDetected]
-									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
-									HBservice.controlService.cmd_id = cmd.presence.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.uv) {
-							eqLogic.services.uv.forEach(function(cmd) {
-								if (cmd.uv) {
-									HBservice = {
-										controlService : new Service.TemperatureSensor(eqLogic.name),
-										characteristics : [Characteristic.UVIndex]
-									};
-									HBservice.controlService.cmd_id = cmd.uv.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.uv.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}						
-						if (eqLogic.services.temperature) {
-							eqLogic.services.temperature.forEach(function(cmd) {
-								if (cmd.temperature) {
-									HBservice = {
-										controlService : new Service.TemperatureSensor(eqLogic.name),
-										characteristics : [Characteristic.CurrentTemperature]
-									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
-									HBservice.controlService.cmd_id = cmd.temperature.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.temperature.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-
-						}
-						if (eqLogic.services.humidity) {
-							eqLogic.services.humidity.forEach(function(cmd) {
-								if (cmd.humidity) {
-									HBservice = {
-										controlService : new Service.HumiditySensor(eqLogic.name),
-										characteristics : [Characteristic.CurrentRelativeHumidity]
-									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
-									HBservice.controlService.cmd_id = cmd.humidity.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.humidity.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.smoke) {
-							eqLogic.services.smoke.forEach(function(cmd) {
-								if (cmd.smoke) {
-									HBservice = {
-										controlService : new Service.SmokeSensor(eqLogic.name),
-										characteristics : [Characteristic.SmokeDetected]
-									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
-									HBservice.controlService.cmd_id = cmd.smoke.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.flood) {
-							eqLogic.services.flood.forEach(function(cmd) {
-								if (cmd.flood) {
-									HBservice = {
-										controlService : new Service.LeakSensor(eqLogic.name),
-										characteristics : [Characteristic.LeakDetected]
-									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
-									HBservice.controlService.cmd_id = cmd.flood.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.opening) {
-							eqLogic.services.opening.forEach(function(cmd) {
-								if (cmd.opening) {
-									HBservice = {
-										controlService : new Service.ContactSensor(eqLogic.name),
-										characteristics : [Characteristic.ContactSensorState]
-									};
-									HBservice.controlService.cmd_id = cmd.opening.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.brightness) {
-							eqLogic.services.brightness.forEach(function(cmd) {
-								if (cmd.brightness) {
-									HBservice = {
-										controlService : new Service.LightSensor(eqLogic.name),
-										characteristics : [Characteristic.CurrentAmbientLightLevel]
-									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
-									HBservice.controlService.cmd_id = cmd.brightness.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.brightness.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.energy2) { // not used
-							HBservice = {
-								controlService : new Service.Outlet(eqLogic.name),
-								characteristics : [Characteristic.On, Characteristic.OutletInUse]
-							};
-							if (HBservice.controlService.subtype == undefined)
-								HBservice.controlService.subtype = '';
-							HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.brightness.id + '-' + HBservice.controlService.subtype;
-							HBservices.push(HBservice);
-							HBservice = null;
-						}
-						if (eqLogic.services.GarageDoor) {
-							eqLogic.services.GarageDoor.forEach(function(cmd) {
-								if (cmd.state) {
-									var cmd_on = 0;
-									var cmd_off = 0;
-									var cmd_toggle = 0;
-									eqServicesCopy.GarageDoor.forEach(function(cmd2) {
-										if (cmd2.on) {
-											if (cmd2.on.value == cmd.state.id) {
-												cmd_on = cmd2.on.id;
-											}
-										} else if (cmd2.off) {
-											if (cmd2.off.value == cmd.state.id) {
-												cmd_off = cmd2.off.id;
-											}
-										} else if (cmd2.toggle) {
-											if (cmd2.toggle.value == cmd.state.id) {
-												cmd_toggle = cmd2.toggle.id;
-											}
-										}
-									});
-									if(!cmd_toggle) that.log('warn','Pas de type générique "Action/Portail ou garage bouton toggle" ou reférence à l\'état non définie sur la commande Toggle');
-									HBservice = {
-										controlService : new Service.GarageDoorOpener(eqLogic.name),
-										characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
-									};
-									HBservice.controlService.cmd_id = cmd.state.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-								}
-							});
-							if(!HBservice) {
-								that.log('warn','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
-							} else {
-								HBservice = null;
-							}
-						}
-						if (eqLogic.services.lock) {
-							eqLogic.services.lock.forEach(function(cmd) {
-								if (cmd.state) {
-									var cmd_on = 0;
-									var cmd_off = 0;
-									eqServicesCopy.lock.forEach(function(cmd2) {
-										if (cmd2.on) {
-											if (cmd2.on.value == cmd.state.id) {
-												cmd_on = cmd2.on.id;
-											}
-										} else if (cmd2.off) {
-											if (cmd2.off.value == cmd.state.id) {
-												cmd_off = cmd2.off.id;
-											}
-										}
-									});
-									if(!cmd_on) that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir" ou reférence à l\'état non définie sur la commande On');
-									if(!cmd_off) that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer" ou reférence à l\'état non définie sur la commande Off');
-									HBservice = {
-										controlService : new Service.LockMechanism(eqLogic.name),
-										characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
-									};
-									HBservice.controlService.cmd_id = cmd.state.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-								}
-							});
-							if(!HBservice) {
-								that.log('warn','Pas de type générique "Info/Serrure Etat"');
-							} else {
-								HBservice = null;
-							}
-						}
-						if (eqLogic.services.DoorBell) {
-							eqLogic.services.DoorBell.forEach(function(cmd) {
-								if(cmd.state) {
-									HBservice = {
-										controlService : new Service.Doorbell(eqLogic.name),
-										characteristics : [Characteristic.ProgrammableSwitchEvent]
-									};
-									HBservice.controlService.cmd_id = cmd.state.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (eqLogic.services.thermostat) { // only one -> will change
-							HBservice = {
-								controlService : new Service.Thermostat(eqLogic.name),
-								characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
-							};
-							HBservice.controlService.cmd_id = eqLogic.services.thermostat.id;
-							if (HBservice.controlService.subtype == undefined)
-								HBservice.controlService.subtype = '';
-							HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.thermostat.id + '-' + HBservice.controlService.subtype;
-							HBservices.push(HBservice);
-							HBservice = null;
-						}
-						if (eqLogic.services.alarm) {
-							eqLogic.services.alarm.forEach(function(cmd) {
-								if(cmd.enable_state) {
-									var cmd_state = 0;
-									var cmd_mode = 0;
-									eqServicesCopy.alarm.forEach(function(cmd2) {
-										if (cmd2.state) {
-											if (cmd2.state.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
-												cmd_state = cmd2.state.id;
-											}
-										} else if (cmd2.mode) {
-											if (cmd2.mode.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
-												cmd_mode = cmd2.mode.id;
-											}
-										}
-									});
-									HBservice = {
-										controlService : new Service.SecuritySystem(eqLogic.name),
-										characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
-									};
-									if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
-									HBservice.controlService.cmd_id = cmd.enable_state.id;
-									if (HBservice.controlService.subtype == undefined)
-										HBservice.controlService.subtype = '';
-									var thisAlarm = that.alarms[eqLogic.id];
-									var away_mode_id,away_mode_label,present_mode_label,present_mode_id,night_mode_label,night_mode_id;
-									if(thisAlarm) {
-										if(thisAlarm.mode_away) {
-											away_mode_label = thisAlarm.mode_away.name;
-											away_mode_id = thisAlarm.mode_away.id;
-										}
-										else
-											that.log('warn','Pas de config du mode Absent');
-										if(thisAlarm.mode_present) {
-											present_mode_label = thisAlarm.mode_present.name;
-											present_mode_id = thisAlarm.mode_present.id;
-										}
-										else
-											that.log('warn','Pas de config du mode Présent');
-										if(thisAlarm.mode_night) {
-											night_mode_label = thisAlarm.mode_night.name;
-											night_mode_id =thisAlarm.mode_night.id;
-										}
-										else
-											that.log('warn','Pas de config du mode Nuit');
-									}
-									/*else {
-										that.log('warn','Pas de config de l\'alarme'); // NOT YET DONE
-									}*/
-									HBservice.controlService.subtype = eqLogic.id + '-' + cmd.enable_state.id + '-' + cmd_state + '-' + cmd_mode + '-' + present_mode_id+'='+present_mode_label+'|'+away_mode_id+'='+away_mode_label+'|'+night_mode_id+'='+night_mode_label;
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							});
-						}
-						if (HBservices.length != 0) {
-							that.addAccessory(
-								that.createAccessory(HBservices, device.id, device.name, device.object_id, device.eqType_name,device.logicalId)
-							);
-							HBservices = [];
-						}
-						else
-						{
-							that.log('│ Accessoire sans Type Générique');
-							that.delAccessory(
-								that.createAccessory([], device.id, device.name, device.object_id, device.eqType_name, device.logicalId) // create a cached lookalike object for unregistering it
-							);
-						}
-						that.log('└─────────');
-					}
+					that.AccessoireCreateHomebridge(
+						that.jeedomClient.ParseGenericType(
+							device, 
+							that.jeedomClient.getDeviceCmd(device.id)
+						)
+					);
 				}
 				else
 				{
@@ -714,7 +207,533 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction JeedomDevices2HomeKitAccessories :',e);
+		console.error(e.stack);
 	}
+};
+
+// -- AccessoireCreateHomebridge
+// -- Desc : Prepare the service list
+// -- Params --
+// -- eqLogic : eqLogics from jeedom (and cmd's)
+// -- Return : nothing
+JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
+	try {
+		var that = this;
+		var HBservices = [];
+		var HBservice = null;	
+		var eqServicesCopy = eqLogic.services;
+		that.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
+		that.log('┌──── ' + that.rooms[eqLogic.object_id] + ' > ' + eqLogic.name + ' (' + eqLogic.id + ')');
+		if (eqLogic.services.light) {
+			eqLogic.services.light.forEach(function(cmd) {
+				if (cmd.color) { // don't work fine
+					HBservice = {
+						controlService : new Service.Lightbulb(eqLogic.name),
+						characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
+					};
+					HBservice.controlService.cmd_id = cmd.color.id;
+					HBservice.controlService.HSBValue = {
+						hue : 0,
+						saturation : 0,
+						brightness : 0
+					};
+					HBservice.controlService.RGBValue = {
+						red : 0,
+						green : 0,
+						blue : 0
+					};
+					HBservice.controlService.countColorCharacteristics = 0;
+					HBservice.controlService.timeoutIdColorCharacteristics = 0;
+					HBservice.controlService.subtype = 'RGB';
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.color.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				} else if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					var cmd_slider = 0;
+					eqServicesCopy.light.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						} else if (cmd2.slider) {
+							if (cmd2.slider.value == cmd.state.id) {
+								cmd_slider = cmd2.slider.id;
+							}
+						}
+					});
+					if (cmd_slider == 0) {
+						HBservice = {
+							controlService : new Service.Lightbulb(eqLogic.name),
+							characteristics : [Characteristic.On]
+						};
+					} else {
+						HBservice = {
+							controlService : new Service.Lightbulb(eqLogic.name),
+							characteristics : [Characteristic.On, Characteristic.Brightness]
+						};
+					}
+					HBservice.controlService.cmd_id = eqLogic.services.light.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Lumière Etat" ou "Info/Lumière Couleur"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.flap) {
+			eqLogic.services.flap.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_up = 0;
+					var cmd_down = 0;
+					var cmd_slider = 0;
+					//var cmd_stop = 0;
+					eqServicesCopy.flap.forEach(function(cmd2) {
+						if (cmd2.up) {
+							if (cmd2.up.value == cmd.state.id) {
+								cmd_up = cmd2.up.id;
+							}
+						} else if (cmd2.down) {
+							if (cmd2.down.value == cmd.state.id) {
+								cmd_down = cmd2.down.id;
+							}
+						} else if (cmd2.slider) {
+							if (cmd2.slider.value == cmd.state.id) {
+								cmd_slider = cmd2.slider.id;
+							}
+						}
+					});
+					if(!cmd_up) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
+					if(!cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down');
+					if(!cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou reférence à l\'état non définie sur la commande Slider');
+					HBservice = {
+						controlService : new Service.WindowCovering(eqLogic.name),
+						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_down + '|' + cmd_up + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
+
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Volet Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.energy) {
+			eqLogic.services.energy.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					eqServicesCopy.energy.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						}
+					});
+					if(!cmd_on) that.log('warn','Pas de type générique "Action/Prise Bouton On" ou reférence à l\'état non définie sur la commande On');
+					if(!cmd_off) that.log('warn','Pas de type générique "Action/Prise Bouton Off" ou reférence à l\'état non définie sur la commande Off');
+					HBservice = {
+						controlService : new Service.Switch(eqLogic.name),
+						characteristics : [Characteristic.On]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Prise Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.power || eqLogic.services.consumption) {
+			eqLogic.services.power.forEach(function(cmd) {
+				if (cmd.power || cmd.consumption) {
+					HBservice = {
+						controlService : new Service.PowerMonitor(eqLogic.name),
+						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
+					};
+					var cmd_id;
+					if (cmd.power) {
+						cmd_id = cmd.power.id;
+					} else {
+						cmd_id = cmd.consumption.id;
+					}
+
+					HBservice.controlService.cmd_id = cmd_id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.battery) {
+			eqLogic.services.battery.forEach(function(cmd) {
+				if (cmd.battery) {
+					HBservice = {
+						controlService : new Service.BatteryService(eqLogic.name),
+						characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery]
+					};
+					var cmd_charging='NOT';
+					if (cmd.batteryCharging)
+						cmd_charging = cmd.batteryCharging.id;
+					HBservice.controlService.cmd_id = cmd.battery.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.battery.id +'|'+ cmd_charging + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.presence) {
+			eqLogic.services.presence.forEach(function(cmd) {
+				if (cmd.presence) {
+					HBservice = {
+						controlService : new Service.MotionSensor(eqLogic.name),
+						characteristics : [Characteristic.MotionDetected]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.presence.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.uv) {
+			eqLogic.services.uv.forEach(function(cmd) {
+				if (cmd.uv) {
+					HBservice = {
+						controlService : new Service.TemperatureSensor(eqLogic.name),
+						characteristics : [Characteristic.UVIndex]
+					};
+					HBservice.controlService.cmd_id = cmd.uv.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.uv.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}						
+		if (eqLogic.services.temperature) {
+			eqLogic.services.temperature.forEach(function(cmd) {
+				if (cmd.temperature) {
+					HBservice = {
+						controlService : new Service.TemperatureSensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentTemperature]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.temperature.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.temperature.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+
+		}
+		if (eqLogic.services.humidity) {
+			eqLogic.services.humidity.forEach(function(cmd) {
+				if (cmd.humidity) {
+					HBservice = {
+						controlService : new Service.HumiditySensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentRelativeHumidity]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.humidity.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.humidity.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.smoke) {
+			eqLogic.services.smoke.forEach(function(cmd) {
+				if (cmd.smoke) {
+					HBservice = {
+						controlService : new Service.SmokeSensor(eqLogic.name),
+						characteristics : [Characteristic.SmokeDetected]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.smoke.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.flood) {
+			eqLogic.services.flood.forEach(function(cmd) {
+				if (cmd.flood) {
+					HBservice = {
+						controlService : new Service.LeakSensor(eqLogic.name),
+						characteristics : [Characteristic.LeakDetected]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.flood.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.opening) {
+			eqLogic.services.opening.forEach(function(cmd) {
+				if (cmd.opening) {
+					HBservice = {
+						controlService : new Service.ContactSensor(eqLogic.name),
+						characteristics : [Characteristic.ContactSensorState]
+					};
+					HBservice.controlService.cmd_id = cmd.opening.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.brightness) {
+			eqLogic.services.brightness.forEach(function(cmd) {
+				if (cmd.brightness) {
+					HBservice = {
+						controlService : new Service.LightSensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentAmbientLightLevel]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.brightness.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.brightness.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.energy2) { // not used
+			HBservice = {
+				controlService : new Service.Outlet(eqLogic.name),
+				characteristics : [Characteristic.On, Characteristic.OutletInUse]
+			};
+			if (HBservice.controlService.subtype == undefined)
+				HBservice.controlService.subtype = '';
+			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.brightness.id + '-' + HBservice.controlService.subtype;
+			HBservices.push(HBservice);
+			HBservice = null;
+		}
+		if (eqLogic.services.GarageDoor) {
+			eqLogic.services.GarageDoor.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					var cmd_toggle = 0;
+					eqServicesCopy.GarageDoor.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						} else if (cmd2.toggle) {
+							if (cmd2.toggle.value == cmd.state.id) {
+								cmd_toggle = cmd2.toggle.id;
+							}
+						}
+					});
+					if(!cmd_toggle) that.log('warn','Pas de type générique "Action/Portail ou garage bouton toggle" ou reférence à l\'état non définie sur la commande Toggle');
+					HBservice = {
+						controlService : new Service.GarageDoorOpener(eqLogic.name),
+						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.lock) {
+			eqLogic.services.lock.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					eqServicesCopy.lock.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						}
+					});
+					if(!cmd_on) that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir" ou reférence à l\'état non définie sur la commande On');
+					if(!cmd_off) that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer" ou reférence à l\'état non définie sur la commande Off');
+					HBservice = {
+						controlService : new Service.LockMechanism(eqLogic.name),
+						characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Serrure Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.DoorBell) {
+			eqLogic.services.DoorBell.forEach(function(cmd) {
+				if(cmd.state) {
+					HBservice = {
+						controlService : new Service.Doorbell(eqLogic.name),
+						characteristics : [Characteristic.ProgrammableSwitchEvent]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.thermostat) { // only one -> will change
+			HBservice = {
+				controlService : new Service.Thermostat(eqLogic.name),
+				characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
+			};
+			HBservice.controlService.cmd_id = eqLogic.services.thermostat.id;
+			if (HBservice.controlService.subtype == undefined)
+				HBservice.controlService.subtype = '';
+			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.thermostat.id + '-' + HBservice.controlService.subtype;
+			HBservices.push(HBservice);
+			HBservice = null;
+		}
+		if (eqLogic.services.alarm) {
+			eqLogic.services.alarm.forEach(function(cmd) {
+				if(cmd.enable_state) {
+					var cmd_state = 0;
+					var cmd_mode = 0;
+					eqServicesCopy.alarm.forEach(function(cmd2) {
+						if (cmd2.state) {
+							if (cmd2.state.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
+								cmd_state = cmd2.state.id;
+							}
+						} else if (cmd2.mode) {
+							if (cmd2.mode.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
+								cmd_mode = cmd2.mode.id;
+							}
+						}
+					});
+					HBservice = {
+						controlService : new Service.SecuritySystem(eqLogic.name),
+						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.enable_state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					var thisAlarm = that.alarms[eqLogic.id];
+					var away_mode_id,away_mode_label,present_mode_label,present_mode_id,night_mode_label,night_mode_id;
+					if(thisAlarm) {
+						if(thisAlarm.mode_away) {
+							away_mode_label = thisAlarm.mode_away.name;
+							away_mode_id = thisAlarm.mode_away.id;
+						}
+						else
+							that.log('warn','Pas de config du mode Absent');
+						if(thisAlarm.mode_present) {
+							present_mode_label = thisAlarm.mode_present.name;
+							present_mode_id = thisAlarm.mode_present.id;
+						}
+						else
+							that.log('warn','Pas de config du mode Présent');
+						if(thisAlarm.mode_night) {
+							night_mode_label = thisAlarm.mode_night.name;
+							night_mode_id =thisAlarm.mode_night.id;
+						}
+						else
+							that.log('warn','Pas de config du mode Nuit');
+					}
+					/*else {
+						that.log('warn','Pas de config de l\'alarme'); // NOT YET DONE
+					}*/
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.enable_state.id + '-' + cmd_state + '-' + cmd_mode + '-' + present_mode_id+'='+present_mode_label+'|'+away_mode_id+'='+away_mode_label+'|'+night_mode_id+'='+night_mode_label;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (HBservices.length != 0) {
+			that.addAccessory(
+				that.createAccessory(HBservices, eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name,eqLogic.logicalId)
+			);
+			HBservices = [];
+		}
+		else
+		{
+			that.log('│ Accessoire sans Type Générique');
+			that.delAccessory(
+				that.createAccessory([], eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name, eqLogic.logicalId) // create a cached lookalike object for unregistering it
+			);
+		}
+		that.log('└─────────');
+	}
+	catch(e){
+		this.log('error','Erreur de la fonction AccessoireCreateHomebridge :',e);
+		console.error(e.stack);
+	}		
 };
 
 // -- createAccessory
@@ -746,6 +765,7 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, id, name, curren
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction createAccessory :',e);
+		console.error(e.stack);
 		hasError=true;
 	}
 };
@@ -780,6 +800,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction delAccessory :',e);
+		console.error(e.stack);
 		// force to unregister the accessory before quitting (avoid cache or persist corruption)
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
 		hasError=true;
@@ -829,6 +850,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction addAccessory :',e);
+		console.error(e.stack);
 		// unregister the accessory before quitting (avoid cache or persist corruption)
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		hasError=true;
@@ -857,6 +879,7 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 	}
 	catch(e){
 		this.log('error','│ Erreur de la fonction existingAccessory :',e);	
+		console.error(e.stack);
 		hasError=true;
 	}
 };
@@ -899,6 +922,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction configureAccessory :',e);
+		console.error(e.stack);
 		hasError=true;
 	}
 };
@@ -935,6 +959,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction bindCharacteristicEvents :',e);
+		console.error(e.stack);
 		hasError=true;
 	}
 };
@@ -1018,6 +1043,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction setAccessoryValue :',e);
+		console.error(e.stack);
 	}
 };
 
@@ -1429,6 +1455,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction getAccessoryValue :',e);
+		console.error(e.stack);
 	}
 };
 
@@ -1676,10 +1703,12 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 			that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 		}).catch(function(err, response) {
 			that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
+			console.error(err.stack);
 		});
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction command :',e);	
+		console.error(e.stack);
 	}
 };
 
@@ -1703,6 +1732,7 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic) {
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction subscribeUpdate :',e);
+		console.error(e.stack);
 		hasError=true;
 	}
 };
@@ -1735,6 +1765,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		that.pollingID = setTimeout(function(){ that.log('debug','==RESTART POLLING==');that.startPollingUpdate(); }, that.pollerPeriod * 1000);
 	}).catch(function(err, response) {
 		that.log('error','Erreur de récupération des évènements de mise à jour: ', err, response);
+		console.error(err.stack);
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','!!RESTART POLLING AFTER ERROR!!');that.startPollingUpdate(); }, that.pollerPeriod * 2 * 1000);
 	});
@@ -2256,6 +2287,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction addServices :',e,JSON.stringify(service.controlService));
+		console.error(e.stack);
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [newAccessory]);
 		hasError=true;
 	}
@@ -2288,6 +2320,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction delServices :',e,JSON.stringify(service));
+		console.error(e.stack);
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);
 		hasError=true;
 	}
