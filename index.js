@@ -217,6 +217,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 // -- eqLogic : eqLogics from jeedom (and cmd's)
 // -- Return : nothing
 JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
+	var createdAccessory;
 	try {
 		var that = this;
 		var HBservices = [];
@@ -715,7 +716,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
-		var createdAccessory;
+
 		if (HBservices.length != 0) {
 			createdAccessory = that.createAccessory(HBservices, eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name,eqLogic.logicalId);
 			that.addAccessory(createdAccessory);
@@ -732,7 +733,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 	catch(e){
 		this.log('error','Erreur de la fonction AccessoireCreateHomebridge :',e);
 		console.error(e.stack);
-		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [this.existingAccessory(createdAccessory.UUID,silence)]);
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [this.existingAccessory(createdAccessory.UUID,true)]);
 		hasError=true;
 	}		
 };
