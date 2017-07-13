@@ -83,7 +83,7 @@ function JeedomPlatform(logger, config, api) {
 		}
 	}
 	catch (e) {
-		this.log('error','Erreur de la Fonction JeedomPlatform : '+e);	
+		this.log('error','Erreur de la Fonction JeedomPlatform : ',e);	
 	}
 }
 
@@ -107,11 +107,11 @@ JeedomPlatform.prototype.addAccessories = function() {
 				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 			}).catch(function(err, response) {
-				that.log('error','#2 Erreur de récupération des données Jeedom: ' + err + ' (' + response + ')');
+				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err , ' (' + response + ')');
 			});
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction addAccessories :'+e);
+		this.log('error','Erreur de la fonction addAccessories :',e);
 	}
 };
 
@@ -713,7 +713,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		that.startPollingUpdate();
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction JeedomDevices2HomeKitAccessories :'+e);
+		this.log('error','Erreur de la fonction JeedomDevices2HomeKitAccessories :',e);
 	}
 };
 
@@ -745,7 +745,7 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, id, name, curren
 		return accessory;
 	}
 	catch(e){
-		this.log('error','│ Erreur de la fonction createAccessory :'+e);
+		this.log('error','│ Erreur de la fonction createAccessory :',e);
 		hasError=true;
 	}
 };
@@ -779,7 +779,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 		}
 	}
 	catch(e){
-		this.log('error','│ Erreur de la fonction delAccessory :'+e);
+		this.log('error','│ Erreur de la fonction delAccessory :',e);
 		// force to unregister the accessory before quitting (avoid cache or persist corruption)
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
 		hasError=true;
@@ -828,7 +828,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		HBAccessory.reviewed = true;
 	}
 	catch(e){
-		this.log('error','│ Erreur de la fonction addAccessory :'+e);
+		this.log('error','│ Erreur de la fonction addAccessory :',e);
 		// unregister the accessory before quitting (avoid cache or persist corruption)
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		hasError=true;
@@ -856,7 +856,7 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 		return null;
 	}
 	catch(e){
-		this.log('error','│ Erreur de la fonction existingAccessory :'+e);	
+		this.log('error','│ Erreur de la fonction existingAccessory :',e);	
 		hasError=true;
 	}
 };
@@ -898,7 +898,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 		accessory.reachable = true;
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction configureAccessory :'+e);
+		this.log('error','Erreur de la fonction configureAccessory :',e);
 		hasError=true;
 	}
 };
@@ -934,7 +934,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		}.bind(this));
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction bindCharacteristicEvents :'+e);
+		this.log('error','Erreur de la fonction bindCharacteristicEvents :',e);
 		hasError=true;
 	}
 };
@@ -1017,7 +1017,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 	
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction setAccessoryValue :'+e);
+		this.log('error','Erreur de la fonction setAccessoryValue :',e);
 	}
 };
 
@@ -1428,7 +1428,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		return returnValue;
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction getAccessoryValue :'+e);
+		this.log('error','Erreur de la fonction getAccessoryValue :',e);
 	}
 };
 
@@ -1675,11 +1675,11 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 		that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 			that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 		}).catch(function(err, response) {
-			that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] + ' | ' + err + ' - ' + response);
+			that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
 		});
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction command :'+e);	
+		this.log('error','Erreur de la fonction command :',e);	
 	}
 };
 
@@ -1702,7 +1702,7 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic) {
 			});
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction subscribeUpdate :'+e);
+		this.log('error','Erreur de la fonction subscribeUpdate :',e);
 		hasError=true;
 	}
 };
@@ -2255,7 +2255,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 		}
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction addServices :'+e,JSON.stringify(service.controlService));
+		this.log('error','Erreur de la fonction addServices :',e,JSON.stringify(service.controlService));
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [newAccessory]);
 		hasError=true;
 	}
@@ -2287,7 +2287,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 			return cachedValues;
 	}
 	catch(e){
-		this.log('error','Erreur de la fonction delServices :'+e,JSON.stringify(service));
+		this.log('error','Erreur de la fonction delServices :',e,JSON.stringify(service));
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);
 		hasError=true;
 	}
