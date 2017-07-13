@@ -715,24 +715,25 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		var createdAccessory;
 		if (HBservices.length != 0) {
-			that.addAccessory(
-				that.createAccessory(HBservices, eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name,eqLogic.logicalId)
-			);
+			createdAccessory = that.createAccessory(HBservices, eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name,eqLogic.logicalId);
+			that.addAccessory(createdAccessory);
 			HBservices = [];
 		}
 		else
 		{
 			that.log('│ Accessoire sans Type Générique');
-			that.delAccessory(
-				that.createAccessory([], eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name, eqLogic.logicalId) // create a cached lookalike object for unregistering it
-			);
+			createdAccessory = that.createAccessory([], eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name, eqLogic.logicalId); // create a cached lookalike object for unregistering it
+			that.delAccessory(createdAccessory);
 		}
 		that.log('└─────────');
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction AccessoireCreateHomebridge :',e);
 		console.error(e.stack);
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [this.existingAccessory(createdAccessory.UUID,silence)]);
+		hasError=true;
 	}		
 };
 
