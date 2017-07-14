@@ -301,7 +301,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					var cmd_slider = 0;
 					//var cmd_stop = 0;
 					eqServicesCopy.flap.forEach(function(cmd2) {
-						if (cmd2.up) {
+						/*if (cmd2.up) {
 							if (cmd2.up.value == cmd.state.id) {
 								cmd_up = cmd2.up.id;
 							}
@@ -309,14 +309,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							if (cmd2.down.value == cmd.state.id) {
 								cmd_down = cmd2.down.id;
 							}
-						} else if (cmd2.slider) {
+						} else */if (cmd2.slider) {
 							if (cmd2.slider.value == cmd.state.id) {
 								cmd_slider = cmd2.slider.id;
 							}
 						}
 					});
-					if(!cmd_up) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
-					if(!cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down');
+					//if(!cmd_up) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
+					//if(!cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down');
 					if(!cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou reférence à l\'état non définie sur la commande Slider');
 					HBservice = {
 						controlService : new Service.WindowCovering(eqLogic.name),
