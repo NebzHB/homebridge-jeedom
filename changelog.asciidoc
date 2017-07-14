@@ -81,7 +81,9 @@
     * activation d'un mode debug dans la plateforme, il sera lié au status du plugin.
     * Françisation des messages du log, plus de verbosité, plus de clareté et de détails pour encore mieux vous aider en cas de problème.
     * Modification des paramètres de composition des UUID, uniquement l'id jeedom et le nom du périphérique (la pièce jeedom entrait en considération).
-        ** *ATTENTION : cela signifie que à l'installation de cette version, vos périphériques dans Maison vont disparaitre pour réapparaitre dans la pièce par défaut (et casser vos scènes et automations).*
+[IMPORTANT]
+Cela signifie que à l'installation de cette version, vos périphériques dans Maison vont disparaitre pour réapparaitre dans la pièce par défaut (et casser vos scènes et automations).
+
         ** Point positif : vous pouvez maintenant changer de pièce dans jeedom les périphériques sans les perdre dans Maison. Malheureusement, ils ne changeront pas dans Maison (non-implémenté dans homebridge).
         ** j'ai gardé le nom du périphérique pour l'instant dans l'identifiant car le renommage d'un périphérique dans jeedom casserait tout dans Maison (pour l'instant) de toute façon.
     * Modification du délais d'interrogation-longue pour optimiser les systèmes avec moins de changements d'états.
@@ -89,11 +91,14 @@
     * Ajout d'un ramasse miettes à la fin de l'ajout des périphériques présent dans jeedom à homebridge, tout ce qui n'a pas été ajouté/modifié est supprimé d'homebridge (si vous avez rendu invisible un périf ou supprimé dans jeedom par exemple).
     * Suppression du bouton Regénérer le fichier de configuration : plus besoin, lorsqu'on sauvegarde la configuration, on regénère le fichier automatiquement et on relance le Daemon.
     * Suppression du bouton Effacer le cache : plus besoin, on gère la suppression individuelle des périphériques. 
-       ** *TIPS* : Si vous avez un problème avec un périphérique malgré tout : décochez "Envoyer à HomeBridge" | relancez le daemon | décochez "Envoyer à HomeBridge" | relancez le daemon : il sera recréé tout proprement (et dans la pièce par défaut de Maison).
+[TIP]
+Si vous avez un problème avec un périphérique malgré tout : décochez "Envoyer à HomeBridge" | relancez le daemon | décochez "Envoyer à HomeBridge" | relancez le daemon : il sera recréé tout proprement (et dans la pièce par défaut de Maison).
+
     * Ajout d'avertissements et de messages d'attention si on s'approche du nombre fatidique de 100 accessoires envoyés dans homebridge (HomeKit ne supporte pas plus de 100 accessoires).
     * Au démarrage du daemon, vérification si avahi-daemon et dbus sont bien lancés, sinon, les démarrer.
     * A l'install des dépendances, passer avahi-daemon et dbus à enabled si pas le cas.
     * Corrections diverses, simplifications et optimisations.
+
 
 
 == KNOWN ISSUES
