@@ -1302,10 +1302,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 										returnValue=Characteristic.TargetDoorState.OPEN; // 1
 								break;
 								case 254 :
-										returnValue=Characteristic.TargetDoorState.OPEN; // 1
+										returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 								break;
 								case 252 :
-										returnValue=Characteristic.TargetDoorState.CLOSED; // 0
+										returnValue=Characteristic.TargetDoorState.OPEN; // 0
 								break;
 								case 253 :
 										returnValue=Characteristic.TargetDoorState.OPEN; // 0
