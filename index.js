@@ -1290,7 +1290,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = toBool(cmdList.value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 			break;
 			case Characteristic.TargetDoorState.UUID :
-				returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
+		/*		returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
@@ -1315,7 +1315,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 						break;
 					}
 				}	
-			break;
+			break;*/
 			case Characteristic.CurrentDoorState.UUID :
 				returnValue=Characteristic.CurrentDoorState.OPEN; // if don't know -> OPEN
 				for (const cmd of cmdList) {
