@@ -1966,7 +1966,6 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					break;
 					case Characteristic.TargetDoorState.UUID :
 						if (value == null || value == undefined) value = 0;
-						that.log('debug',"TargetDoorState : "+!value);
 						subCharact.setValue(sanitizeValue(!value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ProgrammableSwitchEvent.UUID :
