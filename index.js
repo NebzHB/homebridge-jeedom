@@ -1296,10 +1296,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
 								case 255 :
-										returnValue=Characteristic.TargetDoorState.OPEN; //0
+										returnValue=Characteristic.TargetDoorState.CLOSED; //0
 								break;
 								case 0 :
-										returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+										returnValue=Characteristic.TargetDoorState.OPEN; // 1
 								break;
 								case 254 :
 										returnValue=Characteristic.TargetDoorState.CLOSED; // 1
