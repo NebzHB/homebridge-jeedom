@@ -1957,30 +1957,39 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					break;
 					case Characteristic.CurrentDoorState.UUID :
 						v=Characteristic.CurrentDoorState.OPEN; // if not -> OPEN
+						HRreturnValue="OPENDef";
 						switch(parseInt(value)) {
 							case 255 :
 								v=Characteristic.CurrentDoorState.OPEN; // 0
+								HRreturnValue="OPEN";
 							break;
 							case 0 :
 								v=Characteristic.CurrentDoorState.CLOSED; // 1
+								HRreturnValue="CLOSED";
 							break;
 							case 254 : 
 								v=Characteristic.CurrentDoorState.OPENING; // 2
+								HRreturnValue="OPENING";
 							break;
 							case 252 :
 								v=Characteristic.CurrentDoorState.CLOSING; // 3
+								HRreturnValue="CLOSING";
 							break;
 							case 253 :
 								v=Characteristic.CurrentDoorState.STOPPED; // 4
+								HRreturnValue="STOPPED";
 							break;
 						}
-						that.log('info','Etat(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value);
+						that.log('info','Etat(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
 						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.TargetDoorState.UUID :
+						var origValue = value;
 						if (value == null || value == undefined) value = 0;
-						that.log('info','Target(sub) Garage/Barrier Homekit: '+!value+' soit en Jeedom:'+value);
-						subCharact.setValue(sanitizeValue(!value,subCharact), undefined, 'fromJeedom');
+						if(value == 0) value = 1;
+						elseif(value == 1) value = 0;
+						that.log('info','Target(sub) Garage/Barrier Homekit: '+value+' soit en Jeedom:'+origValue);
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ProgrammableSwitchEvent.UUID :
 						that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
