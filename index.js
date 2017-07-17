@@ -1291,19 +1291,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = toBool(cmdList.value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 			break;
 			case Characteristic.TargetDoorState.UUID :
-				HRreturnValue="CLOSEDDef";
-				returnValue=Characteristic.TargetDoorState.CLOSED; // if don't know -> CLOSED
+				HRreturnValue="OPENDef";
+				returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
 								case 255 :
-									returnValue=Characteristic.TargetDoorState.CLOSED; //1
-									HRreturnValue="CLOSED";	
+									returnValue=Characteristic.TargetDoorState.OPEN; //0
+									HRreturnValue="OPEN";	
 								break;
 								case 0 :
-									returnValue=Characteristic.TargetDoorState.OPEN; // 0
-									HRreturnValue="OPEN";
+									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
 								break;
 								case 254 :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
@@ -1795,7 +1795,7 @@ var alarmMode = null;
 var alarmModeTarget = null;
 JeedomPlatform.prototype.updateSubscribers = function(update) {
 	var that = this;
-	var i,subscription,IDs,subCharact;
+	var i,subscription,IDs,subCharact,HRreturnValue;
 	var FC = update.option.value[0];
 	
 	if(FC == '#') update.color=update.option.value;
@@ -1984,12 +1984,32 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.TargetDoorState.UUID :
-						var origValue = value;
-						if (value == null || value == undefined) value = 0;
-						if(value == 0) value = 1;
-						elseif(value == 1) value = 0;
-						that.log('info','Target(sub) Garage/Barrier Homekit: '+value+' soit en Jeedom:'+origValue);
-						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+						v=Characteristic.TargetDoorState.OPEN; // if not -> OPEN
+						HRreturnValue="OPENDef";
+						switch(parseInt(value)) {
+							case 255 :
+								v=Characteristic.TargetDoorState.OPEN; // 0
+								HRreturnValue="OPEN";
+							break;
+							case 0 :
+								v=Characteristic.TargetDoorState.CLOSED; // 1
+								HRreturnValue="CLOSED";
+							break;
+							case 254 : 
+								v=Characteristic.TargetDoorState.CLOSED; // 2
+								HRreturnValue="CLOSED";
+							break;
+							case 252 :
+								v=Characteristic.TargetDoorState.OPEN; // 3
+								HRreturnValue="OPEN";
+							break;
+							case 253 :
+								v=Characteristic.TargetDoorState.OPEN; // 4
+								HRreturnValue="OPEN";
+							break;
+						}
+						that.log('info','Target(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
+						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ProgrammableSwitchEvent.UUID :
 						that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
