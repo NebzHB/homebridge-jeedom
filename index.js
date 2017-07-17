@@ -1061,6 +1061,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		var that = this;
 		var cmds = IDs[1].split('|');
 		var returnValue = 0;
+		var HRreturnValue;
 		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]);
 		var hsv,modesCmd,mode_PRESENT,mode_AWAY,mode_NIGHT,t;
 		switch (characteristic.UUID) {
@@ -1290,55 +1291,67 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = toBool(cmdList.value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 			break;
 			case Characteristic.TargetDoorState.UUID :
+				HRreturnValue="CLOSEDDef";
 				returnValue=Characteristic.TargetDoorState.CLOSED; // if don't know -> CLOSED
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
 								case 255 :
-										returnValue=Characteristic.TargetDoorState.CLOSED; //1
+									returnValue=Characteristic.TargetDoorState.CLOSED; //1
+									HRreturnValue="CLOSED";	
 								break;
 								case 0 :
-										returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									HRreturnValue="OPEN";
 								break;
 								case 254 :
-										returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
 								break;
 								case 252 :
-										returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									HRreturnValue="OPEN";
 								break;
 								case 253 :
-										returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									HRreturnValue="OPEN";
 								break;
 						}
-						that.log('info','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
+						that.log('info','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						break;
 					}
 				}	
 			break;
 			case Characteristic.CurrentDoorState.UUID :
+				HRreturnValue="OPENDef";
 				returnValue=Characteristic.CurrentDoorState.OPEN; // if don't know -> OPEN
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
 								case 255 :
-										returnValue=Characteristic.CurrentDoorState.OPEN; //0
+									returnValue=Characteristic.CurrentDoorState.OPEN; //0
+									HRreturnValue="OPEN";
 								break;
 								case 0 :
-										returnValue=Characteristic.CurrentDoorState.CLOSED; // 1
+									returnValue=Characteristic.CurrentDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
 								break;
 								case 254 :
-										returnValue=Characteristic.CurrentDoorState.OPENING; // 2
+									returnValue=Characteristic.CurrentDoorState.OPENING; // 2
+									HRreturnValue="OPENING";
 								break;
 								case 252 :
-										returnValue=Characteristic.CurrentDoorState.CLOSING; // 3
+									returnValue=Characteristic.CurrentDoorState.CLOSING; // 3
+									HRreturnValue="CLOSING";
 								break;
 								case 253 :
-										returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
+									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
+									HRreturnValue="STOPPED";
 								break;
 						}
-						that.log('info','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
+						that.log('info','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						break;
 					}
 				}
