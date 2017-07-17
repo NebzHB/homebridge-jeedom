@@ -1311,7 +1311,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 										returnValue=Characteristic.TargetDoorState.OPEN; // 0
 								break;
 						}
-						that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
+						that.log('info','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
 						break;
 					}
 				}	
@@ -1338,7 +1338,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 										returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 								break;
 						}
-						that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
+						that.log('info','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue);
 						break;
 					}
 				}
@@ -1961,11 +1961,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 								v=Characteristic.CurrentDoorState.STOPPED; // 4
 							break;
 						}
-						that.log('debug',"Transforme la valeur de Jeedom : "+value+" en valeur pour HomeKit : "+v);
+						that.log('info','Etat(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value);
 						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.TargetDoorState.UUID :
 						if (value == null || value == undefined) value = 0;
+						that.log('info','Target(sub) Garage/Barrier Homekit: '+!value+' soit en Jeedom:'+value);
 						subCharact.setValue(sanitizeValue(!value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ProgrammableSwitchEvent.UUID :
