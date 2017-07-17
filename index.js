@@ -1306,12 +1306,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 									HRreturnValue="CLOSED";
 								break;
 								case 254 :
-									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
-									HRreturnValue="CLOSED";
-								break;
-								case 252 :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
+								break;
+								case 252 :
+									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
 								break;
 								case 253 :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
@@ -1996,15 +1996,15 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 								HRreturnValue="CLOSED";
 							break;
 							case 254 : 
-								v=Characteristic.TargetDoorState.CLOSED; // 2
-								HRreturnValue="CLOSED";
-							break;
-							case 252 :
-								v=Characteristic.TargetDoorState.OPEN; // 3
+								v=Characteristic.TargetDoorState.OPEN; // 0
 								HRreturnValue="OPEN";
 							break;
+							case 252 :
+								v=Characteristic.TargetDoorState.CLOSED; // 1
+								HRreturnValue="CLOSED";
+							break;
 							case 253 :
-								v=Characteristic.TargetDoorState.OPEN; // 4
+								v=Characteristic.TargetDoorState.OPEN; // 0
 								HRreturnValue="OPEN";
 							break;
 						}
