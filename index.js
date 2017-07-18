@@ -1293,7 +1293,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.LockTargetState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
-						that.log('debug','LockTargetState : ',cmd.currentValue));
+						that.log('debug','LockTargetState : ',cmd.currentValue);
 						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 					}
 				}
