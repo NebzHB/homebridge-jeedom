@@ -2016,8 +2016,13 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.LockCurrentState.UUID :
+						newValue = toBool(value) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+						that.log('debug','LockCurrentState(sub) : ',newValue);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
 					case Characteristic.LockTargetState.UUID :
-						newValue = value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+						newValue = toBool(value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+						that.log('debug','LockTargetState(sub) : ',newValue);
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentPosition.UUID :
