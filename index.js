@@ -1,665 +1,903 @@
-// Jeedom Platform plugin for HomeBridge
-//
-// Remember to add platform to config.json. Example:
-// "platforms": [
-//     {
-//             "platform": "Jeedom",
-//             "url": "PUT URL OF YOUR JEEDOM HERE",
-//             "apikey": "PUT APIKEY OF YOUR JEEDOM HERE",
-//             "grouping": "PUT none OR room",
-//             "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 100 INTERVAL IN SECONDS. 2 SECONDS IS THE DEFAULT"
-//     }
-// ],
-//
-// When you attempt to add a device, it will ask for a "PIN code".
-// The default code for all HomeBridge accessories is 031-45-154.
-
+/* This file is part of Jeedom.
+ *
+ * Jeedom is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Jeedom is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
+ */
+/*jshint esversion: 6,node: true */
 'use strict';
 
 var Accessory, Service, Characteristic, UUIDGen;
-var http = require('http');
 var inherits = require('util').inherits;
+var myLogger = require('./lib/myLogger').myLogger;
+var debug = {};
+debug.DEBUG = 100;
+debug.INFO = 200;
+debug.WARN = 300;
+debug.ERROR = 400;
+debug.NO = 1000;
+var hasError = false;
+const DEV_DEBUG=false;
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 	UUIDGen = homebridge.hap.uuid;
-
-	// Custom Services and Characteristics
-	Characteristic.TimeInterval = function() {
-		Characteristic.call(this, 'Time Interval', '2A6529B5-5825-4AF3-AD52-20288FBDA115');
-		this.setProps({
-			format : Characteristic.Formats.FLOAT,
-			unit : Characteristic.Units.SECONDS,
-			maxValue : 21600, // 12 hours
-			minValue : 0,
-			minStep : 900, // 15 min
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.TimeInterval, Characteristic);
-	Characteristic.TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
-
-	Characteristic.CurrentPowerConsumption = function() {
-		Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format : Characteristic.Formats.UINT16,
-			unit : "watts",
-			maxValue : 1000000000,
-			minValue : 0,
-			minStep : 1,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.CurrentPowerConsumption, Characteristic);
-	Characteristic.CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
-
-	Characteristic.TotalPowerConsumption = function() {
-		Characteristic.call(this, 'Total Consumption', 'E863F10C-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format : Characteristic.Formats.FLOAT, // Deviation from Eve Energy observed type
-			unit : "kilowatthours",
-			maxValue : 1000000000,
-			minValue : 0,
-			minStep : 0.001,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.TotalPowerConsumption, Characteristic);
-	Characteristic.TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
-
-	/**
-	 * Custom Service "Power Monitor"
-	 */
-
-	Service.PowerMonitor = function(displayName, subtype) {
-		Service.call(this, displayName, '0EB29E08-C307-498E-8E1A-4EDC5FF70607', subtype);
-
-		// Required Characteristics
-		this.addCharacteristic(Characteristic.CurrentPowerConsumption);
-		this.addCharacteristic(Characteristic.TotalPowerConsumption);
-
-		// Optional Characteristics
-
-	};
-	inherits(Service.PowerMonitor, Service);
-	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
-
-	// End of custom Services and Characteristics
-
-	homebridge.registerPlatform("homebridge-jeedom", "Jeedom", JeedomPlatform, true);
+	RegisterCustomCharacteristics();
+	homebridge.registerPlatform('homebridge-jeedom', 'Jeedom', JeedomPlatform, true);
 };
-function JeedomPlatform(log, config, api) {
+
+// -- JeedomPlatform
+// -- Desc : Main Class, used by Homebridge to construct the platform object
+// -- Params --
+// -- logger : homebridge logger object, contain a prefix
+// -- config : homebridge's config.json file object
+// -- api : homebridge api
+// -- Return : nothing
+function JeedomPlatform(logger, config, api) {
 	try{
 		this.config = config || {};
-		this.api = api;
 		this.accessories = [];
-		this.log = log;
-		config['url'] = "http://127.0.0.1:80"; 
-		/*if (config["url"] == "undefined" || config["url"] == "http://:80") {
-			this.log("Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
+		this.debugLevel = config.debugLevel || debug.ERROR;
+		this.alarms = config.alarms || [];
+		this.log = myLogger.createMyLogger(this.debugLevel,logger);
+		this.log('debugLevel:'+this.debugLevel);
+		
+		if (config.url == "undefined" || 
+		    config.url == "http://:80" ||
+			config.url == 'https://:80') {
+			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
+			process.exit(1);
 		}else{
-			this.log("Adresse Jeedom bien configurée :"+config["url"]);	
-		}*/
-		this.jeedomClient = require('./lib/jeedom-api').createClient(config["url"], config["apikey"]);
-		this.grouping = config["grouping"];
-		if (this.grouping == undefined) {
-			this.grouping = "none";
+			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
+		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this);
 		this.rooms = {};
 		this.updateSubscriptions = [];
+		
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
-		this.pollerPeriod = config["pollerperiod"];
+		this.pollingID = null;
+		
+		this.pollerPeriod = config.pollerperiod;
 		if ( typeof this.pollerPeriod == 'string')
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		else if (this.pollerPeriod == undefined)
-			this.pollerPeriod = 5;
-
-		var self = this;
-		this.requestServer = http.createServer();
-		this.requestServer.on('error', function(err) {
-
-		});
-		this.requestServer.listen(18091, function() {
-			self.log("Server Listening...");
-		});
-
+			this.pollerPeriod = 0.5; // 0.5 is Nice between 2 calls
+		
 		if (api) {
-			// Save the API object as plugin needs to register new accessory via this object.
 			this.api = api;
-
-			// Listen to event "didFinishLaunching", this means homebridge already finished loading cached accessories
-			// Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
-			// Or start discover new accessories
-			this.api.on('didFinishLaunching', function() {
+			this.api.on('didFinishLaunching',function(){
 				this.addAccessories();
 			}.bind(this));
 		}
 	}
 	catch (e) {
-		this.log("Erreur de la Fonction JeedomPlatform : "+e);	
+		this.log('error','Erreur de la Fonction JeedomPlatform : ',e);	
+		console.error(e.stack);
 	}
 }
 
+// -- addAccessories
+// -- Desc : Accessories creation, we get a full model from jeedom and put it in local cache
+// -- Return : nothing
 JeedomPlatform.prototype.addAccessories = function() {
 	try{
-		this.log("Fetching Jeedom Objects ...");
 		var that = this;
-		this.jeedomClient.getRooms().then(function(rooms) {
-			//console.log("pieces :"+JSON.stringify(rooms));
-			rooms.map(function(s, i, a) {
-				that.rooms[s.id] = s.name;
-				that.log('New Room >' + s.name);
+		that.log('Synchronisation Jeedom <> Homebridge...');
+		that.jeedomClient.getModel()
+			.then(function(model){ // we got the base Model from the API
+				that.lastPoll=model.config.datetime;
+				that.log('Enumération des objets Jeedom (Pièces)...');
+				model.objects.map(function(r){
+					that.rooms[r.id] = r.name;
+					that.log('Pièce > ' + r.name);
+				});
+			
+				that.log('Enumération des périphériques Jeedom...');
+				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
+				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
+			}).catch(function(err, response) {
+				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err , ' (' + response + ')');
+				console.error(err.stack);
 			});
-			that.log("Fetching Jeedom devices ...");
-			return that.jeedomClient.getDevices();
-		}).then(function(devices) {
-			if(devices == null){
-				that.log("Device > "+devices);
-			}
-			that.JeedomDevices2HomeKitAccessories(devices);
-		}).catch(function(err, response) {
-			that.log("#2 Error getting data from Jeedom: " + err + " " + response);
-		});
 	}
 	catch(e){
-		this.log("Erreur de la fonction addAccessories :"+e);
+		this.log('error','Erreur de la fonction addAccessories :',e);
+		console.error(e.stack);
 	}
 };
+
+// -- JeedomDevices2HomeKitAccessories
+// -- Desc : Translate JeedomDevices into Homebridge Accessories
+// -- Params --
+// -- devices : eqLogics from jeedom
+// -- Return : nothing
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	try{
-		var foundAccessories = [];
+		var that = this;
 		if (devices != undefined) {
-			// Order results by roomID
 			devices.sort(function compare(a, b) {
-				if (a.object_id > b.object_id) {
-					return -1;
-				}
-				if (a.object_id < b.object_id) {
+				// reorder by room name asc and name asc
+				var aC = that.rooms[a.object_id]+a.name;
+				var bC = that.rooms[b.object_id]+b.name;
+				if (aC > bC) {
 					return 1;
+				}
+				if (aC < bC) {
+					return -1;
 				}
 				return 0;
 			});
-			var currentRoomID = "";
-			var services = [];
-			var service = null;
-			var that = this;
-			devices.map(function(s, i, a) {
-				if (s.isVisible == "1" && s.object_id != null) {
-					that.jeedomClient.getDeviceProperties(s.id).then(function(resultEqL) {
-							that.jeedomClient.getDeviceCmd(s.id).then(function(resultCMD) {
-							AccessoireCreateJeedom(that.jeedomClient.ParseGenericType(resultEqL, resultCMD));
-						}).catch(function(err, response) {
-							that.log("#4 Error getting data from Jeedom: " + err + " " + response);
-						});
-					}).catch(function(err, response) {
-						that.log("#3 Error getting data from Jeedom: " + err + " " + response);
+			
+			devices.map(function(device) {
+				if (device.isVisible == '1' && 
+				    device.object_id != null && 
+				    device.sendToHomebridge != '0') { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
+
+					that.AccessoireCreateHomebridge(
+						that.jeedomClient.ParseGenericType(
+							device, 
+							that.jeedomClient.getDeviceCmd(device.id)
+						)
+					);
+				}
+				else
+				{
+					that.log('┌──── ' + that.rooms[device.object_id] + ' > ' +device.name+' ('+device.id+')');
+					var Messg= '│ Accessoire ';
+					Messg   += device.isVisible == '1' ? 'visible' : 'invisible';
+					Messg   += device.object_id != null ? '' : ', pas dans une pièce';
+					Messg   += device.sendToHomebridge != '0' ? '' : ', pas coché pour Homebridge';
+					that.log(Messg);
+
+					that.delAccessory(
+						that.createAccessory([], device.id, device.name, device.object_id, device.eqType_name, device.logicalId) // create a cached lookalike object for unregistering it
+					);
+					that.log('└─────────');
+				}
+				
+			});
+		}
+		var countA=0;
+		if(!hasError)
+		{
+			that.log('┌────RAMASSE-MIETTES─────');
+			that.log('│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))');
+			var hasDeleted = false;
+			for (var a in that.accessories) 
+			{
+				if (that.accessories.hasOwnProperty(a)) {
+					if(!that.accessories[a].reviewed && 
+					   that.accessories[a].displayName) {
+						that.log('│ ┌──── Trouvé: '+that.accessories[a].displayName);
+						that.delAccessory(that.accessories[a],true);
+						that.log('│ │ Supprimé du cache !');
+						that.log('│ └─────────');
+						hasDeleted=true;
+					}else if(that.accessories[a].reviewed && 
+						 that.accessories[a].displayName) countA++;
+				}
+			}
+			if(!hasDeleted) that.log('│ Rien à supprimer');
+			that.log('└────────────────────────');
+		}
+		else
+		{
+			that.log('error','!!! ERREUR DETECTÉE, ON QUITTE HOMEBRIDGE !!!');
+			process.exit(1);
+		}
+		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
+		that.log(endLog);
+		if(countA >= 100) that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
+		else if(countA >= 90) that.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
+		
+		that.log('debug','==START POLLING==');
+		that.startPollingUpdate();
+	}
+	catch(e){
+		this.log('error','Erreur de la fonction JeedomDevices2HomeKitAccessories :',e);
+		console.error(e.stack);
+	}
+};
+
+// -- AccessoireCreateHomebridge
+// -- Desc : Prepare the service list
+// -- Params --
+// -- eqLogic : eqLogics from jeedom (and cmd's)
+// -- Return : nothing
+JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
+	var createdAccessory;
+	try {
+		var that = this;
+		var HBservices = [];
+		var HBservice = null;	
+		var eqServicesCopy = eqLogic.services;
+		that.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
+		that.log('┌──── ' + that.rooms[eqLogic.object_id] + ' > ' + eqLogic.name + ' (' + eqLogic.id + ')');
+		if (eqLogic.services.light) {
+			eqLogic.services.light.forEach(function(cmd) {
+				if (cmd.color) { // don't work fine
+					HBservice = {
+						controlService : new Service.Lightbulb(eqLogic.name),
+						characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
+					};
+					HBservice.controlService.cmd_id = cmd.color.id;
+					HBservice.controlService.HSBValue = {
+						hue : 0,
+						saturation : 0,
+						brightness : 0
+					};
+					HBservice.controlService.RGBValue = {
+						red : 0,
+						green : 0,
+						blue : 0
+					};
+					HBservice.controlService.countColorCharacteristics = 0;
+					HBservice.controlService.timeoutIdColorCharacteristics = 0;
+					HBservice.controlService.subtype = 'RGB';
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.color.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				} else if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					var cmd_slider = 0;
+					eqServicesCopy.light.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						} else if (cmd2.slider) {
+							if (cmd2.slider.value == cmd.state.id) {
+								cmd_slider = cmd2.slider.id;
+							}
+						}
 					});
-
-					function AccessoireCreateJeedom(_params) {
-						var cmds = _params;
-						//console.log('PARAMS > '+JSON.stringify(_params));
-						that.log('Accessoire trouve // Name : '+_params.name);
-						if (cmds.light) {
-							var cmds2 = cmds;
-							cmds.light.forEach(function(cmd, index, array) {
-								if (cmd.color) {
-									service = {
-										controlService : new Service.Lightbulb(_params.name),
-										characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
-									};
-									service.controlService.cmd_id = cmd.color.id;
-									service.controlService.HSBValue = {
-										hue : 0,
-										saturation : 0,
-										brightness : 0
-									};
-									service.controlService.RGBValue = {
-										red : 0,
-										green : 0,
-										blue : 0
-									};
-									service.controlService.countColorCharacteristics = 0;
-									service.controlService.timeoutIdColorCharacteristics = 0;
-									service.controlService.subtype = "RGB";
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.color.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								} else {
-									if (cmd.state) {
-										var cmd_on = 0;
-										var cmd_off = 0;
-										var cmd_slider = 0;
-										cmds2.light.forEach(function(cmd2, index2, array2) {
-											if (cmd2.on) {
-												if (cmd2.on.value == cmd.state.id) {
-													cmd_on = cmd2.on.id;
-												}
-											} else if (cmd2.off) {
-												if (cmd2.off.value == cmd.state.id) {
-													cmd_off = cmd2.off.id;
-												}
-											} else if (cmd2.slider) {
-												if (cmd2.slider.value == cmd.state.id) {
-													cmd_slider = cmd2.slider.id;
-												}
-											}
-										});
-										if (cmd_slider == 0) {
-											service = {
-												controlService : new Service.Lightbulb(_params.name),
-												characteristics : [Characteristic.On]
-											};
-										} else {
-											service = {
-												controlService : new Service.Lightbulb(_params.name),
-												characteristics : [Characteristic.On, Characteristic.Brightness]
-											};
-										}
-										service.controlService.cmd_id = cmds.light.id;
-										if (service.controlService.subtype == undefined)
-											service.controlService.subtype = "";
-										service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "|" + cmd_slider + "-" + service.controlService.subtype;
-										services.push(service);
-										service = null;
-									}
-								}
-							});
-						}
-						if (cmds.flap) {
-							var cmds2 = cmds;
-							cmds.flap.forEach(function(cmd, index, array) {
-								if (cmd.state) {
-									var cmd_up = 0;
-									var cmd_down = 0;
-									var cmd_slider = 0;
-									var cmd_stop = 0;
-									cmds2.flap.forEach(function(cmd2, index2, array2) {
-										if (cmd2.up) {
-											if (cmd2.up.value == cmd.state.id) {
-												cmd_up = cmd2.up.id;
-											}
-										} else if (cmd2.down) {
-											if (cmd2.down.value == cmd.state.id) {
-												cmd_down = cmd2.down.id;
-											}
-										} else if (cmd2.slider) {
-											if (cmd2.slider.value == cmd.state.id) {
-												cmd_slider = cmd2.slider.id;
-											}
-										}
-									});
-									service = {
-										controlService : new Service.WindowCovering(_params.name),
-										characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
-									};
-									service.controlService.cmd_id = cmd.state.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_down + "|" + cmd_up + "|" + cmd_slider + "-" + service.controlService.subtype;
-
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.energy) {
-							var cmds2 = cmds;
-							cmds.energy.forEach(function(cmd, index, array) {
-								if (cmd.state) {
-									var cmd_on = 0;
-									var cmd_off = 0;
-									cmds2.energy.forEach(function(cmd2, index2, array2) {
-										if (cmd2.on) {
-											if (cmd2.on.value == cmd.state.id) {
-												cmd_on = cmd2.on.id;
-											}
-										} else if (cmd2.off) {
-											if (cmd2.off.value == cmd.state.id) {
-												cmd_off = cmd2.off.id;
-											}
-										}
-									});
-									service = {
-										controlService : new Service.Switch(_params.name),
-										characteristics : [Characteristic.On]
-									};
-									service.controlService.cmd_id = cmd.state.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.state.id + "|" + cmd_on + "|" + cmd_off + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.power || cmds.consumption) {
-							cmds.power.forEach(function(cmd, index, array) {
-								if (cmd.power || cmd.consumption) {
-									service = {
-										controlService : new Service.PowerMonitor(_params.name),
-										characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
-									};
-									if (cmd.power) {
-										var cmd_id = cmd.power.id;
-									} else {
-										var cmd_id = cmd.consumption.id;
-									}
-
-									service.controlService.cmd_id = cmd_id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd_id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-
-						}
-						if (cmds.battery) {
-							cmds.battery.forEach(function(cmd, index, array) {
-								if (cmd.battery) {
-									service = {
-										controlService : new Service.BatteryService(_params.name),
-										characteristics : [Characteristic.BatteryLevel]
-									};
-									service.controlService.cmd_id = cmd.battery.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.battery.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.presence) {
-							cmds.presence.forEach(function(cmd, index, array) {
-								if (cmd.presence) {
-									service = {
-										controlService : new Service.MotionSensor(_params.name),
-										characteristics : [Characteristic.MotionDetected]
-									};
-									service.controlService.cmd_id = cmd.presence.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.presence.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.temperature) {
-							cmds.temperature.forEach(function(cmd, index, array) {
-								if (cmd.temperature) {
-									service = {
-										controlService : new Service.TemperatureSensor(_params.name),
-										characteristics : [Characteristic.CurrentTemperature]
-									};
-									service.controlService.cmd_id = cmd.temperature.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.temperature.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-
-						}
-						if (cmds.humidity) {
-							cmds.humidity.forEach(function(cmd, index, array) {
-								if (cmd.humidity) {
-									service = {
-										controlService : new Service.HumiditySensor(_params.name),
-										characteristics : [Characteristic.CurrentRelativeHumidity]
-									};
-									service.controlService.cmd_id = cmd.humidity.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.humidity.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.smoke) {
-							cmds.smoke.forEach(function(cmd, index, array) {
-								if (cmd.smoke) {
-									service = {
-										controlService : new Service.SmokeSensor(_params.name),
-										characteristics : [Characteristic.SmokeDetected]
-									};
-									service.controlService.cmd_id = cmd.smoke.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.smoke.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.flood) {
-							cmds.flood.forEach(function(cmd, index, array) {
-								if (cmd.flood) {
-									service = {
-										controlService : new Service.LeakSensor(_params.name),
-										characteristics : [Characteristic.LeakDetected]
-									};
-									service.controlService.cmd_id = cmd.flood.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.flood.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.opening) {
-							cmds.opening.forEach(function(cmd, index, array) {
-								if (cmd.opening) {
-									service = {
-										controlService : new Service.ContactSensor(_params.name),
-										characteristics : [Characteristic.ContactSensorState]
-									};
-									service.controlService.cmd_id = cmd.opening.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.opening.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.brightness) {
-							cmds.brightness.forEach(function(cmd, index, array) {
-								if (cmd.brightness) {
-									service = {
-										controlService : new Service.LightSensor(_params.name),
-										characteristics : [Characteristic.CurrentAmbientLightLevel]
-									};
-									service.controlService.cmd_id = cmd.brightness.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.brightness.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.energy2) {
-							service = {
-								controlService : new Service.Outlet(_params.name),
-								characteristics : [Characteristic.On, Characteristic.OutletInUse]
-							};
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" + cmds.brightness.id + "-" + service.controlService.subtype;
-							services.push(service);
-							service = null;
-						}
-						if (cmds.lock) {
-							cmds.lock.forEach(function(cmd, index, array) {
-								if (cmd.lock) {
-									service = {
-										controlService : new Service.LockMechanism(_params.name),
-										characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
-									};
-									service.controlService.cmd_id = cmd.lock.id;
-									if (service.controlService.subtype == undefined)
-										service.controlService.subtype = "";
-									service.controlService.subtype = _params.id + "-" + cmd.lock.id + "-" + service.controlService.subtype;
-									services.push(service);
-									service = null;
-								}
-							});
-						}
-						if (cmds.thermostat) {
-							service = {
-								controlService : new Service.Thermostat(_params.name),
-								characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
-							};
-							service.controlService.cmd_id = cmds.thermostat.id;
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" + cmds.thermostat.id + "-" + service.controlService.subtype;
-							services.push(service);
-							service = null;
-						}
-						if (cmds.alarm) {
-							service = {
-								controlService : new Service.SecuritySystem(_params.name),
-								characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
-							};
-							service.controlService.cmd_id = cmds.alarm.id;
-							if (service.controlService.subtype == undefined)
-								service.controlService.subtype = "";
-							service.controlService.subtype = _params.id + "-" + cmds.alarm.enable_state.id + "-" + cmds.alarm.state.id;
-							services.push(service);
-							service = null;
-						}
-						if (services.length != 0) {
-							var a = that.createAccessory(services, _params.id, _params.name, _params.object_id);
-							//if (!that.accessories[a.uuid]) {
-								that.addAccessory(a);
-							//}
-							services = [];
-						}
+					if (cmd_slider == 0) {
+						HBservice = {
+							controlService : new Service.Lightbulb(eqLogic.name),
+							characteristics : [Characteristic.On]
+						};
+					} else {
+						HBservice = {
+							controlService : new Service.Lightbulb(eqLogic.name),
+							characteristics : [Characteristic.On, Characteristic.Brightness]
+						};
 					}
+					HBservice.controlService.cmd_id = eqLogic.services.light.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Lumière Etat" ou "Info/Lumière Couleur"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.flap) {
+			eqLogic.services.flap.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_up = 0;
+					var cmd_down = 0;
+					var cmd_slider = 0;
+					//var cmd_stop = 0;
+					eqServicesCopy.flap.forEach(function(cmd2) {
+						/*if (cmd2.up) {
+							if (cmd2.up.value == cmd.state.id) {
+								cmd_up = cmd2.up.id;
+							}
+						} else if (cmd2.down) {
+							if (cmd2.down.value == cmd.state.id) {
+								cmd_down = cmd2.down.id;
+							}
+						} else */if (cmd2.slider) {
+							if (cmd2.slider.value == cmd.state.id) {
+								cmd_slider = cmd2.slider.id;
+							}
+						}
+					});
+					//if(!cmd_up) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
+					//if(!cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down');
+					if(!cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou reférence à l\'état non définie sur la commande Slider');
+					HBservice = {
+						controlService : new Service.WindowCovering(eqLogic.name),
+						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_down + '|' + cmd_up + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
+
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Volet Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.energy) {
+			eqLogic.services.energy.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					eqServicesCopy.energy.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						}
+					});
+					if(!cmd_on) that.log('warn','Pas de type générique "Action/Prise Bouton On" ou reférence à l\'état non définie sur la commande On');
+					if(!cmd_off) that.log('warn','Pas de type générique "Action/Prise Bouton Off" ou reférence à l\'état non définie sur la commande Off');
+					HBservice = {
+						controlService : new Service.Switch(eqLogic.name),
+						characteristics : [Characteristic.On]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Prise Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.power || eqLogic.services.consumption) {
+			eqLogic.services.power.forEach(function(cmd) {
+				if (cmd.power || cmd.consumption) {
+					HBservice = {
+						controlService : new Service.PowerMonitor(eqLogic.name),
+						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
+					};
+					var cmd_id;
+					if (cmd.power) {
+						cmd_id = cmd.power.id;
+					} else {
+						cmd_id = cmd.consumption.id;
+					}
+
+					HBservice.controlService.cmd_id = cmd_id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.battery) {
+			eqLogic.services.battery.forEach(function(cmd) {
+				if (cmd.battery) {
+					HBservice = {
+						controlService : new Service.BatteryService(eqLogic.name),
+						characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery]
+					};
+					var cmd_charging='NOT';
+					if (cmd.batteryCharging)
+						cmd_charging = cmd.batteryCharging.id;
+					HBservice.controlService.cmd_id = cmd.battery.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.battery.id +'|'+ cmd_charging + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.presence) {
+			eqLogic.services.presence.forEach(function(cmd) {
+				if (cmd.presence) {
+					HBservice = {
+						controlService : new Service.MotionSensor(eqLogic.name),
+						characteristics : [Characteristic.MotionDetected]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.presence.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.uv) {
+			eqLogic.services.uv.forEach(function(cmd) {
+				if (cmd.uv) {
+					HBservice = {
+						controlService : new Service.TemperatureSensor(eqLogic.name),
+						characteristics : [Characteristic.UVIndex]
+					};
+					HBservice.controlService.cmd_id = cmd.uv.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.uv.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}						
+		if (eqLogic.services.temperature) {
+			eqLogic.services.temperature.forEach(function(cmd) {
+				if (cmd.temperature) {
+					HBservice = {
+						controlService : new Service.TemperatureSensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentTemperature]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.temperature.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.temperature.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+
+		}
+		if (eqLogic.services.humidity) {
+			eqLogic.services.humidity.forEach(function(cmd) {
+				if (cmd.humidity) {
+					HBservice = {
+						controlService : new Service.HumiditySensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentRelativeHumidity]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.humidity.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.humidity.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.smoke) {
+			eqLogic.services.smoke.forEach(function(cmd) {
+				if (cmd.smoke) {
+					HBservice = {
+						controlService : new Service.SmokeSensor(eqLogic.name),
+						characteristics : [Characteristic.SmokeDetected]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.smoke.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.flood) {
+			eqLogic.services.flood.forEach(function(cmd) {
+				if (cmd.flood) {
+					HBservice = {
+						controlService : new Service.LeakSensor(eqLogic.name),
+						characteristics : [Characteristic.LeakDetected]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.flood.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.opening) {
+			eqLogic.services.opening.forEach(function(cmd) {
+				if (cmd.opening) {
+					HBservice = {
+						controlService : new Service.ContactSensor(eqLogic.name),
+						characteristics : [Characteristic.ContactSensorState]
+					};
+					HBservice.controlService.cmd_id = cmd.opening.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.brightness) {
+			eqLogic.services.brightness.forEach(function(cmd) {
+				if (cmd.brightness) {
+					HBservice = {
+						controlService : new Service.LightSensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentAmbientLightLevel]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.brightness.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.brightness.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.energy2) { // not used
+			HBservice = {
+				controlService : new Service.Outlet(eqLogic.name),
+				characteristics : [Characteristic.On, Characteristic.OutletInUse]
+			};
+			if (HBservice.controlService.subtype == undefined)
+				HBservice.controlService.subtype = '';
+			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.brightness.id + '-' + HBservice.controlService.subtype;
+			HBservices.push(HBservice);
+			HBservice = null;
+		}
+		if (eqLogic.services.GarageDoor) {
+			eqLogic.services.GarageDoor.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					var cmd_toggle = 0;
+					eqServicesCopy.GarageDoor.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						} else if (cmd2.toggle) {
+							if (cmd2.toggle.value == cmd.state.id) {
+								cmd_toggle = cmd2.toggle.id;
+							}
+						}
+					});
+					if(!cmd_toggle) that.log('warn','Pas de type générique "Action/Portail ou garage bouton toggle" ou reférence à l\'état non définie sur la commande Toggle');
+					HBservice = {
+						controlService : new Service.GarageDoorOpener(eqLogic.name),
+						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.lock) {
+			eqLogic.services.lock.forEach(function(cmd) {
+				if (cmd.state) {
+					var cmd_on = 0;
+					var cmd_off = 0;
+					eqServicesCopy.lock.forEach(function(cmd2) {
+						if (cmd2.on) {
+							if (cmd2.on.value == cmd.state.id) {
+								cmd_on = cmd2.on.id;
+							}
+						} else if (cmd2.off) {
+							if (cmd2.off.value == cmd.state.id) {
+								cmd_off = cmd2.off.id;
+							}
+						}
+					});
+					if(!cmd_on) that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir" ou reférence à l\'état non définie sur la commande On');
+					if(!cmd_off) that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer" ou reférence à l\'état non définie sur la commande Off');
+					HBservice = {
+						controlService : new Service.LockMechanism(eqLogic.name),
+						characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Serrure Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.DoorBell) {
+			eqLogic.services.DoorBell.forEach(function(cmd) {
+				if(cmd.state) {
+					HBservice = {
+						controlService : new Service.Doorbell(eqLogic.name),
+						characteristics : [Characteristic.ProgrammableSwitchEvent]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
+		if (eqLogic.services.thermostat) { // only one -> will change
+			HBservice = {
+				controlService : new Service.Thermostat(eqLogic.name),
+				characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
+			};
+			HBservice.controlService.cmd_id = eqLogic.services.thermostat.id;
+			if (HBservice.controlService.subtype == undefined)
+				HBservice.controlService.subtype = '';
+			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.thermostat.id + '-' + HBservice.controlService.subtype;
+			HBservices.push(HBservice);
+			HBservice = null;
+		}
+		if (eqLogic.services.alarm) {
+			eqLogic.services.alarm.forEach(function(cmd) {
+				if(cmd.enable_state) {
+					var cmd_state = 0;
+					var cmd_mode = 0;
+					eqServicesCopy.alarm.forEach(function(cmd2) {
+						if (cmd2.state) {
+							if (cmd2.state.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
+								cmd_state = cmd2.state.id;
+							}
+						} else if (cmd2.mode) {
+							if (cmd2.mode.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
+								cmd_mode = cmd2.mode.id;
+							}
+						}
+					});
+					HBservice = {
+						controlService : new Service.SecuritySystem(eqLogic.name),
+						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
+					};
+					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					HBservice.controlService.cmd_id = cmd.enable_state.id;
+					if (HBservice.controlService.subtype == undefined)
+						HBservice.controlService.subtype = '';
+					var thisAlarm = that.alarms[eqLogic.id];
+					var away_mode_id,away_mode_label,present_mode_label,present_mode_id,night_mode_label,night_mode_id;
+					if(thisAlarm) {
+						if(thisAlarm.mode_away) {
+							away_mode_label = thisAlarm.mode_away.name;
+							away_mode_id = thisAlarm.mode_away.id;
+						}
+						else
+							that.log('warn','Pas de config du mode Absent');
+						if(thisAlarm.mode_present) {
+							present_mode_label = thisAlarm.mode_present.name;
+							present_mode_id = thisAlarm.mode_present.id;
+						}
+						else
+							that.log('warn','Pas de config du mode Présent');
+						if(thisAlarm.mode_night) {
+							night_mode_label = thisAlarm.mode_night.name;
+							night_mode_id =thisAlarm.mode_night.id;
+						}
+						else
+							that.log('warn','Pas de config du mode Nuit');
+					}
+					/*else {
+						that.log('warn','Pas de config de l\'alarme'); // NOT YET DONE
+					}*/
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.enable_state.id + '-' + cmd_state + '-' + cmd_mode + '-' + present_mode_id+'='+present_mode_label+'|'+away_mode_id+'='+away_mode_label+'|'+night_mode_id+'='+night_mode_label;
+					HBservices.push(HBservice);
+					HBservice = null;
 				}
 			});
 		}
 
-		// Remove not reviewd accessories: cached accessories no more present in Home Center
-		/*for (var a in this.accessories) {
-			if (!this.accessories[a].reviewed) {
-			    this.log("Removing Accessory: " + this.accessories[a].displayName);
-				this.api.unregisterPlatformAccessories("homebridge-jeedom", "Jeedom", [this.accessories[a]]);
-			}
-		}*/
-
-		this.log("Homebridge Plugin is running now ! // Si vous avez un Warning Avahi (ne pas en tenir compte)");
-		if (this.pollerPeriod >= 1 && this.pollerPeriod <= 100)
-			this.startPollingUpdate(0);
+		if (HBservices.length != 0) {
+			createdAccessory = that.createAccessory(HBservices, eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name,eqLogic.logicalId);
+			that.addAccessory(createdAccessory);
+			HBservices = [];
+		}
+		else
+		{
+			that.log('│ Accessoire sans Type Générique');
+			createdAccessory = that.createAccessory([], eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name, eqLogic.logicalId); // create a cached lookalike object for unregistering it
+			that.delAccessory(createdAccessory);
+		}
+		that.log('└─────────');
 	}
 	catch(e){
-		this.log("Erreur de la fonction JeedomDevices2HomeKitAccessories :"+e);
-	}
+		this.log('error','Erreur de la fonction AccessoireCreateHomebridge :',e);
+		console.error(e.stack);
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [this.existingAccessory(createdAccessory.UUID,true)]);
+		hasError=true;
+	}		
 };
-JeedomPlatform.prototype.createAccessory = function(services, id, name, currentRoomID) {
+
+// -- createAccessory
+// -- Desc : Create the JeedomBridgedAccessory object
+// -- Params --
+// -- HBservices : translated homebridge services
+// -- id : Jeedom id
+// -- name : Jeedom name
+// -- currentRoomID : Jeedom Room id
+// -- eqType_name : type of the eqLogic
+// -- logicalId : Jeedom logicalId
+// -- Return : a JeedomBridgedAccessory object
+JeedomPlatform.prototype.createAccessory = function(HBservices, id, name, currentRoomID, eqType_name, logicalId) {
 	try{
-		var accessory = new JeedomBridgedAccessory(services);
+		var accessory = new JeedomBridgedAccessory(HBservices);
 		accessory.platform = this;
-		accessory.name = (name) ? name : this.rooms[currentRoomID] + "-Devices";
-		accessory.UUID = UUIDGen.generate(id + accessory.name + currentRoomID);
+		accessory.log = this.log;
+		accessory.name = (name) ? name : this.rooms[currentRoomID] + '-Devices';
+
+		accessory.UUID = UUIDGen.generate(id + accessory.name);
 		accessory.context = {};
-		accessory.context.uniqueSeed = id + accessory.name + currentRoomID;
-		accessory.model = "JeedomBridgedAccessory";
-		accessory.manufacturer = "Jeedom";
-		accessory.serialNumber = "<unknown>";
-		accessory.services_add = services;
+		accessory.context.uniqueSeed = id + accessory.name;
+
+		accessory.model = eqType_name;
+		accessory.manufacturer = 'Jeedom>'+ this.rooms[currentRoomID] +'>'+name;
+		accessory.serialNumber = '<'+id+'-'+logicalId+'>';
+		accessory.services_add = HBservices;
 		return accessory;
 	}
 	catch(e){
-		this.log("Erreur de la fonction createAccessory :"+e);
+		this.log('error','│ Erreur de la fonction createAccessory :',e);
+		console.error(e.stack);
+		hasError=true;
 	}
 };
+
+// -- delAccessory
+// -- Desc : deleting an Accessory from homebridge (if exists) and the local list
+// -- Params --
+// -- jeedomAccessory : JeedomBridgedAccessory to delete
+// -- silence : flag for logging or not
+// -- Return : nothing
+JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
+	var existingAccessory;
+	try{
+		silence = typeof silence  !== 'undefined' ? silence : false;
+		if (!jeedomAccessory) {
+			return;
+		}
+
+		if(!silence) this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
+		existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
+		if(existingAccessory)
+		{
+			if(!silence) this.log('│ Suppression de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
+			delete this.accessories[jeedomAccessory.UUID];
+			existingAccessory.reviewed=true;
+		}
+		else
+		{
+			if(!silence) this.log('│ Accessoire Ignoré');
+		}
+	}
+	catch(e){
+		this.log('error','│ Erreur de la fonction delAccessory :',e);
+		console.error(e.stack);
+		// force to unregister the accessory before quitting (avoid cache or persist corruption)
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
+		hasError=true;
+	}
+};
+
+// -- addAccessory
+// -- Desc : adding or updating an Accessory to homebridge and local list
+// -- Params --
+// -- jeedomAccessory : JeedomBridgedAccessory to add
+// -- Return : nothing
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
+	var HBAccessory;
 	try{
 		if (!jeedomAccessory) {
 			return;
 		}
-		var isNewAccessory = false;
-		var uniqueSeed = jeedomAccessory.UUID;
-		var services = jeedomAccessory.services_add;
-		this.log("Verif Accessory: " + jeedomAccessory.name);
-		var newAccessory = this.existingAccessory(uniqueSeed);
-		if (newAccessory == null) {
-			this.log("New Accessory: " + jeedomAccessory.name);
+		let isNewAccessory = false;
+		let services2Add = jeedomAccessory.services_add;
+		this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
+		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
+		if (!HBAccessory) {
+			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
 			isNewAccessory = true;
-			var newAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.UUID);
-			jeedomAccessory.initAccessory(newAccessory);
-			this.accessories[jeedomAccessory.UUID] = jeedomAccessory;
+			HBAccessory = new Accessory(jeedomAccessory.name, jeedomAccessory.UUID);
+			jeedomAccessory.initAccessory(HBAccessory);
+			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
-		newAccessory.reachable = true;
-
-		// Remove services existing in HomeKit accessory no more present in Home Center
-		for (var t = 0; t < newAccessory.services.length; t++) {
-			var found = false;
-			for (var s = 0; s < services.length; s++) {
-				if (newAccessory.services[t].displayName == undefined || services[s].controlService.displayName == newAccessory.services[t].displayName) {
-					found = true;
-					break;	  		
-				}
-			}
-			if (!found) {
-				newAccessory.removeService(newAccessory.services[t]);
-				this.log("Supression des service de : " + jeedomAccessory.name);
-			}
-		}
-
+		//No more supported by HAP-NodeJS
+		//HBAccessory.reachable = true;
+		//HBAccessory.updateReachability(true);
+		
 		if (isNewAccessory) {
-			this.log("Adding Accessory: " + jeedomAccessory.name);
-			this.api.registerPlatformAccessories("homebridge-jeedom", "Jeedom", [newAccessory]);
+			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			this.log("Maj Accessory: " + jeedomAccessory.name);
-			this.api.updatePlatformAccessories([newAccessory]);
+			let cachedValues=jeedomAccessory.delServices(HBAccessory);
+			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
+			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.api.updatePlatformAccessories([HBAccessory]);
 		}
-		newAccessory.reviewed = true;
+		HBAccessory.on('identify', function(paired, callback) {
+			this.log(HBAccessory.displayName, "->Identifié!!!");
+			callback();
+		}.bind(this));
+		HBAccessory.reviewed = true;
 	}
 	catch(e){
-		this.log("Erreur de la fonction addAccessory :"+e);
+		this.log('error','│ Erreur de la fonction addAccessory :',e);
+		console.error(e.stack);
+		// unregister the accessory before quitting (avoid cache or persist corruption)
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
+		hasError=true;
 	}
 };
 
-JeedomPlatform.prototype.existingAccessory = function(uniqueSeed) {
+// -- existingAccessory
+// -- Desc : check if the accessory exists in the local list
+// -- Params --
+// -- UUID : UUID to find
+// -- silence : flag for logging or not
+// -- Return : nothing
+JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 	try{
+		silence = typeof silence  !== 'undefined' ? silence : false;
 		for (var a in this.accessories) {
-			if (this.accessories[a].UUID == uniqueSeed) {
-				this.log("Checked");
-				return this.accessories[a];
+			if (this.accessories.hasOwnProperty(a)) {
+				if (this.accessories[a].UUID == UUID) {
+					if(!silence) this.log('│ Accessoire déjà existant dans Homebridge');
+					return this.accessories[a];
+				}
 			}
 		}
+		if(!silence) this.log('│ Accessoire non existant dans Homebridge');
 		return null;
 	}
 	catch(e){
-		this.log("Erreur de la fonction existingAccessory :"+e);	
+		this.log('error','│ Erreur de la fonction existingAccessory :',e);	
+		console.error(e.stack);
+		hasError=true;
 	}
 };
 
-
+// -- configureAccessory
+// -- Desc : Launched by Homebridge on the beginning, bind the event to the accessory found in the cache
+// -- Params --
+// -- accessory : the accessory to configure
+// -- Return : nothing
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
 		for (var s = 0; s < accessory.services.length; s++) {
 			var service = accessory.services[s];
 			if (service.subtype != undefined) {
-				var subtypeParams = service.subtype.split("-");
-				if (subtypeParams.length == 3 && subtypeParams[2] == "RGB") {
+				var subtypeParams = service.subtype.split('-');
+				if (subtypeParams.length == 3 && subtypeParams[2] == 'RGB') {
 					service.HSBValue = {
 						hue : 0,
 						saturation : 0,
@@ -680,512 +918,1195 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 					this.bindCharacteristicEvents(characteristic, service);
 			}
 		}
-		this.log("Configuring Accessory: " + accessory.displayName +" > "+ accessory.context.uniqueSeed);
+		this.log('Accessoire en cache: ' + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
-		accessory.reachable = true;
+		//accessory.reachable = true;
 	}
 	catch(e){
-		this.log("Erreur de la fonction configureAccessory :"+e);
+		this.log('error','Erreur de la fonction configureAccessory :',e);
+		console.error(e.stack);
+		hasError=true;
 	}
 };
+
+// -- bindCharacteristicEvents
+// -- Desc : bind the set and get event to the characteristic
+// -- Params --
+// -- characteristic : characteristic to bind event to
+// -- service : service of the characteristic
+// -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
-		var onOff = characteristic.props.format == "bool" ? true : false;
 		var readOnly = true;
 		for (var i = 0; i < characteristic.props.perms.length; i++)
-			if (characteristic.props.perms[i] == "pw")
+			if (characteristic.props.perms[i] == 'pw')
 				readOnly = false;
-		var IDs = service.subtype.split("-");
-		var propertyChanged = "value";
-		if (service.HSBValue != undefined)
-			propertyChanged = "color";
-		this.subscribeUpdate(service, characteristic, onOff, propertyChanged);
+		var IDs = service.subtype.split('-');
+		this.subscribeUpdate(service, characteristic);
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
-				if (characteristic.UUID == '00000033-0000-1000-8000-0026BB765291') {
-					console.log('set target mode');
-				}
-				if (context !== 'fromJeedom' && context !== 'fromSetValue') {
-					if (characteristic.UUID == (new Characteristic.On()).UUID && service.isVirtual) {
-						this.command("pressButton", IDs[1], service, IDs);
-						setTimeout(function() {
-							characteristic.setValue(false, undefined, 'fromSetValue');
-						}, 100);
-					} else if (characteristic.UUID == (new Characteristic.On()).UUID) {
-						this.command(value == 0 ? "turnOff" : "turnOn", null, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.TargetTemperature()).UUID) {
-						if (Math.abs(value - characteristic.value) >= 0.5) {
-							value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
-							this.command("setTargetLevel", value, service, IDs);
-						} else {
-							value = characteristic.value;
-						}
-						setTimeout(function() {
-							characteristic.setValue(value, undefined, 'fromSetValue');
-						}, 100);
-					} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
-						this.command("setTime", value + Math.trunc((new Date()).getTime() / 1000), service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.TargetHeatingCoolingState()).UUID) {
-						this.command("TargetHeatingCoolingState", value, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
-						var action = value == Characteristic.LockTargetState.UNSECURED ? "unsecure" : "secure";
-						this.command(action, 0, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
-						var rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
-						this.syncColorCharacteristics(rgb, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
-						var rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
-						this.syncColorCharacteristics(rgb, service, IDs);
-					} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
-						if (service.HSBValue != null) {
-							var rgb = this.updateJeedomColorFromHomeKit(null, null, value, service);
-							this.syncColorCharacteristics(rgb, service, IDs);
-						} else {
-							this.command("setValue", value, service, IDs);
-						}
-					} else {
-						this.command("setValue", value, service, IDs);
-					}
-				}
+				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
+					this.log('info','[Commande d\'Homekit] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+					this.setAccessoryValue(value,characteristic,service,IDs);
+				} else
+					this.log('info','[Commande de Jeedom] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
 				callback();
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
-			if (service.isVirtual) {
-				callback(undefined, false);
-			} else {
-				this.getAccessoryValue(callback, onOff, characteristic, service, IDs);
-			}
+			this.log('info','[Demande d\'Homekit] IDs:'+IDs,'Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+			let returnValue = this.getAccessoryValue(characteristic, service, IDs);
+			callback(undefined, sanitizeValue(returnValue,characteristic));
 		}.bind(this));
 	}
 	catch(e){
-		this.log("Erreur de la fonction bindCharacteristicEvents :"+e);
+		this.log('error','Erreur de la fonction bindCharacteristicEvents :',e);
+		console.error(e.stack);
+		hasError=true;
 	}
 };
-JeedomPlatform.prototype.getAccessoryValue = function(callback, returnBoolean, characteristic, service, IDs) {
+
+// -- setAccessoryValue
+// -- Desc : set the value of an accessory in Jeedom
+// -- Params --
+// -- value : the value to set
+// -- characteristic : characteristic to get the value from
+// -- service : service in which the characteristic is
+// -- IDs : eqLogic ID
+// -- Return : nothing
+JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, service, IDs) {
 	try{
-		var that = this;
-		var cmds = IDs[1].split("|");
-		this.jeedomClient.getDeviceCmd(IDs[0]).then(function(properties) {
-			if (characteristic.UUID == (new Characteristic.OutletInUse()).UUID) {
-				callback(undefined, parseFloat(properties.power) > 1.0 ? true : false);
-			} else if (characteristic.UUID == (new Characteristic.TimeInterval()).UUID) {
-				var t = (new Date()).getTime();
-				t = parseInt(properties.timestamp) - t;
-				if (t < 0)
-					t = 0;
-				callback(undefined, t);
-			} else if (characteristic.UUID == (new Characteristic.TargetTemperature()).UUID) {
-				var v = "";
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "THERMOSTAT_SETPOINT") {
-						v = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + v);
-					}
-				});
-				callback(undefined, v);
-			} else if (characteristic.UUID == (new Characteristic.Hue()).UUID) {
-				var v = "";
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "LIGHT_COLOR") {
-						//console.log("valeur " + element.generic_type + " : " + v);
-						v = element.currentValue;
-					}
-				});
-				var hsv = that.updateHomeKitColorFromJeedom(v, service);
-				callback(undefined, Math.round(hsv.h));
-			} else if (characteristic.UUID == (new Characteristic.Saturation()).UUID) {
-				var v = "";
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "LIGHT_COLOR") {
-						//console.log("valeur " + element.generic_type + " : " + v);
-						v = element.currentValue;
-					}
-				});
-				var hsv = that.updateHomeKitColorFromJeedom(v, service);
-				callback(undefined, Math.round(hsv.s));
-			} else if (characteristic.UUID == (new Characteristic.SmokeDetected()).UUID) {
-				var v = "";
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "SMOKE" && element.id == cmds[0]) {
-						v = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + v);
-					}
-				});
-				callback(undefined, v == 1 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
-			} else if (characteristic.UUID == (new Characteristic.LeakDetected()).UUID) {
-				var v = "";
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "FLOOD" && element.id == cmds[0]) {
-						v = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + v);
-					}
-				});
-				callback(undefined, v == 1 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED);
-			} else if (characteristic.UUID == (new Characteristic.ContactSensorState()).UUID) {
-				var v = "";
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "OPENING" && element.id == cmds[0]) {
-						v = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + v);
-					}
-				});
-				callback(undefined, v == 1 ? Characteristic.ContactSensorState.CONTACT_NOT_DETECTED : Characteristic.ContactSensorState.CONTACT_DETECTED);
-			} else if (characteristic.UUID == (new Characteristic.Brightness()).UUID) {
+		//var that = this;
+		var action,rgb;
+		switch (characteristic.UUID) {
+			case Characteristic.On.UUID :
+					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
+			break;
+			case Characteristic.TargetTemperature.UUID :
+				if (Math.abs(value - characteristic.value) >= 0.5) {
+					value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
+					this.command('setTargetLevel', value, service, IDs);
+				} else {
+					value = characteristic.value;
+				}
+				setTimeout(function() {
+					characteristic.setValue(sanitizeValue(value,characteristic), undefined, 'fromSetValue');
+				}, 100);
+			break;
+			case Characteristic.TimeInterval.UUID :
+				this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service, IDs);
+			break;
+			case Characteristic.TargetHeatingCoolingState.UUID :
+				this.log('set target mode');
+				this.command('TargetHeatingCoolingState', value, service, IDs);
+			break;
+			case Characteristic.TargetDoorState.UUID :
+				this.command('GBtoggle', 0, service, IDs);
+			break;
+			case Characteristic.LockTargetState.UUID :
+				action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
+				this.command(action, 0, service, IDs);
+			break;
+			case Characteristic.SecuritySystemTargetState.UUID:
+				this.command('SetAlarmMode', value, service, IDs);
+			break;
+			case Characteristic.CurrentPosition.UUID:
+			case Characteristic.TargetPosition.UUID:
+			case Characteristic.PositionState.UUID: // could be Service.Window or Service.Door too so we check
+				if (service.UUID == Service.WindowCovering.UUID) {
+					if(value == 0)
+						action = 'flapDown';
+					else if (value == 99 || value == 100)
+						action = 'flapUp';
+					this.command('setValue', value, service, IDs);
+				}
+			break;
+			case Characteristic.Hue.UUID :
+				rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
+				this.syncColorCharacteristics(rgb, service, IDs);
+			break;
+			case Characteristic.Saturation.UUID :
+				rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
+				this.syncColorCharacteristics(rgb, service, IDs);
+			break;
+			case Characteristic.Brightness.UUID :
 				if (service.HSBValue != null) {
-					var v = "";
-					properties.forEach(function(element, index, array) {
-						if (element.generic_type == "LIGHT_COLOR") {
-							//console.log("valeur " + element.generic_type + " : " + v);
-							v = element.currentValue;
-						}
-					});
-					var hsv = that.updateHomeKitColorFromJeedom(v, service);
-					callback(undefined, Math.round(hsv.v));
+					rgb = this.updateJeedomColorFromHomeKit(null, null, value, service);
+					this.syncColorCharacteristics(rgb, service, IDs);
 				} else {
-					var v = "";
-					properties.forEach(function(element, index, array) {
-						if (element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) {
-							if (v == "")
-								v = 0;
-							// v = parseInt(element.currentValue);
-							v = Math.round(parseInt(element.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
-							//console.log("valeur " + element.generic_type + " : " + v);
-						}
-					});
-					callback(undefined, v);
+					this.command('setValue', value, service, IDs);
 				}
-			} else if (characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
-				var v = 0;
-				var alarm = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "ALARM_ENABLE_STATE") {
-						if (parseInt(element.currentValue) == 0) {
-							//console.log("valeur " + element.generic_type + " : desarmé");
-							v = Characteristic.SecuritySystemCurrentState.DISARMED;
-						} else {
-							//console.log("valeur " + element.generic_type + " : armé");
-							v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-						}
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					}
-					if (element.generic_type == "ALARM_STATE") {
-						if (parseInt(element.currentValue) == 1) {
-							//console.log("valeur " + element.generic_type + " : alarm");
-							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
-						}
-					}
-				});
-				if (alarm != 0) {
-					callback(undefined, alarm);
-				} else {
-					callback(undefined, v);
-				}
-
-			} else if (characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
-				var v = 0;
-				var alarm = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "ALARM_ENABLE_STATE") {
-						if (parseInt(element.currentValue) == 0) {
-							//console.log("valeur " + element.generic_type + " : desarmé");
-							v = Characteristic.SecuritySystemCurrentState.DISARMED;
-						} else {
-							//console.log("valeur " + element.generic_type + " : armé");
-							v = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-						}
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					}
-					if (element.generic_type == "ALARM_STATE") {
-						if (parseInt(element.currentValue) == 1) {
-							//console.log("valeur " + element.generic_type + " : alarm");
-							alarm = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
-						}
-					}
-				});
-				if (alarm != 0) {
-					callback(undefined, alarm);
-				} else {
-					callback(undefined, v);
-				}
-
-			} else if (characteristic.UUID == (new Characteristic.CurrentHeatingCoolingState()).UUID) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "THERMOSTAT_MODE") {
-						if (element.currentValue == "Off") {
-							v = Characteristic.CurrentHeatingCoolingState.OFF;
-						} else {
-							v = Characteristic.CurrentHeatingCoolingState.AUTO;
-						}
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-					}
-				});
-				callback(undefined, v);
-			} else if (characteristic.UUID == (new Characteristic.PositionState()).UUID) {
-				callback(undefined, Characteristic.PositionState.STOPPED);
-			} else if (characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || characteristic.UUID == (new Characteristic.LockTargetState()).UUID) {
-				callback(undefined, properties.value == "true" ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED);
-			} else if (characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
-				var v = "";
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "FLAP_STATE" && element.id == cmds[0]) {
-						v = parseInt(element.currentValue);
-						//console.log("valeur " + element.generic_type + " : " + v);
-					}
-				});
-				callback(undefined, v);
-			} else if (returnBoolean) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if ((element.generic_type == "LIGHT_STATE" && element.id == cmds[0]) || (element.generic_type == "ENERGY_STATE" && element.id == cmds[0]) || (element.generic_type == "PRESENCE" && element.id == cmds[0]) || (element.generic_type == "OPENING" && element.id == cmds[0])) {
-						v = element.currentValue;
-						//console.log("valeur binary " + element.generic_type + " : " + v);
-					}
-				});
-
-				//var v = properties.value;
-				if (v == "true" || v == "false") {
-					callback(undefined, (v == "false") ? false : true);
-				} else {
-					callback(undefined, (parseInt(v) == 0) ? false : true);
-				}
-			} else if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if ((element.generic_type == "TEMPERATURE" && element.id == cmds[0]) || element.generic_type == "THERMOSTAT_TEMPERATURE") {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						v = element.currentValue;
-					}
-				});
-				callback(undefined, parseFloat(v));
-			} else if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "BRIGHTNESS" && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						v = element.currentValue;
-					}
-				});
-				callback(undefined, parseInt(v));
-			} else if (characteristic.UUID == (new Characteristic.CurrentRelativeHumidity()).UUID) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "HUMIDITY" && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						v = element.currentValue;
-					}
-				});
-				callback(undefined, parseInt(v));
-			} else if (characteristic.UUID == (new Characteristic.BatteryLevel()).UUID) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "BATTERY" && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						v = element.currentValue;
-					}
-				});
-				callback(undefined, parseInt(v));
-			} else if (characteristic.UUID == (new Characteristic.CurrentPowerConsumption()).UUID) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "POWER" && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						v = element.currentValue;
-					}
-				});
-				callback(undefined, parseFloat(v));
-			} else if (characteristic.UUID == (new Characteristic.TotalPowerConsumption()).UUID) {
-				var v = 0;
-				properties.forEach(function(element, index, array) {
-					if (element.generic_type == "CONSUMPTION" && element.id == cmds[0]) {
-						//console.log("valeur " + element.generic_type + " : " + element.currentValue);
-						v = element.currentValue;
-					}
-				});
-				callback(undefined, parseFloat(v));
-			} else {
-				var v = 0;
-				callback(undefined, parseInt(v));
-			}
-		}).catch(function(err, response) {
-			that.log("There was a problem getting value from" + IDs[0] + "-" + err);
-		});
+			break;
+			default :
+				this.command('setValue', value, service, IDs);
+			break;
+		}
+	
 	}
 	catch(e){
-		this.log("Erreur de la fonction getAccessoryValue :"+e);
+		this.log('error','Erreur de la fonction setAccessoryValue :',e);
+		console.error(e.stack);
 	}
 };
-JeedomPlatform.prototype.command = function(c, value, service, IDs) {
+
+// -- getAccessoryValue
+// -- Desc : Get the value of an accessory in the jeedom local cache
+// -- Params --
+// -- characteristic : characteristic to get the value from
+// -- service : service in which the characteristic is
+// -- IDs : eqLogic ID
+// -- Return : nothing
+JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, IDs) {
 	try{
 		var that = this;
-		var cmds = IDs[1].split("|");
-		if (service.UUID == (new Service.SecuritySystem()).UUID) {
-			c = "SetAlarmMode";
-		} else if (value == 0 && service.UUID == (new Service.WindowCovering).UUID) {
-			c = "flapDown";
-		} else if ((value == 99 || value == 100) && service.UUID == (new Service.WindowCovering).UUID) {
-			c = "flapUp";
-		}
-		this.jeedomClient.getDeviceCmd(IDs[0]).then(function(resultCMD) {
-			var cmdId = cmds[0];
-			resultCMD.forEach(function(element, index, array) {
-				if (c == "flapDown" && element.generic_type == "FLAP_DOWN") {
-					cmdId = element.id;
-				} else if (c == "flapUp" && element.generic_type == "FLAP_UP") {
-					cmdId = element.id;
-				} else if (value >= 0 && element.id == cmds[3] && (element.generic_type == "LIGHT_SLIDER" || element.generic_type == "FLAP_SLIDER")) {
-					cmdId = element.id;
-					if (value == undefined) {
-						if (c == "turnOn") {
-							value = (element.generic_type == "LIGHT_SLIDER") ? 255 : 99;
-						} else if (c == "turnOff") {
-							value = 0;
-						}
-					} else {
-						// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
-						value =	Math.round(value * 99/100);
-					}
-				} else if ((value == 255 || c == "turnOn") && element.id == cmds[1] && (element.generic_type == "LIGHT_ON" || element.generic_type == "ENERGY_ON")) {
-					cmdId = element.id;
-				} else if ((value == 0 || c == "turnOff") && element.id == cmds[2] && (element.generic_type == "LIGHT_OFF" || (element.generic_type == "ENERGY_OFF" && element.id == cmds[2]) )) {
-					cmdId = element.id;
-				} else if (c == "setRGB" && element.generic_type == "LIGHT_SET_COLOR") {
-					cmdId = element.id;
-				} else if (c == "SetAlarmMode" && element.generic_type == "ALARM_ARMED" && value < 3) {
-					cmdId = element.id;
-				} else if (c == "SetAlarmMode" && element.generic_type == "ALARM_RELEASED" && value == 3) {
-					cmdId = element.id;
-				} else if (c == "setTargetLevel" && value > 0 && element.generic_type == "THERMOSTAT_SET_SETPOINT") {
-					cmdId = element.id;
-				} else if (c == "TargetHeatingCoolingState") {
-					if (element.generic_type == "THERMOSTAT_SET_MODE" && element.name == "Off") {
-						cmdId = element.id;
+		var cmds = IDs[1].split('|');
+		var returnValue = 0;
+		var HRreturnValue;
+		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]);
+		var hsv,modesCmd,mode_PRESENT,mode_AWAY,mode_NIGHT,t;
+		switch (characteristic.UUID) {
+			case Characteristic.OutletInUse.UUID :
+				returnValue = parseFloat(cmdList.power) > 1.0 ? true : false;
+			break;
+			case Characteristic.TimeInterval.UUID :
+				returnValue = Date.now();
+				returnValue = parseInt(cmdList.timestamp) - returnValue;
+				if (returnValue < 0) returnValue = 0;
+			break;
+			case Characteristic.TargetTemperature.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
+						returnValue = cmd.currentValue;
+						break;
 					}
 				}
-			});
-			that.jeedomClient.executeDeviceAction(cmdId, c, value).then(function(response) {
-				that.log("Command: " + c + ((value != undefined) ? ", value: " + value : ""));
-			}).catch(function(err, response) {
-				that.log("There was a problem sending command " + c + " to " + IDs[0]);
-			});
+			break;
+			case Characteristic.Hue.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LIGHT_COLOR') {
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+				hsv = that.updateHomeKitColorFromJeedom(returnValue, service);
+				returnValue = Math.round(hsv.h);
+			break;
+			case Characteristic.Saturation.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LIGHT_COLOR') {
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+				hsv = that.updateHomeKitColorFromJeedom(returnValue, service);
+				returnValue = Math.round(hsv.v);
+			break;
+			case Characteristic.SmokeDetected.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SMOKE' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						if(returnValue == 1) returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
+						else returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+						break;
+					}
+				}
+			break;
+			case Characteristic.LeakDetected.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FLOOD' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						if(returnValue == 1) returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
+						else returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						break;
+					}
+				}
+			break;
+			case Characteristic.MotionDetected.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'PRESENCE' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.ContactSensorState.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'OPENING' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						if(returnValue == 1) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
+						break;
+					}
+				}
+			break;
+			case Characteristic.Brightness.UUID :
+				returnValue = 0;
+				for (const cmd of cmdList) {
+					if (service.HSBValue != null) {
+						if (cmd.generic_type == 'LIGHT_COLOR') {
+							//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+							hsv = that.updateHomeKitColorFromJeedom(cmd.currentValue, service);
+							returnValue = Math.round(hsv.v);
+							break;
+						}
+					} else if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == cmds[0]) {
+						returnValue = Math.round(parseInt(cmd.currentValue) * 100/99); // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+						break;
+					}
+				}
+			break;
+			case Characteristic.SecuritySystemTargetState.UUID :
+				for (const cmd of cmdList) {
+					let currentValue = cmd.currentValue;
+					
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
+						that.log('debug',"Alarm_enable_state=",currentValue);
+						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
+						break;
+					}
+					if (cmd.generic_type == 'ALARM_MODE') {
+						that.log('debug',"alarm_mode=",currentValue);
+						modesCmd = IDs[4].split('|');
+						
+						for(const c in modesCmd) {
+							if (modesCmd.hasOwnProperty(c)) {
+								t = modesCmd[c].split('=');
+								switch (parseInt(c)) {
+										case 0:
+											mode_PRESENT = t[1];
+										break;
+										case 1:
+											mode_AWAY = t[1];
+										break;
+										case 2:
+											mode_NIGHT = t[1];
+										break;
+								}
+							}
+						}
+						switch (currentValue) {
+							case mode_PRESENT:
+								that.log('debug',"renvoie present",Characteristic.SecuritySystemTargetState.STAY_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.STAY_ARM;
+							break;
+							case mode_AWAY:
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+							break;
+							case mode_NIGHT:
+								that.log('debug',"renvoie nuit",Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+							break;
+							default: // back compatibility
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+							break;
+						}
+					}
+				}
+			break;
+			case Characteristic.SecuritySystemCurrentState.UUID :
+				for (const cmd of cmdList) {
+					let currentValue = cmd.currentValue;
+					
+					if (cmd.generic_type == 'ALARM_STATE' && currentValue == 1) {
+						that.log('debug',"Alarm_State=",currentValue);
+						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+						break;
+					}
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
+						that.log('debug',"Alarm_enable_state=",currentValue);
+						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
+						break;
+					}
+					if (cmd.generic_type == 'ALARM_MODE') {
+						that.log('debug',"alarm_mode=",currentValue);
+						modesCmd = IDs[4].split('|');
+						
+						for(const c in modesCmd) {
+							if (modesCmd.hasOwnProperty(c)) {
+								t = modesCmd[c].split('=');
+								switch (parseInt(c)) {
+										case 0:
+											mode_PRESENT = t[1];
+										break;
+										case 1:
+											mode_AWAY = t[1];
+										break;
+										case 2:
+											mode_NIGHT = t[1];
+										break;
+								}
+							}
+						}
+						switch (currentValue) {
+							case mode_PRESENT:
+								that.log('debug',"renvoie present",Characteristic.SecuritySystemCurrentState.STAY_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.STAY_ARM;
+							break;
+							case mode_AWAY:
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+							break;
+							case mode_NIGHT:
+								that.log('debug',"renvoie nuit",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+							break;
+							default: // back compatibility
+								that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+							break;
+						}
+					}
+				}
+			break;
+			case Characteristic.CurrentHeatingCoolingState.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'THERMOSTAT_MODE') {
+						if (cmd.currentValue == 'Off') {
+							returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
+						} else {
+							returnValue = Characteristic.CurrentHeatingCoolingState.AUTO;
+						}
+						break;
+					}
+				}
+			break;
+			case Characteristic.PositionState.UUID :
+				returnValue = Characteristic.PositionState.STOPPED;
+			break;
+			case Characteristic.ProgrammableSwitchEvent.UUID :
+				returnValue = cmdList.currentValue;
+				that.log('debug','GetState ProgrammableSwitchEvent: '+returnValue);
+			break;
+			case Characteristic.LockCurrentState.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LOCK_STATE') {
+						that.log('debug','LockCurrentState : ',cmd.currentValue);
+						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+					}
+				}
+			break;
+			case Characteristic.LockTargetState.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LOCK_STATE') {
+						that.log('debug','LockTargetState : ',cmd.currentValue);
+						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+					}
+				}
+			break;
+			case Characteristic.TargetDoorState.UUID :
+				HRreturnValue="OPENDef";
+				returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'GARAGE_STATE' || 
+					    cmd.generic_type == 'BARRIER_STATE') {
+						switch(parseInt(cmd.currentValue)) {
+								case 255 :
+									returnValue=Characteristic.TargetDoorState.OPEN; //0
+									HRreturnValue="OPEN";	
+								break;
+								case 0 :
+									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
+								break;
+								case 254 :
+									returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									HRreturnValue="OPEN";
+								break;
+								case 252 :
+									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
+								break;
+								case 253 :
+									returnValue=Characteristic.TargetDoorState.OPEN; // 0
+									HRreturnValue="OPEN";
+								break;
+						}
+						that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						break;
+					}
+				}	
+			break;
+			case Characteristic.CurrentDoorState.UUID :
+				HRreturnValue="OPENDef";
+				returnValue=Characteristic.CurrentDoorState.OPEN; // if don't know -> OPEN
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'GARAGE_STATE' || 
+					    cmd.generic_type == 'BARRIER_STATE') {
+						switch(parseInt(cmd.currentValue)) {
+								case 255 :
+									returnValue=Characteristic.CurrentDoorState.OPEN; //0
+									HRreturnValue="OPEN";
+								break;
+								case 0 :
+									returnValue=Characteristic.CurrentDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
+								break;
+								case 254 :
+									returnValue=Characteristic.CurrentDoorState.OPENING; // 2
+									HRreturnValue="OPENING";
+								break;
+								case 252 :
+									returnValue=Characteristic.CurrentDoorState.CLOSING; // 3
+									HRreturnValue="CLOSING";
+								break;
+								case 253 :
+									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
+									HRreturnValue="STOPPED";
+								break;
+						}
+						that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						break;
+					}
+				}
+			break;
+			case Characteristic.CurrentPosition.UUID :
+			case Characteristic.TargetPosition.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (flaps need yearly tunning)
+						break;
+					}
+				}
+			break;
+			case Characteristic.CurrentTemperature.UUID :
+				for (const cmd of cmdList) {
+					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == cmds[0]) || 
+					    cmd.generic_type == 'THERMOSTAT_TEMPERATURE') {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.UVIndex.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'UV' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;			
+			case Characteristic.CurrentAmbientLightLevel.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.CurrentRelativeHumidity.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'HUMIDITY' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.BatteryLevel.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BATTERY' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.StatusLowBattery.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BATTERY' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						if(returnValue > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+						else returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
+						break;
+					}
+				}
+			break;
+			case Characteristic.ChargingState.UUID :
+				var hasFound = false;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'BATTERY_CHARGING' && cmd.id == cmds[1]) {
+						returnValue = cmd.currentValue;
+						if(returnValue == 0) returnValue = Characteristic.ChargingState.NOT_CHARGING;
+						else returnValue = Characteristic.ChargingState.CHARGING;
+						hasFound = true;
+						break;
+					}
+				}
+				if(!hasFound) returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;
+			break;
+			case Characteristic.StatusTampered.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SABOTAGE') {
+						returnValue = cmd.currentValue;
+						if(returnValue == 0) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
+						else returnValue=Characteristic.StatusTampered.TAMPERED;
+						break;
+					}
+				}
+			break;
+			case Characteristic.CurrentPowerConsumption.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'POWER' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.TotalPowerConsumption.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.On.UUID :
+				for (const cmd of cmdList) {
+					if ((cmd.generic_type == 'LIGHT_STATE' && cmd.id == cmds[0]) || 
+						(cmd.generic_type == "ENERGY_STATE" && cmd.id == cmds[0])) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+		}
+		return returnValue;
+	}
+	catch(e){
+		this.log('error','Erreur de la fonction getAccessoryValue :',e);
+		console.error(e.stack);
+	}
+};
+
+// -- sanitizeValue
+// -- Desc : limit the value to the min and max characteristic + round the float to the same precision than the minStep
+// -- Params --
+// -- currentValue : value to prepare
+// -- characteristic : characteristic containing the props
+// -- Return : prepared value
+function sanitizeValue(currentValue,characteristic) {
+	let val=0;
+	if(!characteristic) // just return the value if no characteristic
+		return val;
+	else
+		if(!characteristic.props) 
+			return val;
+		else 
+			if(!characteristic.props.format) 
+				return val;
+
+	switch(characteristic.props.format) {
+			case "uint8" :
+			case "uint16":
+			case "uint32" :
+			case "uint64" :
+				val = parseInt(currentValue);
+				if(val == undefined || val == null || isNaN(val)) val = 0;
+				val = Math.abs(val); // unsigned
+			break;
+			case "int" :
+				val = parseInt(currentValue);
+				if(val == undefined || val == null || isNaN(val)) val = 0;
+			break;
+			case "float" :
+				val = minStepRound(parseFloat(currentValue),characteristic);
+				if(val == undefined || val == null || isNaN(val)) val = 0;
+			break;
+			case "bool" :
+				val = toBool(currentValue);
+			break;
+			case "string" :
+			case "tlv8" :
+				val = currentValue;
+				if(val == undefined || val == null) val = '';
+				val = val.toString();
+			break;
+	}
+	if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < characteristic.props.minValue) val = characteristic.props.minValue;
+	if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > characteristic.props.maxValue) val = characteristic.props.maxValue;
+	return val;
+}
+
+// -- minStepRound
+// -- Desc : round the value to the same precision than the minStep
+// -- Params --
+// -- val : value to round
+// -- characteristic : characteristic containing the props
+// -- Return : rounded value
+function minStepRound(val,characteristic) {
+	if(characteristic.props.minStep == null || characteristic.props.minStep == undefined) {
+		characteristic.props.minStep = 1;
+	}
+	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
+	val = val * Math.pow(10, prec);
+	val = Math.round(val); // round to the minStep precision
+	val = val / Math.pow(10, prec);
+	return val;
+}
+
+// -- toBool
+// -- Desc : transform to boolean a value
+// -- Params --
+// -- value : value to convert into boolean
+// -- Return : boolean value
+function toBool(val) {
+	if (val == 'false' || val == '0') {
+		return false;
+	} else {
+		return Boolean(val);
+	}
+}
+
+// -- command
+// -- Desc : Command from Homebridge to execute in Jeedom
+// -- Params --
+// -- action : command type
+// -- value : value to set (if any)
+// -- service : from which Homebridge service
+// -- IDs : eqLogic ID
+// -- Return : nothing
+JeedomPlatform.prototype.command = function(action, value, service, IDs) {
+	try{
+		var that = this;
+		var cmds = IDs[1].split('|');
+		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]); 
+		var cmdId = cmds[0];
+		let found=false;
+		// ALARM
+		var id_PRESENT,id_AWAY,id_NIGHT;
+		if(action == 'SetAlarmMode') {
+			var modesCmd = IDs[4].split('|');
+			for(const c in modesCmd) {
+				if (modesCmd.hasOwnProperty(c)) {
+					var t = modesCmd[c].split('=');
+					switch (parseInt(c)) {
+							case 0:
+								id_PRESENT = t[0];
+							break;
+							case 1:
+								id_AWAY = t[0];
+							break;
+							case 2:
+								id_NIGHT = t[0];
+							break;
+					}
+				}
+			}
+		}
+		// /ALARM		
+		for (const cmd of cmdList) {
+			if(!found) {
+				switch (cmd.generic_type) {
+					case 'FLAP_DOWN' :
+						if(action == 'flapDown') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'FLAP_UP' :
+						if(action == 'flapUp') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'GB_OPEN' :
+						if(action == 'GBopen') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'GB_CLOSE' :
+						if(action == 'GBclose') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'GB_TOGGLE' :
+						if(action == 'GBtoggle') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'LOCK_OPEN' :
+						if(action == 'unsecure') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'LOCK_CLOSE' :
+						if(action == 'secure') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'LIGHT_SLIDER' :
+					case 'FLAP_SLIDER' :
+						if(value >= 0 && cmd.id == cmds[3]) {
+							cmdId = cmd.id;
+							if (action == 'turnOn' && cmds[1]) {
+								cmdId=cmds[1];
+							} else if (action == 'turnOff' && cmds[2]) {
+								cmdId=cmds[2];
+							}		
+							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
+							value =	Math.round(value * 99/100);							
+							found = true;
+						}
+					break;
+					case 'LIGHT_ON' :
+					case 'ENERGY_ON' :
+						if((value == 255 || action == 'turnOn') && cmd.id == cmds[1]) {
+							cmdId = cmd.id;					
+							found = true;
+						}
+					break;
+					case 'LIGHT_OFF' :
+					case 'ENERGY_OFF' :
+						if((value == 0 || action == 'turnOff') && cmd.id == cmds[2]) {
+							cmdId = cmd.id;					
+							found = true;
+						}
+					break;
+					case 'LIGHT_SET_COLOR' :
+						if(action == 'setRGB') {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'ALARM_RELEASED' :
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.DISARM) {
+								that.log('debug',"setAlarmMode",value,cmd.id);
+ 								cmdId = cmd.id;
+ 								found = true;
+						}
+					break;
+					case 'ALARM_SET_MODE' :
+						console.log("ALARM_SET_MODE","SetAlarmMode=",action,value);
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.NIGHT_ARM) {
+							cmdId = id_NIGHT;
+							console.log("set nuit");
+							found = true;
+						}
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.AWAY_ARM) {
+							cmdId = id_AWAY;
+							console.log("set absent");
+							found = true;
+						}
+						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.STAY_ARM) {
+							cmdId = id_PRESENT;
+							console.log("set present");
+							found = true;
+ 						}
+ 					break;					
+					case 'THERMOSTAT_SET_SETPOINT' :
+						if(action == 'setTargetLevel') {
+							if(value > 0) {
+								cmdId = cmd.id;
+								found = true;
+							}
+						}
+					break;
+					case 'THERMOSTAT_SET_MODE' :
+						if(action == 'TargetHeatingCoolingState') {
+							if(cmd.name == 'Off') {
+								cmdId = cmd.id;
+								found = true;
+							}
+						}
+					break;
+				}
+			}
+		}
+		
+		that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+			that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 		}).catch(function(err, response) {
-			that.log("#1 Error getting data from Jeedom: " + err + " " + response);
+			that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
+			console.error(err.stack);
 		});
 	}
 	catch(e){
-		this.log("Erreur de la fonction command :"+e);	
+		this.log('error','Erreur de la fonction command :',e);	
+		console.error(e.stack);
 	}
 };
-JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic, onOff, propertyChanged) {
+
+// -- subscribeUpdate
+// -- Desc : Populate the subscriptions to the characteristic. if the value is changed, the characteristic will be updated
+// -- Params --
+// -- service : service containing the characteristic to subscribe to
+// -- characteristic : characteristic to subscribe to
+// -- Return : nothing
+JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic) {
 	try{
-		if (characteristic.UUID == (new Characteristic.PositionState()).UUID)
+		if (characteristic.UUID == Characteristic.PositionState.UUID)
 			return;
 
-		var IDs = service.subtype.split("-");
+		var IDs = service.subtype.split('-');
 		this.updateSubscriptions.push({
 			'id' : IDs[0],
 			'service' : service,
-			'characteristic' : characteristic,
-			'onOff' : onOff,
-			"property" : propertyChanged
-		});
+			'characteristic' : characteristic
+			});
 	}
 	catch(e){
-		this.log("Erreur de la fonction subscribeUpdate :"+e);
+		this.log('error','Erreur de la fonction subscribeUpdate :',e);
+		console.error(e.stack);
+		hasError=true;
 	}
 };
-JeedomPlatform.prototype.startPollingUpdate = function(lastPoll) {
+
+// -- startPollingUpdate
+// -- Desc : Get the last status from Jeedom and act on it (update model and subscribers)
+// -- Params --
+// -- Return : nothing
+JeedomPlatform.prototype.startPollingUpdate = function() {
 	var that = this;
-	if (this.jeedomClient == undefined) {
-		setTimeout(function() {
-			that.startPollingUpdate(0);
-		}, that.pollerPeriod * 1000);
-		return;
-	}
-	that.lastPoll = lastPoll;
-	this.jeedomClient.refreshStates(this.lastPoll).then(function(updates) {
+	if(that.pollingUpdateRunning) {return;}
+	that.pollingUpdateRunning = true;
+	that.jeedomClient.refreshStates().then(function(updates) {
+		that.lastPoll = updates.datetime;
 		if (updates.result != undefined) {
-			var lastPoll = updates.datetime;
-		}
-		if (updates.result != undefined) {
-			updates.result.map(function(s) {
-				if (s.option.value != undefined && s.option.cmd_id != undefined) {
-					var value = parseInt(s.option.value);
-					if (isNaN(value))
-						value = (s.option.value === "true");
-					for (var i = 0; i < that.updateSubscriptions.length; i++) {
-						var subscription = that.updateSubscriptions[i];
-						if (subscription.service.subtype != undefined) {
-							var IDs = subscription.service.subtype.split("-");
-							var cmds = IDs[1].split("|");
-							var cmd_id = cmds[0];
-							var cmd2_id = IDs[2];
-						}
-						if (cmd_id == s.option.cmd_id || cmd2_id == s.option.cmd_id) {
-							var powerValue = false;
-							var intervalValue = false;
-							if (subscription.characteristic.UUID == (new Characteristic.OutletInUse()).UUID)
-								powerValue = true;
-							if (subscription.characteristic.UUID == (new Characteristic.TimeInterval()).UUID)
-								intervalValue = true;
-							if (subscription.characteristic.UUID == (new Characteristic.SmokeDetected()).UUID)
-								subscription.characteristic.setValue(value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemCurrentState()).UUID) {
-								if (cmd2_id == s.option.cmd_id && value == 1) {
-									subscription.characteristic.setValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED, undefined, 'fromJeedom');
-								} else {
-									subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
-								}
-							} else if (subscription.characteristic.UUID == (new Characteristic.SecuritySystemTargetState()).UUID) {
-								subscription.characteristic.setValue(value == 0 ? Characteristic.SecuritySystemCurrentState.DISARMED : Characteristic.SecuritySystemCurrentState.ARM_AWAY, undefined, 'fromJeedom');
-							} else if (subscription.characteristic.UUID == (new Characteristic.LeakDetected()).UUID)
-								subscription.characteristic.setValue(value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.ContactSensorState()).UUID)
-								subscription.characteristic.setValue(value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.LockCurrentState()).UUID || subscription.characteristic.UUID == (new Characteristic.LockTargetState()).UUID)
-								subscription.characteristic.setValue(value == 1 ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.CurrentPosition()).UUID || subscription.characteristic.UUID == (new Characteristic.TargetPosition()).UUID) {
-								if (value >= subscription.characteristic.props.minValue && value <= subscription.characteristic.props.maxValue)
-									subscription.characteristic.setValue(value, undefined, 'fromJeedom');
-							} else if (s.power != undefined && powerValue) {
-								subscription.characteristic.setValue(parseFloat(s.power) > 1.0 ? true : false, undefined, 'fromJeedom');
-							} // brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to %	
-							else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID) {				
-								subscription.characteristic.setValue(Math.round(value * 100/99), undefined, 'fromJeedom');
-							} else if ((subscription.onOff && typeof (value) == "boolean") || !subscription.onOff) {
-								subscription.characteristic.setValue(value, undefined, 'fromJeedom');
-							} else {
-								subscription.characteristic.setValue(value == 0 ? false : true, undefined, 'fromJeedom');
-							}
-						}
-					}
+			updates.result.map(function(update) {
+				if (update.name == 'cmd::update' && 
+				    update.option.value != undefined && 
+				    update.option.cmd_id != undefined) {
+					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
+					setTimeout(function(){that.updateSubscribers(update);},50);
 				}
-				if (s.color != undefined) {
-					for (var i = 0; i < that.updateSubscriptions.length; i++) {
-						var subscription = that.updateSubscriptions[i];
-						if (subscription.id == s.id && subscription.property == "color") {
-							var hsv = that.updateHomeKitColorFromJeedom(s.color, subscription.service);
-							if (subscription.characteristic.UUID == (new Characteristic.On()).UUID)
-								subscription.characteristic.setValue(hsv.v == 0 ? false : true, undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.Hue()).UUID)
-								subscription.characteristic.setValue(Math.round(hsv.h), undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.Saturation()).UUID)
-								subscription.characteristic.setValue(Math.round(hsv.s), undefined, 'fromJeedom');
-							else if (subscription.characteristic.UUID == (new Characteristic.Brightness()).UUID)
-								subscription.characteristic.setValue(Math.round(hsv.v), undefined, 'fromJeedom');
-						}
-					}
+				else {
+					if(DEV_DEBUG) that.log('debug','[Reçu Type non géré]: '+update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
 				}
 			});
-
 		}
-		that.startPollingUpdate(lastPoll);
+	}).then(function(){
+		that.pollingUpdateRunning = false;
+		that.pollingID = setTimeout(function(){ that.log('debug','==RESTART POLLING==');that.startPollingUpdate(); }, that.pollerPeriod * 1000);
 	}).catch(function(err, response) {
-		that.log("Error fetching updates: " + err);
-		that.startPollingUpdate(lastPoll);
+		that.log('error','Erreur de récupération des évènements de mise à jour: ', err, response);
+		console.error(err.stack);
+		that.pollingUpdateRunning = false;
+		that.pollingID = setTimeout(function(){ that.log('debug','!!RESTART POLLING AFTER ERROR!!');that.startPollingUpdate(); }, that.pollerPeriod * 2 * 1000);
 	});
 };
+
+// -- updateSubscribers
+// -- Desc : update subcribers populated by the subscribeUpdate method
+// -- Params --
+// -- update : the update received from Jeedom
+// -- Return : nothing
+var alarmMode = null;
+var alarmModeTarget = null;
+JeedomPlatform.prototype.updateSubscribers = function(update) {
+	var that = this;
+	var i,subscription,IDs,subCharact,HRreturnValue;
+	var FC = update.option.value[0];
+	
+	if(FC == '#') update.color=update.option.value;
+	else update.color=undefined;
+	
+	var value = parseInt(update.option.value);
+	var newValue=0;
+	if (isNaN(value))
+		value = (update.option.value === 'true');
+	
+	if (update.name == 'cmd::update' && 
+	    update.option.value != undefined && 
+	    update.option.cmd_id != undefined) {
+		//that.log('debug','cmd : '+JSON.stringify(cmd));
+		var cmd_id,cmd2_id,cmd3_id;
+		for (i = 0; i < that.updateSubscriptions.length; i++) {
+			subscription = that.updateSubscriptions[i];
+			if (subscription.service.subtype != undefined) {
+				IDs = subscription.service.subtype.split('-');
+				var cmds = IDs[1].split('|');
+				cmd_id = cmds[0];
+				cmd2_id = IDs[2];
+				cmd3_id = IDs[3];
+			}
+			subCharact = subscription.characteristic;
+			if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id) {
+				var intervalValue = false;
+				var mode_PRESENT,mode_AWAY,mode_NIGHT,t,modesCmd,v;
+				switch(subCharact.UUID) {
+					case Characteristic.TimeInterval.UUID :
+						intervalValue = true;
+					break;
+					case Characteristic.SmokeDetected.UUID :
+						newValue = value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');		
+					break;
+					case Characteristic.SecuritySystemCurrentState.UUID :
+						that.log('debug',"Current",alarmMode);
+						if (cmd2_id == update.option.cmd_id) { 
+							if(value == 1) {// if ALARM_STATE == 1 : RING !
+								that.log('debug',"ALARM !!!");
+								subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,subCharact), undefined, 'fromJeedom');
+								alarmMode = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+							} else {
+								alarmMode = null;
+							}
+						} else if (cmd_id == update.option.cmd_id) { 
+							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
+								if(alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
+									that.log('debug',"disarmed");
+									subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.DISARMED,subCharact), undefined, 'fromJeedom');
+									alarmMode = Characteristic.SecuritySystemCurrentState.DISARMED;
+								}
+							} else {
+								alarmMode = null;
+							}
+						} else if(cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
+							if(alarmMode != Characteristic.SecuritySystemCurrentState.DISARMED && alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
+								that.log('debug',"value : ",update.option.display_value);
+								// we set the mode Strings
+								modesCmd = IDs[4].split('|');
+								for(const c in modesCmd) {
+									if (modesCmd.hasOwnProperty(c)) {
+										t = modesCmd[c].split('=');
+										switch (parseInt(c)) {
+												case 0:
+													mode_PRESENT = t[1];
+												break;
+												case 1:
+													mode_AWAY = t[1];
+												break;
+												case 2:
+													mode_NIGHT = t[1];
+												break;
+										}
+									}
+								}
+								v=Characteristic.SecuritySystemCurrentState.DISARMED;
+								switch(update.option.display_value) {
+									case mode_PRESENT :
+										v=Characteristic.SecuritySystemCurrentState.STAY_ARM;
+									break;
+									case mode_AWAY :
+										v=Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+									break;
+									case mode_NIGHT :
+										v=Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+									break;
+								}
+								subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+								alarmMode = null;
+							}
+ 						}
+					break;
+					case Characteristic.SecuritySystemTargetState.UUID :
+						that.log('debug',"Target",alarmModeTarget);
+						if (cmd_id == update.option.cmd_id) { 
+							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
+								that.log('debug',"disarm");
+								subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemTargetState.DISARM,subCharact), undefined, 'fromJeedom');
+								alarmModeTarget = Characteristic.SecuritySystemTargetState.DISARM;
+							} else {
+								alarmModeTarget = null;
+							}
+						} else if (cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
+							if(alarmModeTarget != Characteristic.SecuritySystemTargetState.DISARM) {
+								that.log('debug',"value : ",update.option.display_value);
+								// we set the mode Strings)
+								modesCmd = IDs[4].split('|');
+								for(const c in modesCmd) {
+									if (modesCmd.hasOwnProperty(c)) {
+										t = modesCmd[c].split('=');
+										switch (parseInt(c)) {
+												case 0:
+													mode_PRESENT = t[1];
+												break;
+												case 1:
+													mode_AWAY = t[1];
+												break;
+												case 2:
+													mode_NIGHT = t[1];
+												break;
+										}
+									}
+								}
+								v=Characteristic.SecuritySystemTargetState.DISARM;
+								switch(update.option.display_value) {
+									case mode_PRESENT :
+										v=Characteristic.SecuritySystemTargetState.STAY_ARM;
+									break;
+									case mode_AWAY :
+										v=Characteristic.SecuritySystemTargetState.AWAY_ARM;
+									break;
+									case mode_NIGHT :
+										v=Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+									break;
+									case 0 : // if ALARM RING
+										v=alarmModeTarget; // display previous mode
+									break;
+								}
+								subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+								alarmModeTarget = v;
+							}
+						}			
+					break;
+					case Characteristic.LeakDetected.UUID :
+						newValue = value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.StatusTampered.UUID :
+						if(value == 0 || isNaN(value))
+							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.NOT_TAMPERED,subCharact), undefined, 'fromJeedom');
+						else
+							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.ContactSensorState.UUID :
+						newValue = value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.CurrentDoorState.UUID :
+						v=Characteristic.CurrentDoorState.OPEN; // if not -> OPEN
+						HRreturnValue="OPENDef";
+						switch(parseInt(value)) {
+							case 255 :
+								v=Characteristic.CurrentDoorState.OPEN; // 0
+								HRreturnValue="OPEN";
+							break;
+							case 0 :
+								v=Characteristic.CurrentDoorState.CLOSED; // 1
+								HRreturnValue="CLOSED";
+							break;
+							case 254 : 
+								v=Characteristic.CurrentDoorState.OPENING; // 2
+								HRreturnValue="OPENING";
+							break;
+							case 252 :
+								v=Characteristic.CurrentDoorState.CLOSING; // 3
+								HRreturnValue="CLOSING";
+							break;
+							case 253 :
+								v=Characteristic.CurrentDoorState.STOPPED; // 4
+								HRreturnValue="STOPPED";
+							break;
+						}
+						that.log('debug','Etat(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
+						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.TargetDoorState.UUID :
+						v=Characteristic.TargetDoorState.OPEN; // if not -> OPEN
+						HRreturnValue="OPENDef";
+						switch(parseInt(value)) {
+							case 255 :
+								v=Characteristic.TargetDoorState.OPEN; // 0
+								HRreturnValue="OPEN";
+							break;
+							case 0 :
+								v=Characteristic.TargetDoorState.CLOSED; // 1
+								HRreturnValue="CLOSED";
+							break;
+							case 254 : 
+								v=Characteristic.TargetDoorState.OPEN; // 0
+								HRreturnValue="OPEN";
+							break;
+							case 252 :
+								v=Characteristic.TargetDoorState.CLOSED; // 1
+								HRreturnValue="CLOSED";
+							break;
+							case 253 :
+								v=Characteristic.TargetDoorState.OPEN; // 0
+								HRreturnValue="OPEN";
+							break;
+						}
+						that.log('debug','Target(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
+						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.ProgrammableSwitchEvent.UUID :
+						that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.LockCurrentState.UUID :
+						newValue = toBool(value) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+						that.log('debug','LockCurrentState(sub) : ',newValue);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.LockTargetState.UUID :
+						newValue = toBool(value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+						that.log('debug','LockTargetState(sub) : ',newValue);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.CurrentPosition.UUID :
+					case Characteristic.TargetPosition.UUID :
+						if (value >= subCharact.props.minValue && value <= subCharact.props.maxValue)
+							subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.OutletInUse.UUID :
+						if (update.power != undefined) {
+							newValue = parseFloat(update.power) > 1.0 ? true : false;
+							subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+						}
+					break;
+					case Characteristic.Brightness.UUID :
+						newValue = Math.round(value * 100/99);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.On.UUID :
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+					break;
+					default :
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+					break;
+				} 
+			}
+		}
+	}
+	if (update.color != undefined) {
+		var found=false;
+		for (i = 0; i < that.updateSubscriptions.length; i++) {
+			subscription = that.updateSubscriptions[i];
+			IDs = subscription.service.subtype.split('-');
+			if (IDs[1] == update.option.cmd_id && subscription.service.HSBValue != undefined) {
+				var hsv = that.updateHomeKitColorFromJeedom(update.color, subscription.service);
+				subCharact =  subscription.characteristic;
+				switch(subCharact.UUID)
+				{
+					case Characteristic.On.UUID :
+						//that.log('debug','update On :'+hsv.v == 0 ? false : true);
+						newValue = hsv.v == 0 ? false : true;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.Hue.UUID :
+						//that.log('debug','update Hue :'+Math.round(hsv.h));
+						newValue = Math.round(hsv.h);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.Saturation.UUID :
+						//that.log('debug','update Sat :'+Math.round(hsv.s));
+						newValue = Math.round(hsv.s);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.Brightness.UUID :
+						//that.log('debug','update Bright :'+Math.round(hsv.v));
+						newValue = Math.round(hsv.v);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+				}
+				found=true;
+			}
+			else if (found==true) // after all founds
+			{
+				break;
+			}
+		}
+	}
+};
+
+// -- updateJeedomColorFromHomeKit
+// -- Desc : convert HSV value (Homebridge) to html value (Jeedom)
+// -- Params --
+// -- h : Hue
+// -- s : Saturation
+// -- v : Value (brightness)
+// -- service : service containing the color
+// -- Return : rgb object
 JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
 	if (h != null)
 		service.HSBValue.hue = h;
@@ -1199,11 +2120,18 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 	service.RGBValue.blue = rgb.b;
 	return rgb;
 };
+
+// -- updateHomeKitColorFromJeedom
+// -- Desc : convert html value (Jeedom) to HSV value (Homebridge)
+// -- Params --
+// -- color : html color #121212
+// -- service : service containing the color
+// -- Return : hsv object
 JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
 	if (color == undefined)
-		color = "0,0,0";
+		color = '0,0,0';
 	//console.log("couleur :" + color);
-	var colors = color.split(",");
+	//var colors = color.split(',');
 	var r = hexToR(color);
 	var g = hexToG(color);
 	var b = hexToB(color);
@@ -1217,6 +2145,13 @@ JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service)
 	return hsv;
 };
 
+// -- syncColorCharacteristics
+// -- Desc : set color in jeedom
+// -- Params --
+// -- rgb : rgb object
+// -- service : service to set color to
+// -- IDs : eqLogic ID
+// -- Return : nothing
 JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) {
 	switch (--service.countColorCharacteristics) {
 	case -1:
@@ -1226,14 +2161,14 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 			if (service.countColorCharacteristics < 2)
 				return;
 			var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
-			that.command("setRGB", rgbColor, service, IDs);
+			that.command('setRGB', rgbColor, service, IDs);
 			service.countColorCharacteristics = 0;
 			service.timeoutIdColorCharacteristics = 0;
 		}, 1000);
 		break;
 	case 0:
 		var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
-		this.command("setRGB", rgbColor, service, IDs);
+		this.command('setRGB', rgbColor, service, IDs);
 		service.countColorCharacteristics = 0;
 		service.timeoutIdColorCharacteristics = 0;
 		break;
@@ -1241,66 +2176,290 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 		break;
 	}
 };
+
+// -- RegisterCustomCharacteristics
+// -- Desc : Register some custom characteristic in Homebridge
+// -- Params --
+// -- Return : nothing
+function RegisterCustomCharacteristics() {
+	// Custom Services and Characteristics
+	Characteristic.TimeInterval = function() {
+		Characteristic.call(this, 'Time Interval', '2A6529B5-5825-4AF3-AD52-20288FBDA115');
+		this.setProps({
+			format : Characteristic.Formats.FLOAT,
+			unit : Characteristic.Units.SECONDS,
+			maxValue : 21600, // 12 hours
+			minValue : 0,
+			minStep : 900, // 15 min
+			perms : [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.TimeInterval, Characteristic);
+	Characteristic.TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+
+	Characteristic.CurrentPowerConsumption = function() {
+		Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format : Characteristic.Formats.UINT16,
+			unit : 'watts',
+			maxValue : 1000000000,
+			minValue : 0,
+			minStep : 1,
+			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.CurrentPowerConsumption, Characteristic);
+	Characteristic.CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
+
+	Characteristic.TotalPowerConsumption = function() {
+		Characteristic.call(this, 'Total Consumption', 'E863F10C-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format : Characteristic.Formats.FLOAT, // Deviation from Eve Energy observed type
+			unit : 'kilowatthours',
+			maxValue : 1000000000,
+			minValue : 0,
+			minStep : 0.001,
+			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.TotalPowerConsumption, Characteristic);
+	Characteristic.TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
+
+	Characteristic.UVIndex = function() {
+		Characteristic.call(this, 'UV Index', '05ba0fe0-b848-4226-906d-5b64272e05ce');
+		this.setProps({
+			format: Characteristic.Formats.UINT8,
+			maxValue: 10,
+			minValue: 0,
+			minStep: 1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.UVIndex, Characteristic);	
+	Characteristic.UVIndex.UUID = '05ba0fe0-b848-4226-906d-5b64272e05ce';
+
+	Characteristic.AirPressure = function() {
+		Characteristic.call(this, 'Air Pressure', 'E863F10F-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.UINT16,
+			unit: "hPa",
+			maxValue: 1100,
+			minValue: 700,
+			minStep: 1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.AirPressure, Characteristic);	
+	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+
+	/**
+	 * Custom Service 'Power Monitor'
+	 */
+
+	Service.PowerMonitor = function(displayName, subtype) {
+		Service.call(this, displayName, '0EB29E08-C307-498E-8E1A-4EDC5FF70607', subtype);
+
+		// Required Characteristics
+		this.addCharacteristic(Characteristic.CurrentPowerConsumption);
+		this.addCharacteristic(Characteristic.TotalPowerConsumption);
+
+		// Optional Characteristics
+
+	};
+	inherits(Service.PowerMonitor, Service);
+	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+	
+	// End of custom Services and Characteristics	
+}
+
+// -- JeedomBridgedAccessory
+// -- Desc : Bridged Class, used by Homebridge to construct the Bridged platform object
+// -- Params --
+// -- services : Services of the Accessory
+// -- Return : nothing
 function JeedomBridgedAccessory(services) {
 	this.services = services;
 }
 
+// -- initAccessory
+// -- Desc : setting the main Characteristic of the Accessory (Manufacturer, ...) and adding services
+// -- Params --
+// -- newAccessory : the Accessory to add the services to
+// -- Return : nothing
 JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
-	newAccessory.getService(Service.AccessoryInformation).setCharacteristic(Characteristic.Manufacturer, this.manufacturer).setCharacteristic(Characteristic.Model, this.model).setCharacteristic(Characteristic.SerialNumber, this.serialNumber);
+	newAccessory
+	   .getService(Service.AccessoryInformation)
+		.setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
+		.setCharacteristic(Characteristic.Model, this.model)
+		.setCharacteristic(Characteristic.SerialNumber, this.serialNumber);
 
-	for (var s = 0; s < this.services.length; s++) {
-		var service = this.services[s];
-		newAccessory.addService(service.controlService);
-		for (var i = 0; i < service.characteristics.length; i++) {
-			var characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
-			characteristic.props.needsBinding = true;
-			if (characteristic.UUID == (new Characteristic.CurrentAmbientLightLevel()).UUID) {
-				characteristic.props.maxValue = 1000;
-				characteristic.props.minStep = 1;
-				characteristic.props.minValue = 1;
-		 }
-         		   if (characteristic.UUID == (new Characteristic.CurrentTemperature()).UUID) {
-                characteristic.props.minValue = -50;
+	this.addServices(newAccessory,this.services,[]);
+};
+
+// -- addServices
+// -- Desc : adding the services to the accessory and rebind event if needed
+// -- Params --
+// -- newAccessory : accessory to add the services too
+// -- services : services to be added
+// -- Return : nothing
+JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,cachedValues) {
+	var service;
+	try {
+		var cachedValue, characteristic;
+		for (var s = 0; s < services.length; s++) {
+			service = services[s];
+			
+			if(!newAccessory.getService(service.controlService)){// not exist ?
+				this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+				newAccessory.addService(service.controlService);
+				for (var i = 0; i < service.characteristics.length; i++) {
+					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
+					
+					cachedValue = cachedValues[service.controlService.subtype+characteristic.displayName];
+					if(cachedValue){
+						characteristic.setValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
+					}
+					
+					characteristic.props.needsBinding = true;
+					/*if (characteristic.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
+						characteristic.props.maxValue = 1000;
+						characteristic.props.minStep = 1;
+						characteristic.props.minValue = 1;
+					}*/
+					if (characteristic.UUID == Characteristic.CurrentTemperature.UUID) {
+						characteristic.props.minValue = -50;
+						characteristic.props.minStep = 0.01;
+					}
+					this.platform.bindCharacteristicEvents(characteristic, service.controlService);
+					this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
+				}
 			}
-			this.platform.bindCharacteristicEvents(characteristic, service.controlService);
+			else
+				this.log('debug','On essaye d\'ajouter un service mais il existe déjà : ',service.controlService);
 		}
 	}
+	catch(e){
+		this.log('error','Erreur de la fonction addServices :',e,JSON.stringify(service.controlService));
+		console.error(e.stack);
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [newAccessory]);
+		hasError=true;
+	}
 };
+
+// -- delServices
+// -- Desc : deleting the services from the accessory
+// -- Params --
+// -- accessory : accessory to delete the services from
+// -- Return : nothing
+JeedomBridgedAccessory.prototype.delServices = function(accessory) {
+	var service;
+	try {
+			var serviceList=[];
+			var cachedValues=[];
+			for(var t=0; t< accessory.services.length;t++) { 
+				if(accessory.services[t].UUID != Service.AccessoryInformation.UUID && 
+				   accessory.services[t].UUID != Service.BridgingState.UUID)
+					serviceList.push(accessory.services[t]);
+			}		
+			for(service of serviceList){ // dont work in one loop or with temp object :(
+				this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
+				for (const c of service.characteristics) {
+					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+					cachedValues[service.subtype+c.displayName]=c.value;
+				}
+				accessory.removeService(service);
+			}
+			return cachedValues;
+	}
+	catch(e){
+		this.log('error','Erreur de la fonction delServices :',e,JSON.stringify(service));
+		console.error(e.stack);
+		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);
+		hasError=true;
+	}
+};
+
+// -- hexToR
+// -- Desc : take the R value in a html color string
+// -- Params --
+// -- h : html color string
+// -- Return : R value
 function hexToR(h) {
 	return parseInt((cutHex(h)).substring(0, 2), 16);
 }
 
+// -- hexToG
+// -- Desc : take the G value in a html color string
+// -- Params --
+// -- h : html color string
+// -- Return : G value
 function hexToG(h) {
 	return parseInt((cutHex(h)).substring(2, 4), 16);
 }
 
+// -- hexToB
+// -- Desc : take the B value in a html color string
+// -- Params --
+// -- h : html color string
+// -- Return : B value
 function hexToB(h) {
 	return parseInt((cutHex(h)).substring(4, 6), 16);
 }
 
+// -- cutHex
+// -- Desc : trim the #
+// -- Params --
+// -- h : html color string
+// -- Return : numeric value of html color
 function cutHex(h) {
-	return (h.charAt(0) == "#") ? h.substring(1, 7) : h;
+	return (h.charAt(0) == '#') ? h.substring(1, 7) : h;
 }
 
+// -- rgbToHex
+// -- Desc : transform separated R G B into html color
+// -- Params --
+// -- R : Red value
+// -- G : Green value
+// -- B : Blue value
+// -- Return : html color
 function rgbToHex(R, G, B) {
-	return "#" + toHex(R) + toHex(G) + toHex(B);
+	return '#' + toHex(R) + toHex(G) + toHex(B);
 }
 
+// -- toHex
+// -- Desc : Transform to hex
+// -- Params --
+// -- n : number
+// -- Return : hex value
 function toHex(n) {
 	n = parseInt(n, 10);
 	if (isNaN(n))
-		return "00";
+		return '00';
 	n = Math.max(0, Math.min(n, 255));
-	return "0123456789ABCDEF".charAt((n - n % 16) / 16) + "0123456789ABCDEF".charAt(n % 16);
+	return '0123456789ABCDEF'.charAt((n - n % 16) / 16) + '0123456789ABCDEF'.charAt(n % 16);
 }
 
+// -- HSVtoRGB
+// -- Desc : Transofrm HSV to RGB
+// -- Params --
+// -- hue : Hue value
+// -- saturation : Saturation value
+// -- value : value (brightness) value
+// -- Return : RGB object
 function HSVtoRGB(hue, saturation, value) {
 	var h = hue / 360.0;
 	var s = saturation / 100.0;
 	var v = value / 100.0;
 	var r, g, b, i, f, p, q, t;
 	if (arguments.length === 1) {
-		s = h.s, v = h.v, h = h.h;
+		s = h.s;
+		v = h.v;
+		h = h.h;
 	}
 	i = Math.floor(h * 6);
 	f = h * 6 - i;
@@ -1309,22 +2468,34 @@ function HSVtoRGB(hue, saturation, value) {
 	t = v * (1 - (1 - f) * s);
 	switch (i % 6) {
 	case 0:
-		r = v, g = t, b = p;
+		r = v;
+		g = t;
+		b = p;
 		break;
 	case 1:
-		r = q, g = v, b = p;
+		r = q;
+		g = v;
+		b = p;
 		break;
 	case 2:
-		r = p, g = v, b = t;
+		r = p;
+		g = v;
+		b = t;
 		break;
 	case 3:
-		r = p, g = q, b = v;
+		r = p;
+		g = q;
+		b = v;
 		break;
 	case 4:
-		r = t, g = p, b = v;
+		r = t;
+		g = p;
+		b = v;
 		break;
 	case 5:
-		r = v, g = p, b = q;
+		r = v;
+		g = p;
+		b = q;
 		break;
 	}
 	return {
@@ -1334,9 +2505,18 @@ function HSVtoRGB(hue, saturation, value) {
 	};
 }
 
+// -- RGBtoHSV
+// -- Desc : Transofrm RGB to HSV
+// -- Params --
+// -- r : Red value
+// -- g : Green value
+// -- b : Blue value
+// -- Return : HSV object
 function RGBtoHSV(r, g, b) {
 	if (arguments.length === 1) {
-		g = r.g, b = r.b, r = r.r;
+		r = r.r;
+		g = r.g;
+		b = r.b;
 	}
 	var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, h, s = (max === 0 ? 0 : d / max), v = max / 255;
 
