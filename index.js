@@ -832,7 +832,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
 		//No more supported by HAP-NodeJS
-		HBAccessory.reachable = true;
+		//HBAccessory.reachable = true;
 		//HBAccessory.updateReachability(true);
 		
 		if (isNewAccessory) {
@@ -920,7 +920,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 		}
 		this.log('Accessoire en cache: ' + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
-		accessory.reachable = true;
+		//accessory.reachable = true;
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction configureAccessory :',e);
