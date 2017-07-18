@@ -3,6 +3,9 @@
 == Changelog
 === Homebridge
 
+==== v1.2.0
+    * Realease Stable
+
 ==== v1.1.4
 
     * Bugfix : unregister Accessories si on a une erreur
