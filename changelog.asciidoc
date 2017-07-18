@@ -1,12 +1,10 @@
-= REALEASE NOTES
+= Changelog
+== Homebridge
 
-== Changelog
-=== Homebridge
-
-==== v1.2.0
+=== v1.2.0
     * Realease Stable
 
-==== v1.1.4
+=== v1.1.4
 
     * Bugfix : unregister Accessories si on a une erreur
     * Update Homebridge & HAP-NodeJS
@@ -14,72 +12,72 @@
     * pré-support Sabotage
     * Bugfix : Interdire une valeur Null ou Undefined d'être envoyée à homekit
     
-==== v1.1.2
+=== v1.1.2
 
     * Support basique Alarme : besoin d'une config coté plugin pour mapper les modes NUIT, ABSENT, PRESENT avec des ALARM_SET_MODE jeedom
     
-==== v1.1.1 
+=== v1.1.1 
     * Bugfix : Restauration des valeurs en cache au redémarrage
     * Bugfix : Bornage des valeurs du detecteur de lumière
     
-==== v1.1.0 
+=== v1.1.0 
 
     * Support des Plateformes Homebridge en mode expert (Cameras, autre...)
     * Documentation code
     * Freeze des fonctionnalités, debugging à faire en vue de version stable
     
-==== v1.0.27
+=== v1.0.27
 
     * Simplifié l'ajout/suppression des services
     * Commencé à résoudre les problèmes LightBulbs mais pas terminé
     
-==== v1.0.26
+=== v1.0.26
 
     * Gestion pourcentage batterie via le type générique "BATTERY"
     * Si < 20% on set un flag "LowBattery" dans Homekit pour afficher dans Maison/Eve/...
     * Gestion du "charge en cours" définit sur "non chargeable" pour l'instant car il faut voir comment on gère ca coté Jeedom
 
-==== v1.0.25 
+=== v1.0.25 
 
     * Nettoyage du code et simplification
     * Meilleure gestion des services en cas de modification de ceux-ci (modification des types génériques)
 
-==== v1.0.24
+=== v1.0.24
 
     * Optimisation (on break les boucles si on a trouvé l'élément, plus rapide sur les grosses installations)
 
-==== v1.0.23
+=== v1.0.23
 
     * si un volet est ouvert à 95% afficher 100% dans Maison (usure mécanique, recalibration)
 
-==== v1.0.22
+=== v1.0.22
 
     * Préparation des Sonnettes en prévision du support dans HomeKit par Apple
 
-==== v1.0.21
+=== v1.0.21
 
     * Corrigé la gestion des Serrures, elles fonctionnent
         *!!! si vous utilisez un iPad comme concentrateur HomeKit, pensez a désactiver Siri pour éviter à qqun de crier "siri ouvre la porte d'entrée" par la boite aux lettres (c'est arrivé !) !!!*
 
-==== v1.0.20
+=== v1.0.20
 
     * Logs plus clairs et plus de verbosité sur la création des Characteristics
 
-==== v1.0.19
+=== v1.0.19
 
     * Support pour les portes de garage/barrières, N'utiliser que BARRIER_STATE ou GARAGE_STATE (même traitement, états 255,254,253,252,0) et GB_TOGGLE
 
-==== v1.0.18
+=== v1.0.18
 
     * Combiné les types OPENING et OPENING_WINDOW car c'est un même type dans homebridge.
     * Ajout du Model (nom du type de l'eqLogic) et du Serial Number (id de l'objet + id logique) dans homebridge.
 
-==== v1.0.17
+=== v1.0.17
 
     * Prise en charge du niveau de debug du plugin mobile (il faut sauver le niveau et relancer le demon pour prise en charge)
     * Simplification du code (retiré des choses inutiles comme la création d'un serveur http)
 
-==== v1.0.16
+=== v1.0.16
 
     * activation d'un mode debug dans la plateforme, il sera lié au status du plugin.
     * Françisation des messages du log, plus de verbosité, plus de clareté et de détails pour encore mieux vous aider en cas de problème.
@@ -104,12 +102,13 @@ Si vous avez un problème avec un périphérique malgré tout : décochez "Envoy
 
 
 
-== KNOWN ISSUES
+
+= KNOWN ISSUES
   * Possibles problèmes sur les ampoules (voir todo) mais il existait déjà.
   * Possibles problèmes sur certains types génériques plus rares.
   * Alarme et Thermostat peuvent ne pas fonctionné comme désiré, correction prochaines version
   
-== TODO | ROADMAP
+= TODO | ROADMAP
   * V - Champ textfield custom dans la configuration pour ceux qui veullent rajouter des accessories manuellement dans homebridge (Sonos etc).
   * Modulariser les périphériques : afin de clarifier et de simplifier l'ajout de gestions de nouveaux types.
   * Corriger un bug dans les lightbulbs, set à false la color (pré-existant).
