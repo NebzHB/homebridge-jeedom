@@ -1288,7 +1288,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 						that.log('debug','LockCurrentState : ',cmd.currentValue);
 						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 					}
-				)
+				}
 			break;
 			case Characteristic.LockTargetState.UUID :
 				for (const cmd of cmdList) {
@@ -1296,7 +1296,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 						that.log('debug','LockTargetState : ',cmd.currentValue));
 						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 					}
-				)
+				}
 			break;
 			case Characteristic.TargetDoorState.UUID :
 				HRreturnValue="OPENDef";
