@@ -525,7 +525,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.opening.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '|' + cmd.opening.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -1134,8 +1134,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'OPENING' && cmd.id == cmds[0]) {
-						returnValue = cmd.currentValue;
-						if(toBool(returnValue) === true) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						if(returnValue === false) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						break;
 					}
@@ -1818,12 +1818,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 	    update.option.value != undefined && 
 	    update.option.cmd_id != undefined) {
 		//that.log('debug','cmd : '+JSON.stringify(cmd));
-		var cmd_id,cmd2_id,cmd3_id;
+		var cmd_id,cmd2_id,cmd3_id,cmds;
 		for (i = 0; i < that.updateSubscriptions.length; i++) {
 			subscription = that.updateSubscriptions[i];
 			if (subscription.service.subtype != undefined) {
 				IDs = subscription.service.subtype.split('-');
-				var cmds = IDs[1].split('|');
+				cmds = IDs[1].split('|');
 				cmd_id = cmds[0];
 				cmd2_id = IDs[2];
 				cmd3_id = IDs[3];
@@ -1960,9 +1960,11 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
-						newValue = value;
-						if(toBool(newValue) === true) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						
+						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						if(newValue === false) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
+					
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
