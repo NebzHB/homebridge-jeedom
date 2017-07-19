@@ -1135,7 +1135,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'OPENING' && cmd.id == cmds[0]) {
 						returnValue = cmd.currentValue;
-						if(returnValue == 1) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						if(toBool(returnValue) === true) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						break;
 					}
@@ -1960,7 +1960,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
-						newValue = value == 0 ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						newValue = value;
+						if(toBool(newValue) === true) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
