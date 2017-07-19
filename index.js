@@ -1018,7 +1018,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						action = 'flapDown';
 					else if (value == 99 || value == 100)
 						action = 'flapUp';
-					this.command('setValue', value, service, IDs);
+					else
+						action = 'setValue';
+					this.command(action, value, service, IDs);
 				}
 			break;
 			case Characteristic.Hue.UUID :
