@@ -296,12 +296,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.flap) {
 			eqLogic.services.flap.forEach(function(cmd) {
 				if (cmd.state) {
-					var cmd_up = 0;
-					var cmd_down = 0;
+					var cmd_up = 'NOT';
+					var cmd_down = 'NOT';
 					var cmd_slider = 0;
 					//var cmd_stop = 0;
 					eqServicesCopy.flap.forEach(function(cmd2) {
-						/*if (cmd2.up) {
+						if (cmd2.up) {
 							if (cmd2.up.value == cmd.state.id) {
 								cmd_up = cmd2.up.id;
 							}
@@ -309,7 +309,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							if (cmd2.down.value == cmd.state.id) {
 								cmd_down = cmd2.down.id;
 							}
-						} else */if (cmd2.slider) {
+						} else if (cmd2.slider) {
 							if (cmd2.slider.value == cmd.state.id) {
 								cmd_slider = cmd2.slider.id;
 							}
@@ -977,6 +977,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, service, IDs) {
 	try{
 		//var that = this;
+		var cmds = IDs[1].split('|');
 		var action,rgb;
 		switch (characteristic.UUID) {
 			case Characteristic.On.UUID :
@@ -1014,9 +1015,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.TargetPosition.UUID:
 			case Characteristic.PositionState.UUID: // could be Service.Window or Service.Door too so we check
 				if (service.UUID == Service.WindowCovering.UUID) {
-					if(value == 0)
+					if(value == 0 && cmds[1] != 'NOT')
 						action = 'flapDown';
-					else if (value == 99 || value == 100)
+					else if ((value == 99 || value == 100) && cmds[2] != 'NOT')
 						action = 'flapUp';
 					else
 						action = 'setValue';
@@ -1604,13 +1605,13 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 			if(!found) {
 				switch (cmd.generic_type) {
 					case 'FLAP_DOWN' :
-						if(action == 'flapDown') {
+						if(action == 'flapDown' && cmd.id == cmds[1]) {
 							cmdId = cmd.id;
 							found = true;
 						}
 					break;
 					case 'FLAP_UP' :
-						if(action == 'flapUp') {
+						if(action == 'flapUp'  && cmd.id == cmds[2]) {
 							cmdId = cmd.id;
 							found = true;
 						}
