@@ -1460,6 +1460,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE') {
+						// not managing the invertBinary
 						returnValue = cmd.currentValue;
 						if(returnValue == 0) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						else returnValue=Characteristic.StatusTampered.TAMPERED;
@@ -1977,6 +1978,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.StatusTampered.UUID :
+						// not managing the invertBinary
 						if(value == 0 || isNaN(value))
 							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.NOT_TAMPERED,subCharact), undefined, 'fromJeedom');
 						else
@@ -1990,6 +1992,17 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
 						if(newValue === false) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.ChargingState.UUID :
+						if (cmds[1] != 'NOT') { // have BATTERY_CHARGING
+							// not managing the invertBinary
+							newValue = toBool(value);
+							if(newValue === false) newValue = Characteristic.ChargingState.NOT_CHARGING;
+							else newValue = Characteristic.ChargingState.CHARGING;
+						} else {
+							newValue = Characteristic.ChargingState.NOT_CHARGEABLE;
+						}						
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
