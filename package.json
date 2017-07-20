@@ -23,7 +23,7 @@
     "Siri"
   ],
   "dependencies": {
-    "request": "^2.65.0"
+    "request": "^2.81.0"
   },
   "author": "Thomas MARTINEZ",
   "license": "GPL2",
