@@ -423,7 +423,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.presence.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '|' + cmd.presence.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -491,7 +491,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.smoke.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '|' + cmd.smoke.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -508,7 +508,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.flood.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '|' + cmd.flood.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -1125,9 +1125,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.SmokeDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SMOKE' && cmd.id == cmds[0]) {
-						returnValue = cmd.currentValue;
-						if(returnValue == 1) returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
-						else returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						if(returnValue === false) returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+						else returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;						
 						break;
 					}
 				}
@@ -1135,9 +1135,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.LeakDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLOOD' && cmd.id == cmds[0]) {
-						returnValue = cmd.currentValue;
-						if(returnValue == 1) returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
-						else returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						if(returnValue === false) returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						else returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
 						break;
 					}
 				}
@@ -1145,7 +1145,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.MotionDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == cmds[0]) {
-						returnValue = cmd.currentValue;
+						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						break;
 					}
 				}
@@ -1855,10 +1855,6 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					case Characteristic.TimeInterval.UUID :
 						intervalValue = true;
 					break;
-					case Characteristic.SmokeDetected.UUID :
-						newValue = value == 0 ? Characteristic.SmokeDetected.SMOKE_DETECTED : Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');		
-					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
 						that.log('debug',"Current",alarmMode);
 						if (cmd2_id == update.option.cmd_id) { 
@@ -1968,8 +1964,16 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							}
 						}			
 					break;
+					case Characteristic.SmokeDetected.UUID :
+						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						if(newValue === false) newValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+						else newValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
 					case Characteristic.LeakDetected.UUID :
-						newValue = value == 0 ? Characteristic.LeakDetected.LEAK_DETECTED : Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						if(newValue === false) newValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						else newValue = Characteristic.LeakDetected.LEAK_DETECTED;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.StatusTampered.UUID :
@@ -1978,12 +1982,14 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						else
 							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 					break;
+					case Characteristic.MotionDetected.UUID :
+						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
 					case Characteristic.ContactSensorState.UUID :
-						
 						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
 						if(newValue === false) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
-					
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
