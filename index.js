@@ -1459,7 +1459,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'SABOTAGE') {
+					if (cmd.generic_type == 'SABOTAGE') 
 						returnValue = cmd.currentValue;
 						if(returnValue == 0) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						else returnValue=Characteristic.StatusTampered.TAMPERED;
