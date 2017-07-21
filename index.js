@@ -370,24 +370,25 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}
-		if (eqLogic.services.power || eqLogic.services.consumption) {
+		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
 			eqLogic.services.power.forEach(function(cmd) {
-				if (cmd.power || cmd.consumption) {
+				if (cmd.power) {
 					HBservice = {
 						controlService : new Service.PowerMonitor(eqLogic.name),
 						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
 					};
-					var cmd_id;
-					if (cmd.power) {
-						cmd_id = cmd.power.id;
-					} else {
-						cmd_id = cmd.consumption.id;
-					}
-
-					HBservice.controlService.cmd_id = cmd_id;
+					var cmd_id_consumption=0;
+					eqServicesCopy.consumption.forEach(function(cmd2) {
+						if (cmd2.consumption) {
+							cmd_id_consumption = cmd2.consumption.id;
+						}
+					});
+					var cmd_id_power = cmd.power.id;
+					
+					HBservice.controlService.cmd_id = cmd_id_power;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id_power + '|' + cmd_id_consumption + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -1478,7 +1479,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.TotalPowerConsumption.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == cmds[0]) {
+					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == cmds[1]) {
 						returnValue = cmd.currentValue;
 						break;
 					}
