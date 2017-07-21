@@ -1017,9 +1017,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.TargetPosition.UUID:
 			case Characteristic.PositionState.UUID: // could be Service.Window or Service.Door too so we check
 				if (service.UUID == Service.WindowCovering.UUID) {
-					var Down = cmds[1];
-					var Up = cmds[2];
-					var Slider = cmds[3];
+					var Down = parseInt(cmds[1]);
+					var Up = parseInt(cmds[2]);
+					var Slider = parseInt(cmds[3]);
 					if(Down && Up) {
 						if (Slider) {
 							if (value == 0)
