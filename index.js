@@ -1128,7 +1128,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.SmokeDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SMOKE' && cmd.id == cmds[0]) {
-						returnValue = parseInt(cmds[1])==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						//returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						returnValue = toBool(cmd.currentValue);
 						if(returnValue === false) returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
 						else returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;						
 						break;
@@ -1138,7 +1139,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.LeakDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLOOD' && cmd.id == cmds[0]) {
-						returnValue = parseInt(cmds[1])==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						//returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						returnValue = toBool(cmd.currentValue);
 						if(returnValue === false) returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
 						else returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
 						break;
@@ -1148,9 +1150,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.MotionDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == cmds[0]) {
-						that.log('debug',"mouvement valeur brute :",cmd.currentValue,cmds[1]);
-						returnValue = parseInt(cmds[1])==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
-						that.log('debug',"valeur envoyée :",returnValue);
+						//returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert ?
+						returnValue = toBool(cmd.currentValue);
 						break;
 					}
 				}
@@ -1971,13 +1972,15 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						}			
 					break;
 					case Characteristic.SmokeDetected.UUID :
-						newValue = parseInt(cmds[1])==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert ?
+						newValue = toBool(value);
 						if(newValue === false) newValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
 						else newValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.LeakDetected.UUID :
-						newValue = parseInt(cmds[1])==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert ?
+						newValue = toBool(value);
 						if(newValue === false) newValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
 						else newValue = Characteristic.LeakDetected.LEAK_DETECTED;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
@@ -1990,9 +1993,8 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.MotionDetected.UUID :
-						that.log('debug',"valeur brute (sub):",value,cmds[1]);
-						newValue = parseInt(cmds[1])==0 ? toBool(value) : !toBool(value); // invertBinary ?
-						that.log('debug',"valuer modifiée(sub):",newValue);
+						//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert
+						newValue = toBool(value);
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
