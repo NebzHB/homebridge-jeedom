@@ -423,7 +423,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.presence.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '|' + cmd.presence.display.invertBinary + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -491,7 +491,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.smoke.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '|' + cmd.smoke.display.invertBinary + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -508,7 +508,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.flood.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '|' + cmd.flood.display.invertBinary + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -524,7 +524,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.opening.id;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '|' + cmd.opening.display.invertBinary + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -1125,7 +1125,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.SmokeDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SMOKE' && cmd.id == cmds[0]) {
-						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = toBool(cmd.currentValue);
 						if(returnValue === false) returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
 						else returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;						
 						break;
@@ -1135,7 +1135,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.LeakDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLOOD' && cmd.id == cmds[0]) {
-						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = toBool(cmd.currentValue);
 						if(returnValue === false) returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
 						else returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
 						break;
@@ -1145,7 +1145,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.MotionDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == cmds[0]) {
-						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = toBool(cmd.currentValue);
 						break;
 					}
 				}
@@ -1153,7 +1153,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'OPENING' && cmd.id == cmds[0]) {
-						returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = toBool(cmd.currentValue); 
 						if(returnValue === false) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						break;
@@ -1459,8 +1459,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'SABOTAGE') {
-						// not managing the invertBinary
+					if (cmd.generic_type == 'SABOTAGE') 
 						returnValue = cmd.currentValue;
 						if(returnValue == 0) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						else returnValue=Characteristic.StatusTampered.TAMPERED;
@@ -1966,37 +1965,35 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						}			
 					break;
 					case Characteristic.SmokeDetected.UUID :
-						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						newValue = toBool(value);
 						if(newValue === false) newValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
 						else newValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.LeakDetected.UUID :
-						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						newValue = toBool(value); 
 						if(newValue === false) newValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
 						else newValue = Characteristic.LeakDetected.LEAK_DETECTED;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.StatusTampered.UUID :
-						// not managing the invertBinary
 						if(value == 0 || isNaN(value))
 							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.NOT_TAMPERED,subCharact), undefined, 'fromJeedom');
 						else
 							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.MotionDetected.UUID :
-						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						newValue = toBool(value);
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ContactSensorState.UUID :
-						newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ?
+						newValue = toBool(value);
 						if(newValue === false) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.ChargingState.UUID :
 						if (cmds[1] != 'NOT') { // have BATTERY_CHARGING
-							// not managing the invertBinary
 							newValue = toBool(value);
 							if(newValue === false) newValue = Characteristic.ChargingState.NOT_CHARGING;
 							else newValue = Characteristic.ChargingState.CHARGING;
