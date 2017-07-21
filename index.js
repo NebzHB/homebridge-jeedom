@@ -378,11 +378,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
 					};
 					var cmd_id_consumption=0;
-					eqServicesCopy.consumption.forEach(function(cmd2) {
-						if (cmd2.consumption) {
-							cmd_id_consumption = cmd2.consumption.id;
-						}
-					});
+					if(eqServicesCopy.consumption) {
+						eqServicesCopy.consumption.forEach(function(cmd2) {
+							if (cmd2.consumption) {
+								cmd_id_consumption = cmd2.consumption.id;
+							}
+						});
+					}
 					var cmd_id_power = cmd.power.id;
 					
 					HBservice.controlService.cmd_id = cmd_id_power;
