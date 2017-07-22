@@ -299,9 +299,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					var cmd_up = 0;
 					var cmd_down = 0;
 					var cmd_slider = 0;
-					//var cmd_stop = 0;
 					eqServicesCopy.flap.forEach(function(cmd2) {
-						/*if (cmd2.up) {
+						if (cmd2.up) {
 							if (cmd2.up.value == cmd.state.id) {
 								cmd_up = cmd2.up.id;
 							}
@@ -309,15 +308,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							if (cmd2.down.value == cmd.state.id) {
 								cmd_down = cmd2.down.id;
 							}
-						} else */if (cmd2.slider) {
+						} else if (cmd2.slider) {
 							if (cmd2.slider.value == cmd.state.id) {
 								cmd_slider = cmd2.slider.id;
 							}
 						}
 					});
-					//if(!cmd_up) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
-					//if(!cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down');
-					if(!cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou reférence à l\'état non définie sur la commande Slider');
+					if (cmd_up && !cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Up'); 
+					if (!cmd_up && cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
+					if(!cmd_up && !cmd_down && !cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Slider');
 					HBservice = {
 						controlService : new Service.WindowCovering(eqLogic.name),
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
@@ -371,24 +370,27 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}
-		if (eqLogic.services.power || eqLogic.services.consumption) {
+		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
 			eqLogic.services.power.forEach(function(cmd) {
-				if (cmd.power || cmd.consumption) {
+				if (cmd.power) {
 					HBservice = {
 						controlService : new Service.PowerMonitor(eqLogic.name),
 						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
 					};
-					var cmd_id;
-					if (cmd.power) {
-						cmd_id = cmd.power.id;
-					} else {
-						cmd_id = cmd.consumption.id;
+					var cmd_id_consumption=0;
+					if(eqServicesCopy.consumption) {
+						eqServicesCopy.consumption.forEach(function(cmd2) {
+							if (cmd2.consumption) {
+								cmd_id_consumption = cmd2.consumption.id;
+							}
+						});
 					}
-
-					HBservice.controlService.cmd_id = cmd_id;
+					var cmd_id_power = cmd.power.id;
+					
+					HBservice.controlService.cmd_id = cmd_id_power;
 					if (HBservice.controlService.subtype == undefined)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id_power + '|' + cmd_id_consumption + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -977,6 +979,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, service, IDs) {
 	try{
 		//var that = this;
+		var cmds = IDs[1].split('|');
 		var action,rgb;
 		switch (characteristic.UUID) {
 			case Characteristic.On.UUID :
@@ -1014,11 +1017,30 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.TargetPosition.UUID:
 			case Characteristic.PositionState.UUID: // could be Service.Window or Service.Door too so we check
 				if (service.UUID == Service.WindowCovering.UUID) {
-					if(value == 0)
-						action = 'flapDown';
-					else if (value == 99 || value == 100)
-						action = 'flapUp';
-					this.command('setValue', value, service, IDs);
+					var Down = parseInt(cmds[1]);
+					var Up = parseInt(cmds[2]);
+					var Slider = parseInt(cmds[3]);
+					if(Down && Up) {
+						if (Slider) {
+							if (value == 0)
+								action = 'flapDown';
+							else if (value == 99 || value == 100)
+								action = 'flapUp';
+							else
+								action = 'setValue';
+						}
+						else {
+							if (value < 50)
+								action = 'flapDown';
+							else
+								action = 'flapUp';
+						}
+					}
+					else if (Slider) {
+						action = 'setValue';
+					}
+
+					this.command(action, value, service, IDs);
 				}
 			break;
 			case Characteristic.Hue.UUID :
@@ -1458,7 +1480,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.TotalPowerConsumption.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == cmds[0]) {
+					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == cmds[1]) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -1602,13 +1624,13 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 			if(!found) {
 				switch (cmd.generic_type) {
 					case 'FLAP_DOWN' :
-						if(action == 'flapDown') {
+						if(action == 'flapDown' && cmd.id == cmds[1]) {
 							cmdId = cmd.id;
 							found = true;
 						}
 					break;
 					case 'FLAP_UP' :
-						if(action == 'flapUp') {
+						if(action == 'flapUp'  && cmd.id == cmds[2]) {
 							cmdId = cmd.id;
 							found = true;
 						}
@@ -1963,6 +1985,17 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						newValue = value;
 						if(toBool(newValue) === true) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					break;
+					case Characteristic.ChargingState.UUID :
+						if (cmds[1] != 'NOT') { // have BATTERY_CHARGING
+							// not managing the invertBinary
+							newValue = toBool(value);
+							if(newValue === false) newValue = Characteristic.ChargingState.NOT_CHARGING;
+							else newValue = Characteristic.ChargingState.CHARGING;
+						} else {
+							newValue = Characteristic.ChargingState.NOT_CHARGEABLE;
+						}						
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.CurrentDoorState.UUID :
