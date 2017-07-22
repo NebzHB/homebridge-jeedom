@@ -6,7 +6,6 @@
     * Bugfix : capteurs Fenêtres
     * Bugfix : volets Somfy
     * Bugfix : Consommation Electrique qui bug sur composants zwave
-    * Bugfix : gérer l'inversion de valeurs sur Portes/Fenetres
     * Bugfix : En chargement pour perif avec batterie
 
 ==== v1.2.0
