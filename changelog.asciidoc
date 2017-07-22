@@ -1,6 +1,12 @@
 = Changelog
 == Homebridge
 
+==== v1.2.1
+    * Bugfix : capteurs Fenêtres
+    * Bugfix : volets Somfy
+    * Bugfix : Consommation Electrique qui bug sur composants zwave
+    * Bugfix : En chargement pour perif avec batterie
+
 === v1.2.0
     * Realease Stable
 
