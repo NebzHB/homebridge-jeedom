@@ -1133,7 +1133,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'OPENING' && cmd.id == cmds[0]) {
+					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == cmds[0]) {
 						returnValue = cmd.currentValue;
 						if(toBool(returnValue) === true) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
