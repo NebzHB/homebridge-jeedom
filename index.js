@@ -788,7 +788,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 			return;
 		}
 
-		if(!silence) this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
+		if(!silence) this.log('│ Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
 		existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
 		if(existingAccessory)
 		{
@@ -824,7 +824,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		let isNewAccessory = false;
 		let services2Add = jeedomAccessory.services_add;
-		this.log('│ Vérification d\'existance de l\'accessoire dans Homebridge...');
+		this.log('│ Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
 		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
@@ -873,12 +873,12 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 		for (var a in this.accessories) {
 			if (this.accessories.hasOwnProperty(a)) {
 				if (this.accessories[a].UUID == UUID) {
-					if(!silence) this.log('│ Accessoire déjà existant dans Homebridge');
+					if(!silence) this.log('│ Accessoire déjà existant dans le cache Homebridge');
 					return this.accessories[a];
 				}
 			}
 		}
-		if(!silence) this.log('│ Accessoire non existant dans Homebridge');
+		if(!silence) this.log('│ Accessoire non existant dans le cache Homebridge');
 		return null;
 	}
 	catch(e){
