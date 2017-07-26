@@ -1531,16 +1531,16 @@ function sanitizeValue(currentValue,characteristic) {
 			case "uint32" :
 			case "uint64" :
 				val = parseInt(currentValue);
-				if(val == undefined || val == null || isNaN(val)) val = 0;
+				if(!val) val = 0;
 				val = Math.abs(val); // unsigned
 			break;
 			case "int" :
 				val = parseInt(currentValue);
-				if(val == undefined || val == null || isNaN(val)) val = 0;
+				if(!val) val = 0;
 			break;
 			case "float" :
 				val = minStepRound(parseFloat(currentValue),characteristic);
-				if(val == undefined || val == null || isNaN(val)) val = 0;
+				if(!val) val = 0;
 			break;
 			case "bool" :
 				val = toBool(currentValue);
@@ -1548,12 +1548,12 @@ function sanitizeValue(currentValue,characteristic) {
 			case "string" :
 			case "tlv8" :
 				val = currentValue;
-				if(val == undefined || val == null) val = '';
+				if(!val) val = '';
 				val = val.toString();
 			break;
 	}
-	if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < characteristic.props.minValue) val = characteristic.props.minValue;
-	if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > characteristic.props.maxValue) val = characteristic.props.maxValue;
+	if(characteristic.props.minValue && val < characteristic.props.minValue) val = characteristic.props.minValue;
+	if(characteristic.props.maxValue && val > characteristic.props.maxValue) val = characteristic.props.maxValue;
 	return val;
 }
 
@@ -2569,7 +2569,12 @@ function RGBtoHSV(r, g, b) {
 		g = r.g;
 		b = r.b;
 	}
-	var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, h, s = (max === 0 ? 0 : d / max), v = max / 255;
+	var max = Math.max(r, g, b);
+	var min = Math.min(r, g, b);
+	var d = max - min;
+	var h;
+	var s = (max === 0 ? 0 : d / max);
+	var v = max / 255;
 
 	switch (max) {
 	case min:
