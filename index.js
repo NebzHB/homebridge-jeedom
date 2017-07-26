@@ -53,7 +53,7 @@ function JeedomPlatform(logger, config, api) {
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		
-		if (config.url == "undefined" || 
+		if (!config.url || 
 		    config.url == "http://:80" ||
 			config.url == 'https://:80') {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
@@ -72,7 +72,7 @@ function JeedomPlatform(logger, config, api) {
 		this.pollerPeriod = config.pollerperiod;
 		if ( typeof this.pollerPeriod == 'string')
 			this.pollerPeriod = parseInt(this.pollerPeriod);
-		else if (this.pollerPeriod == undefined)
+		else if (!this.pollerPeriod)
 			this.pollerPeriod = 0.5; // 0.5 is Nice between 2 calls
 		
 		if (api) {
@@ -126,7 +126,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	try{
 		var that = this;
-		if (devices != undefined) {
+		if (devices) {
 			devices.sort(function compare(a, b) {
 				// reorder by room name asc and name asc
 				var aC = that.rooms[a.object_id]+a.name;
@@ -246,7 +246,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.countColorCharacteristics = 0;
 					HBservice.controlService.timeoutIdColorCharacteristics = 0;
 					HBservice.controlService.subtype = 'RGB';
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.color.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -281,7 +281,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						};
 					}
 					HBservice.controlService.cmd_id = eqLogic.services.light.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -322,7 +322,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
 					};
 					HBservice.controlService.cmd_id = cmd.state.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_down + '|' + cmd_up + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
 
@@ -358,7 +358,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.On]
 					};
 					HBservice.controlService.cmd_id = cmd.state.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -388,7 +388,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					var cmd_id_power = cmd.power.id;
 					
 					HBservice.controlService.cmd_id = cmd_id_power;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd_id_power + '|' + cmd_id_consumption + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -407,7 +407,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if (cmd.batteryCharging)
 						cmd_charging = cmd.batteryCharging.id;
 					HBservice.controlService.cmd_id = cmd.battery.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.battery.id +'|'+ cmd_charging + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -424,7 +424,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 					HBservice.controlService.cmd_id = cmd.presence.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.presence.id + '|' + cmd.presence.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -440,7 +440,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.UVIndex]
 					};
 					HBservice.controlService.cmd_id = cmd.uv.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.uv.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -457,7 +457,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 					HBservice.controlService.cmd_id = cmd.temperature.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.temperature.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -475,7 +475,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 					HBservice.controlService.cmd_id = cmd.humidity.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.humidity.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -492,7 +492,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 					HBservice.controlService.cmd_id = cmd.smoke.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.smoke.id + '|' + cmd.smoke.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -509,7 +509,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 					HBservice.controlService.cmd_id = cmd.flood.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.flood.id + '|' + cmd.flood.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -525,7 +525,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.ContactSensorState]
 					};
 					HBservice.controlService.cmd_id = cmd.opening.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.opening.id + '|' + cmd.opening.display.invertBinary + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -542,7 +542,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 					HBservice.controlService.cmd_id = cmd.brightness.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.brightness.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -555,7 +555,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				controlService : new Service.Outlet(eqLogic.name),
 				characteristics : [Characteristic.On, Characteristic.OutletInUse]
 			};
-			if (HBservice.controlService.subtype == undefined)
+			if (!HBservice.controlService.subtype)
 				HBservice.controlService.subtype = '';
 			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.brightness.id + '-' + HBservice.controlService.subtype;
 			HBservices.push(HBservice);
@@ -588,7 +588,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
 					};
 					HBservice.controlService.cmd_id = cmd.state.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -623,7 +623,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
 					};
 					HBservice.controlService.cmd_id = cmd.state.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -643,7 +643,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.ProgrammableSwitchEvent]
 					};
 					HBservice.controlService.cmd_id = cmd.state.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
@@ -657,7 +657,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
 			};
 			HBservice.controlService.cmd_id = eqLogic.services.thermostat.id;
-			if (HBservice.controlService.subtype == undefined)
+			if (!HBservice.controlService.subtype)
 				HBservice.controlService.subtype = '';
 			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.thermostat.id + '-' + HBservice.controlService.subtype;
 			HBservices.push(HBservice);
@@ -685,7 +685,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
 					HBservice.controlService.cmd_id = cmd.enable_state.id;
-					if (HBservice.controlService.subtype == undefined)
+					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
 					var thisAlarm = that.alarms[eqLogic.id];
 					var away_mode_id,away_mode_label,present_mode_label,present_mode_id,night_mode_label,night_mode_id;
@@ -783,7 +783,7 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, id, name, curren
 JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 	var existingAccessory;
 	try{
-		silence = typeof silence  !== 'undefined' ? silence : false;
+		silence = silence || false;
 		if (!jeedomAccessory) {
 			return;
 		}
@@ -869,7 +869,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 // -- Return : nothing
 JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 	try{
-		silence = typeof silence  !== 'undefined' ? silence : false;
+		silence = silence || false;
 		for (var a in this.accessories) {
 			if (this.accessories.hasOwnProperty(a)) {
 				if (this.accessories[a].UUID == UUID) {
@@ -897,7 +897,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
 		for (var s = 0; s < accessory.services.length; s++) {
 			var service = accessory.services[s];
-			if (service.subtype != undefined) {
+			if (service.subtype) {
 				var subtypeParams = service.subtype.split('-');
 				if (subtypeParams.length == 3 && subtypeParams[2] == 'RGB') {
 					service.HSBValue = {
@@ -1564,7 +1564,7 @@ function sanitizeValue(currentValue,characteristic) {
 // -- characteristic : characteristic containing the props
 // -- Return : rounded value
 function minStepRound(val,characteristic) {
-	if(characteristic.props.minStep == null || characteristic.props.minStep == undefined) {
+	if(!characteristic.props.minStep) {
 		characteristic.props.minStep = 1;
 	}
 	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
@@ -1796,11 +1796,11 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 	that.pollingUpdateRunning = true;
 	that.jeedomClient.refreshStates().then(function(updates) {
 		that.lastPoll = updates.datetime;
-		if (updates.result != undefined) {
+		if (updates.result) {
 			updates.result.map(function(update) {
 				if (update.name == 'cmd::update' && 
-				    update.option.value != undefined && 
-				    update.option.cmd_id != undefined) {
+				    update.option.value && 
+				    update.option.cmd_id) {
 					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
 					setTimeout(function(){that.updateSubscribers(update);},50);
 				}
@@ -1841,13 +1841,13 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		value = (update.option.value === 'true');
 	
 	if (update.name == 'cmd::update' && 
-	    update.option.value != undefined && 
-	    update.option.cmd_id != undefined) {
+	    update.option.value && 
+	    update.option.cmd_id) {
 		//that.log('debug','cmd : '+JSON.stringify(cmd));
 		var cmd_id,cmd2_id,cmd3_id,cmds;
 		for (i = 0; i < that.updateSubscriptions.length; i++) {
 			subscription = that.updateSubscriptions[i];
-			if (subscription.service.subtype != undefined) {
+			if (subscription.service.subtype) {
 				IDs = subscription.service.subtype.split('-');
 				cmds = IDs[1].split('|');
 				cmd_id = cmds[0];
@@ -2090,7 +2090,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.OutletInUse.UUID :
-						if (update.power != undefined) {
+						if (update.power) {
 							newValue = parseFloat(update.power) > 1.0 ? true : false;
 							subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 						}
@@ -2109,12 +2109,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			}
 		}
 	}
-	if (update.color != undefined) {
+	if (update.color) {
 		var found=false;
 		for (i = 0; i < that.updateSubscriptions.length; i++) {
 			subscription = that.updateSubscriptions[i];
 			IDs = subscription.service.subtype.split('-');
-			if (IDs[1] == update.option.cmd_id && subscription.service.HSBValue != undefined) {
+			if (IDs[1] == update.option.cmd_id && subscription.service.HSBValue) {
 				var hsv = that.updateHomeKitColorFromJeedom(update.color, subscription.service);
 				subCharact =  subscription.characteristic;
 				switch(subCharact.UUID)
@@ -2179,7 +2179,7 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 // -- service : service containing the color
 // -- Return : hsv object
 JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
-	if (color == undefined)
+	if (!color)
 		color = '0,0,0';
 	//console.log("couleur :" + color);
 	//var colors = color.split(',');
