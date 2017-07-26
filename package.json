@@ -26,9 +26,9 @@
     "request": "^2.81.0"
   },
   "author": "Thomas MARTINEZ",
-  "contributors": [{
+  "contributors": [
       "Benjamin RENARD <nebz@nebz.be>"
-  }],
+  ],
   "license": "GPL2",
   "bugs": {
     "url": "https://github.com/jeedom/homebridge-jeedom/issues"
