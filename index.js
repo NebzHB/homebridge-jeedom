@@ -894,7 +894,7 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
 		//this.log('debug',JSON.stringify(accessory).replace("\n",""));
-		if(!accessory.context || !accessory.context.eqLogic)
+		if(!accessory.context)// || !accessory.context.eqLogic)
 		{
 			// Remove this invalid device from the cache.
 			this.log('debug','L\'accessoire est invalide, on le retire du cache Homebridge :',accessory.displayName);
