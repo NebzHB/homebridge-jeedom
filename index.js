@@ -162,7 +162,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					that.log(Messg);
 
 					that.delAccessory(
-						that.createAccessory([], device.id, device.name, device.object_id, device.eqType_name, device.logicalId) // create a cached lookalike object for unregistering it
+						that.createAccessory([], device) // create a cached lookalike object for unregistering it
 					);
 					that.log('└─────────');
 				}
@@ -720,14 +720,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 
 		if (HBservices.length != 0) {
-			createdAccessory = that.createAccessory(HBservices, eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name,eqLogic.logicalId);
+			createdAccessory = that.createAccessory(HBservices, eqLogic);
 			that.addAccessory(createdAccessory);
 			HBservices = [];
 		}
 		else
 		{
 			that.log('│ Accessoire sans Type Générique');
-			createdAccessory = that.createAccessory([], eqLogic.id, eqLogic.name, eqLogic.object_id, eqLogic.eqType_name, eqLogic.logicalId); // create a cached lookalike object for unregistering it
+			createdAccessory = that.createAccessory([], eqLogic); // create a cached lookalike object for unregistering it
 			that.delAccessory(createdAccessory);
 		}
 		that.log('└─────────');
@@ -744,26 +744,23 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 // -- Desc : Create the JeedomBridgedAccessory object
 // -- Params --
 // -- HBservices : translated homebridge services
-// -- id : Jeedom id
-// -- name : Jeedom name
-// -- currentRoomID : Jeedom Room id
-// -- eqType_name : type of the eqLogic
-// -- logicalId : Jeedom logicalId
-// -- Return : a JeedomBridgedAccessory object
-JeedomPlatform.prototype.createAccessory = function(HBservices, id, name, currentRoomID, eqType_name, logicalId) {
+// -- eqLogic : the jeedom eqLogic
+JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 	try{
+		
 		var accessory = new JeedomBridgedAccessory(HBservices);
 		accessory.platform = this;
 		accessory.log = this.log;
-		accessory.name = (name) ? name : this.rooms[currentRoomID] + '-Devices';
+		accessory.name = eqLogic.name;
 
-		accessory.UUID = UUIDGen.generate(id + accessory.name);
+		accessory.UUID = UUIDGen.generate(eqLogic.id + accessory.name);
 		accessory.context = {};
-		accessory.context.uniqueSeed = id + accessory.name;
-
-		accessory.model = eqType_name;
-		accessory.manufacturer = 'Jeedom>'+ this.rooms[currentRoomID] +'>'+name;
-		accessory.serialNumber = '<'+id+'-'+logicalId+'>';
+		accessory.context.uniqueSeed = eqLogic.id + accessory.name;
+		accessory.context.eqLogic = eqLogic;
+		
+		accessory.model = eqLogic.eqType_name;
+		accessory.manufacturer = 'Jeedom>'+ this.rooms[eqLogic.object_id] +'>'+accessory.name;
+		accessory.serialNumber = '<'+eqLogic.id+'-'+eqLogic.logicalId+'>';
 		accessory.services_add = HBservices;
 		return accessory;
 	}
@@ -833,6 +830,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			jeedomAccessory.initAccessory(HBAccessory);
 			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
+		HBAccessory.context = jeedomAccessory.context;
 		//No more supported by HAP-NodeJS
 		//HBAccessory.reachable = true;
 		//HBAccessory.updateReachability(true);
@@ -895,6 +893,19 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 // -- Return : nothing
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
+		//this.log('debug',JSON.stringify(accessory).replace("\n",""));
+		if(!accessory.context || !accessory.context.eqLogic)
+		{
+			// Remove this invalid device from the cache.
+			this.log('debug','L\'accessoire est invalide, on le retire du cache Homebridge :',accessory.displayName);
+			try {
+				this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);
+			} catch (e) {
+				this.log('error',"#45 Impossible de supprimer l'accessoire !" , e);
+			}
+			return;
+		}
+		
 		for (var s = 0; s < accessory.services.length; s++) {
 			var service = accessory.services[s];
 			if (service.subtype) {
