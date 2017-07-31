@@ -1122,7 +1122,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.NotificationText.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GENERIC_INFO') {
-						returnValue = cmd.currentValue.substring(0,64);
+						returnValue = cmd.currentValue.toString().substring(0,64);
 						break;
 					}
 				}
