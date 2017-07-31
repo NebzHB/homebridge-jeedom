@@ -432,6 +432,22 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.generic) {
+			eqLogic.services.generic.forEach(function(cmd) {
+				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.NotificationService(eqLogic.name),
+						characteristics : [Characteristic.NotificationCode,Characteristic.NotificationText]
+					};
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (!HBservice.controlService.subtype)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
 		if (eqLogic.services.uv) {
 			eqLogic.services.uv.forEach(function(cmd) {
 				if (cmd.uv) {
@@ -1100,6 +1116,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		switch (characteristic.UUID) {
 			case Characteristic.OutletInUse.UUID :
 				returnValue = parseFloat(cmdList.power) > 1.0 ? true : false;
+			break;
+			case Characteristic.NotificationCode.UUID :
+			break;			
+			case Characteristic.NotificationText.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'GENERIC_INFO') {
+						returnValue = cmd.currentValue.substring(0,64);
+						break;
+					}
+				}
 			break;
 			case Characteristic.TimeInterval.UUID :
 				returnValue = Date.now();
@@ -1873,6 +1899,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					case Characteristic.TimeInterval.UUID :
 						intervalValue = true;
 					break;
+					case Characteristic.NotificationCode.UUID :
+					break;					
+					case Characteristic.NotificationText.UUID :
+						newValue = update.option.value.substring(0,64);
+						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom')
+					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
 						that.log('debug',"Current",alarmMode);
 						if (cmd2_id == update.option.cmd_id) { 
@@ -2318,6 +2350,31 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Characteristic.AirPressure, Characteristic);	
 	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+	
+	Characteristic.NotificationCode = function() {
+		Characteristic.call(this, 'Notification Code', '381C47A3-CB06-4177-8E3D-A1B4C22EB031');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT8,
+		  maxValue: 255,
+		  minValue: 0,
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = 255;
+	};
+	Characteristic.NotificationCode.UUID = '381C47A3-CB06-4177-8E3D-A1B4C22EB031';
+	inherits(Characteristic.NotificationCode, Characteristic);
+
+	Characteristic.NotificationText = function() {
+		Characteristic.call(this, 'Notification Text', 'E244CA80-813E-423A-86BD-02F293B857A0');
+		this.setProps({
+		  format:   Characteristic.Formats.STRING,
+		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = '';
+	};
+	Characteristic.NotificationText.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
+	inherits(Characteristic.NotificationText, Characteristic);	
 
 	/**
 	 * Custom Service 'Power Monitor'
@@ -2335,6 +2392,23 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Service.PowerMonitor, Service);
 	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+
+	/**
+	 * Custom Service 'Notification Service'
+	 */
+	 
+	Service.NotificationService = function (displayName, subtype) {
+		Service.call(this, displayName, '074D8CE9-5B4B-48D5-9990-D98850C2F3FE', subtype);
+
+		// Required Characteristics
+		this.addCharacteristic(Characteristic.NotificationCode);
+		this.addCharacteristic(Characteristic.NotificationText);
+
+		// Optional Characteristics
+		this.addOptionalCharacteristic(Characteristic.Name);
+	};
+	inherits(Service.NotificationService, Service);	
+	Service.NotificationService.UUID = '074D8CE9-5B4B-48D5-9990-D98850C2F3FE';
 	
 	// End of custom Services and Characteristics	
 }
