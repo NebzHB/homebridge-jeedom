@@ -1128,8 +1128,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 						let maxSize = 64;
 						let unite='';
 						if(cmds[1]) {
-							maxSize -= cmds[1].length;
-							unite=' '+cmds[1];
+							unite = ' '+cmds[1];
+							maxSize -= unite.length;
 						}
 						returnValue = cmd.currentValue.toString().substring(0,maxSize) + unite;
 						break;
