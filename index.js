@@ -437,12 +437,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					HBservice = {
 						controlService : new Service.NotificationService(eqLogic.name),
-						characteristics : [Characteristic.NotificationCode,Characteristic.NotificationText]
+						characteristics : [/*Characteristic.NotificationCode,*/Characteristic.NotificationText]
 					};
+					HBservice.controlService.getCharacteristic(Characteristic.NotificationText).displayName = cmd.state.name;
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+					let unite = cmd.state.unite ? cmd.state.unite : '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + unite +'-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -970,7 +972,8 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		for (var i = 0; i < characteristic.props.perms.length; i++)
 			if (characteristic.props.perms[i] == 'pw')
 				readOnly = false;
-		var IDs = service.subtype.split('-');
+		if(service.subtype)
+			var IDs = service.subtype.split('-');
 		this.subscribeUpdate(service, characteristic);
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
@@ -1118,11 +1121,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				returnValue = parseFloat(cmdList.power) > 1.0 ? true : false;
 			break;
 			case Characteristic.NotificationCode.UUID :
-			break;			
+			break;
 			case Characteristic.NotificationText.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GENERIC_INFO') {
-						returnValue = cmd.currentValue.toString().substring(0,64);
+						let maxSize = 64;
+						let unite='';
+						if(cmds[1]) {
+							maxSize -= cmds[1].length;
+							unite=' '+cmds[1];
+						}
+						returnValue = cmd.currentValue.toString().substring(0,maxSize) + unite;
 						break;
 					}
 				}
@@ -1899,12 +1908,6 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					case Characteristic.TimeInterval.UUID :
 						intervalValue = true;
 					break;
-					case Characteristic.NotificationCode.UUID :
-					break;					
-					case Characteristic.NotificationText.UUID :
-						newValue = update.option.value.substring(0,64);
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom')
-					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
 						that.log('debug',"Current",alarmMode);
 						if (cmd2_id == update.option.cmd_id) { 
@@ -2366,7 +2369,7 @@ function RegisterCustomCharacteristics() {
 	inherits(Characteristic.NotificationCode, Characteristic);
 
 	Characteristic.NotificationText = function() {
-		Characteristic.call(this, 'Notification Text', 'E244CA80-813E-423A-86BD-02F293B857A0');
+		Characteristic.call(this, 'Label', 'E244CA80-813E-423A-86BD-02F293B857A0');
 		this.setProps({
 		  format:   Characteristic.Formats.STRING,
 		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
@@ -2401,7 +2404,7 @@ function RegisterCustomCharacteristics() {
 		Service.call(this, displayName, '074D8CE9-5B4B-48D5-9990-D98850C2F3FE', subtype);
 
 		// Required Characteristics
-		this.addCharacteristic(Characteristic.NotificationCode);
+		/*this.addCharacteristic(Characteristic.NotificationCode);*/
 		this.addCharacteristic(Characteristic.NotificationText);
 
 		// Optional Characteristics
