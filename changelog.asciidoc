@@ -108,22 +108,17 @@ Si vous avez un problème avec un périphérique malgré tout : décochez "Envoy
     * Corrections diverses, simplifications et optimisations.
 
 
-
-
-== KNOWN ISSUES
-  * Possibles problèmes sur les ampoules (voir todo) mais il existait déjà.
+== Bugs Connus
+  * Le plugin Alarme n'est pas encore complêtement supporté car vous pouvez créer des "modes" dynamiquement et les modes de HomeKit sont statique, je dois trouver un moyen sympa de les "mapper" entre eux.
+  * Le plugin Thermostat est resté au même point aussi.
+  * Redémarrage à la sauvage pendant le démarrage du plugin (du daemon) : vous crachez tout votre homebridge -> Réparation.
+  * Les ampoules couleur... elle ne fonctionnaient pas bien, ce n'est toujours pas réglé (je dois réécrire cette partie) (toute ampoules en fait)
   * Possibles problèmes sur certains types génériques plus rares.
-  * Alarme et Thermostat peuvent ne pas fonctionné comme désiré, correction prochaines version
   
 == TODO | ROADMAP
-  * V - Champ textfield custom dans la configuration pour ceux qui veullent rajouter des accessories manuellement dans homebridge (Sonos etc).
-  * Modulariser les périphériques : afin de clarifier et de simplifier l'ajout de gestions de nouveaux types.
   * Corriger un bug dans les lightbulbs, set à false la color (pré-existant).
-  * V - Modifier un perif (ajout modif supp services) et reparser ses services (reuse function ?)
-  * Ajouter des accessoires supportés (Camera, double relay, etc)
+  * Ajouter des accessoires supportés (Qualité d'air, double relay, etc)
   * Comme les pièces ne sont pas portée dans Maison, donner l'option d'un préfix ou sufix nom de la pièce pour avoir facile à les ranger dans Maison (mais il faut renommer pour siri... donc on laisse le choix)
   * Investiguer pour recharger les accessoires sans relancer le daemon.
   * la vérification du status de dépendances homebridge doit inclure la version homebridge required et HAP-NodeJS etc
-  * V - lors d'un update du plugin, relancer les dépendances et relancer le daemon
-  * V - interdire ces codes pin : 000-00-000, 111-11-111 -> 999-99-999, 123-45-678, 876-54-321
   * ...
