@@ -2,6 +2,9 @@
 
 === Homebridge
 
+==== v1.2.2
+    * Type Generic Info supporté comme label
+
 ==== v1.2.1
     * Bugfix : capteurs Fenêtres
     * Bugfix : volets Somfy
