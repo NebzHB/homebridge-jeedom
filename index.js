@@ -437,14 +437,19 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					HBservice = {
 						controlService : new Service.NotificationService(eqLogic.name),
-						characteristics : [/*Characteristic.NotificationCode,*/Characteristic.NotificationText]
+						characteristics : [Characteristic.Name,/*Characteristic.NotificationCode,*/Characteristic.NotificationText]
 					};
 					HBservice.controlService.getCharacteristic(Characteristic.NotificationText).displayName = cmd.state.name;
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					let unite = cmd.state.unite ? cmd.state.unite : '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + unite +'-' + HBservice.controlService.subtype;
+					var unite = cmd.state.unite ? cmd.state.unite : '';
+					var props={};
+					if(unite) {
+						props.unit=unite;
+						HBservice.controlService.getCharacteristic(Characteristic.NotificationText).setProps(props);
+					}
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -1126,12 +1131,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GENERIC_INFO') {
 						let maxSize = 64;
-						let unite='';
-						if(cmds[1]) {
-							unite = ' '+cmds[1];
-							maxSize -= unite.length;
-						}
-						returnValue = cmd.currentValue.toString().substring(0,maxSize) + unite;
+						returnValue = cmd.currentValue.toString().substring(0,maxSize);
 						break;
 					}
 				}
