@@ -1577,29 +1577,33 @@ function sanitizeValue(currentValue,characteristic) {
 			case "uint32" :
 			case "uint64" :
 				val = parseInt(currentValue);
-				if(!val) val = 0;
 				val = Math.abs(val); // unsigned
+				if(!val) val = 0;
+				if(characteristic.props.minValue && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
 			break;
 			case "int" :
 				val = parseInt(currentValue);
 				if(!val) val = 0;
+				if(characteristic.props.minValue && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
 			break;
 			case "float" :
 				val = minStepRound(parseFloat(currentValue),characteristic);
-				if(!val) val = 0;
+				if(!val) val = 0.0;
+				if(characteristic.props.minValue && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
+				if(characteristic.props.maxValue && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
 			break;
 			case "bool" :
 				val = toBool(currentValue);
+				if(!val) val = false;
 			break;
 			case "string" :
 			case "tlv8" :
-				val = currentValue;
+				val = currentValue.toString();
 				if(!val) val = '';
-				val = val.toString();
 			break;
 	}
-	if(characteristic.props.minValue && val < characteristic.props.minValue) val = characteristic.props.minValue;
-	if(characteristic.props.maxValue && val > characteristic.props.maxValue) val = characteristic.props.maxValue;
 	return val;
 }
 
@@ -1614,9 +1618,11 @@ function minStepRound(val,characteristic) {
 		characteristic.props.minStep = 1;
 	}
 	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
-	val = val * Math.pow(10, prec);
-	val = Math.round(val); // round to the minStep precision
-	val = val / Math.pow(10, prec);
+	if(val) {
+		val = val * Math.pow(10, prec);
+		val = Math.round(val); // round to the minStep precision
+		val = val / Math.pow(10, prec);
+	}
 	return val;
 }
 
