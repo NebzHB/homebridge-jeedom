@@ -458,11 +458,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(unite) props.unit=unite;
 						if(cmd.state.configuration) {
 							if(NumericGenericType=='float'){
-								if(cmd.state.configuration.maxValue) props.maxValue = parseFloat(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue) props.minValue = parseFloat(cmd.state.configuration.minValue);
+								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined) props.maxValue = parseFloat(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined) props.minValue = parseFloat(cmd.state.configuration.minValue);
 							} else if (NumericGenericType=='int'){
-								if(cmd.state.configuration.maxValue) props.maxValue = parseInt(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue) props.minValue = parseInt(cmd.state.configuration.minValue);
+								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined) props.maxValue = parseInt(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined) props.minValue = parseInt(cmd.state.configuration.minValue);
 							}
 						}
 						HBservice.controlService.getCharacteristic(CharactToSet).setProps(props);
