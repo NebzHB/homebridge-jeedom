@@ -97,6 +97,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 		that.log('Synchronisation Jeedom <> Homebridge...');
 		that.jeedomClient.getModel()
 			.then(function(model){ // we got the base Model from the API
+				if(!model) that.log('error','Model invalide > ',model);
 				that.lastPoll=model.config.datetime;
 				that.log('Enumération des objets Jeedom (Pièces)...');
 				model.objects.map(function(r){
