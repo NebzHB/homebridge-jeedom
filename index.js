@@ -1622,20 +1622,20 @@ function sanitizeValue(currentValue,characteristic) {
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
 				if(!val) val = 0;
-				if(characteristic.props.minValue && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
 			break;
 			case "int" :
 				val = parseInt(currentValue);
 				if(!val) val = 0;
-				if(characteristic.props.minValue && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
 			break;
 			case "float" :
 				val = minStepRound(parseFloat(currentValue),characteristic);
 				if(!val) val = 0.0;
-				if(characteristic.props.minValue && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
-				if(characteristic.props.maxValue && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
 			break;
 			case "bool" :
 				val = toBool(currentValue);
@@ -1657,7 +1657,7 @@ function sanitizeValue(currentValue,characteristic) {
 // -- characteristic : characteristic containing the props
 // -- Return : rounded value
 function minStepRound(val,characteristic) {
-	if(!characteristic.props.minStep) {
+	if(characteristic.props.minStep == null || characteristic.props.minStep == undefined) {
 		characteristic.props.minStep = 1;
 	}
 	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
@@ -2550,7 +2550,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
 					
 					cachedValue = cachedValues[service.controlService.subtype+characteristic.displayName];
-					if(cachedValue){
+					if(cachedValue != undefined && cachedValue != null){
 						characteristic.setValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
 					}
 					
