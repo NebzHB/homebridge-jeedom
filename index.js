@@ -2192,7 +2192,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.OutletInUse.UUID :
-						if (update.power) {
+						if (update.power != undefined) {
 							newValue = parseFloat(update.power) > 1.0 ? true : false;
 							subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 						}
