@@ -1615,7 +1615,7 @@ function sanitizeValue(currentValue,characteristic) {
 // -- characteristic : characteristic containing the props
 // -- Return : rounded value
 function minStepRound(val,characteristic) {
-	if(characteristic.props.minStep != null && characteristic.props.minStep != undefined) {
+	if(characteristic.props.minStep == null || characteristic.props.minStep == undefined) {
 		characteristic.props.minStep = 1;
 	}
 	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
