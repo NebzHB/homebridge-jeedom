@@ -3,8 +3,7 @@
 === Homebridge
 
 ==== v1.2.2
-    * Type Generic Info supporté pour les infos Jeedom de type Numerique, Binaire, Autre
-WARNING: ne pas modifier ce type dans Jeedom pendant que homebridge fonctionne
+    * Type Generic Info supporté comme label
 
 ==== v1.2.1
     * Bugfix : capteurs Fenêtres
