@@ -1580,20 +1580,20 @@ function sanitizeValue(currentValue,characteristic) {
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
 				if(!val) val = 0;
-				if(characteristic.props.minValue && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
 			break;
 			case "int" :
 				val = parseInt(currentValue);
 				if(!val) val = 0;
-				if(characteristic.props.minValue && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
 			break;
 			case "float" :
 				val = minStepRound(parseFloat(currentValue),characteristic);
 				if(!val) val = 0.0;
-				if(characteristic.props.minValue && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
-				if(characteristic.props.maxValue && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
 			break;
 			case "bool" :
 				val = toBool(currentValue);
@@ -1615,7 +1615,7 @@ function sanitizeValue(currentValue,characteristic) {
 // -- characteristic : characteristic containing the props
 // -- Return : rounded value
 function minStepRound(val,characteristic) {
-	if(!characteristic.props.minStep) {
+	if(characteristic.props.minStep != null && characteristic.props.minStep != undefined) {
 		characteristic.props.minStep = 1;
 	}
 	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
@@ -2370,7 +2370,7 @@ function RegisterCustomCharacteristics() {
 		  minStep: 1,
 		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY ]
 		});
-		this.value = 255;
+		this.value = this.getDefaultValue();
 	};
 	Characteristic.NotificationCode.UUID = '381C47A3-CB06-4177-8E3D-A1B4C22EB031';
 	inherits(Characteristic.NotificationCode, Characteristic);
@@ -2381,7 +2381,7 @@ function RegisterCustomCharacteristics() {
 		  format:   Characteristic.Formats.STRING,
 		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
 		});
-		this.value = '';
+		this.value = this.getDefaultValue();
 	};
 	Characteristic.NotificationText.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
 	inherits(Characteristic.NotificationText, Characteristic);	
@@ -2467,7 +2467,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
 					
 					cachedValue = cachedValues[service.controlService.subtype+characteristic.displayName];
-					if(cachedValue != null && cachedValue != undefined){
+					if(cachedValue != undefined && cachedValue != null){
 						characteristic.setValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
 					}
 					
