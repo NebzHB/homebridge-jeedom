@@ -1936,7 +1936,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		value = (update.option.value === 'true');
 	
 	if (update.name == 'cmd::update' && 
-	    update.option.value != undefined && 
+	    update.option.value && 
 	    update.option.cmd_id) {
 		//that.log('debug','cmd : '+JSON.stringify(cmd));
 		var cmd_id,cmd2_id,cmd3_id,cmds;
