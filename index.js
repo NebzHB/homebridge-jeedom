@@ -2426,7 +2426,7 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericINT = function() {
 		Characteristic.call(this, 'ValueINT', 'E244CA80-813E-423A-86BD-02F293B857A0');
 		this.setProps({
-		  format:   Characteristic.Formats.INT,
+		  format:   Characteristic.Formats.UINT32,
 		  minStep: 1,
 		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
 		});
