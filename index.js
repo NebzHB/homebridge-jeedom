@@ -437,52 +437,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					HBservice = {
 						controlService : new Service.NotificationService(eqLogic.name),
-						characteristics : [/*Characteristic.NotificationCode,Characteristic.NotificationText*/]
+						characteristics : [Characteristic.Name,/*Characteristic.NotificationCode,*/Characteristic.NotificationText]
 					};
-					
-					var props = {};
-					var unite;
-					if(cmd.state.subType=="numeric") {
-						// test if default value is Float or Int ?
-						var CharactToSet=Characteristic.GenericFLOAT;
-						var NumericGenericType='float';
-						if(cmd.state.currentValue.toString().indexOf('.') == -1) {
-							CharactToSet=Characteristic.GenericINT;
-							NumericGenericType='int';
-						}
-						HBservice.characteristics.push(CharactToSet);
-						HBservice.controlService.addCharacteristic(CharactToSet);
-						HBservice.controlService.getCharacteristic(CharactToSet).displayName = cmd.state.name;
-						
-						unite = cmd.state.unite ? cmd.state.unite : '';
-						if(unite) props.unit=unite;
-						if(cmd.state.configuration) {
-							if(NumericGenericType=='float'){
-								if(cmd.state.configuration.maxValue) props.maxValue = parseFloat(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue) props.minValue = parseFloat(cmd.state.configuration.minValue);
-							} else if (NumericGenericType=='int'){
-								if(cmd.state.configuration.maxValue) props.maxValue = parseInt(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue) props.minValue = parseInt(cmd.state.configuration.minValue);
-							}
-						}
-						HBservice.controlService.getCharacteristic(CharactToSet).setProps(props);
-					} else if (cmd.state.subType=="binary") {
-						HBservice.characteristics.push(Characteristic.GenericBOOL);
-						HBservice.controlService.addCharacteristic(Characteristic.GenericBOOL);
-						HBservice.controlService.getCharacteristic(Characteristic.GenericBOOL).displayName = cmd.state.name;
-					} else if (cmd.state.subType=="string") {
-						HBservice.characteristics.push(Characteristic.GenericSTRING);
-						HBservice.controlService.addCharacteristic(Characteristic.GenericSTRING);
-						HBservice.controlService.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
-						
-						unite = cmd.state.unite ? cmd.state.unite : '';
-						if(unite) props.unit=unite;
-						HBservice.controlService.getCharacteristic(Characteristic.GenericSTRING).setProps(props);
-					}					
+					HBservice.controlService.getCharacteristic(Characteristic.NotificationText).displayName = cmd.state.name;
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					
+					var unite = cmd.state.unite ? cmd.state.unite : '';
+					var props={};
+					if(unite) {
+						props.unit=unite;
+						HBservice.controlService.getCharacteristic(Characteristic.NotificationText).setProps(props);
+					}
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -1161,20 +1127,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.NotificationCode.UUID :
 			break;
-			case Characteristic.GenericFLOAT.UUID : // all same UUID
-			case Characteristic.GenericINT.UUID :
-			case Characteristic.GenericBOOL.UUID :
-			case Characteristic.GenericSTRING.UUID :
+			case Characteristic.NotificationText.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'GENERIC_INFO' && cmd.id == cmds[0]) {
-						if(cmd.subType == "numeric") {
-							returnValue = parseFloat(cmd.currentValue);
-						} else if (cmd.subType == "binary") {
-							returnValue = toBool(cmd.currentValue);
-						} else if (cmd.subType == "string") {
-							let maxSize = 64;
-							returnValue = cmd.currentValue.toString().substring(0,maxSize);
-						}
+					if (cmd.generic_type == 'GENERIC_INFO') {
+						let maxSize = 64;
+						returnValue = cmd.currentValue.toString().substring(0,maxSize);
 						break;
 					}
 				}
@@ -1957,12 +1914,6 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					case Characteristic.TimeInterval.UUID :
 						intervalValue = true;
 					break;
-					case Characteristic.GenericFLOAT.UUID : // all same UUID
-					case Characteristic.GenericINT.UUID :
-					case Characteristic.GenericBOOL.UUID :
-					case Characteristic.GenericSTRING.UUID :
-						subCharact.setValue(sanitizeValue(update.option.value,subCharact), undefined, 'fromJeedom');
-					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
 						that.log('debug',"Current",alarmMode);
 						if (cmd2_id == update.option.cmd_id) { 
@@ -2418,56 +2369,21 @@ function RegisterCustomCharacteristics() {
 		  minStep: 1,
 		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY ]
 		});
-		this.value = this.getDefaultValue();
+		this.value = 255;
 	};
 	Characteristic.NotificationCode.UUID = '381C47A3-CB06-4177-8E3D-A1B4C22EB031';
 	inherits(Characteristic.NotificationCode, Characteristic);
 
-	Characteristic.GenericINT = function() {
-		Characteristic.call(this, 'ValueINT', 'E244CA80-813E-423A-86BD-02F293B857A0');
-		this.setProps({
-		  format:   Characteristic.Formats.UINT32,
-		  minStep: 1,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericINT.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
-	inherits(Characteristic.GenericINT, Characteristic);	
-	
-	Characteristic.GenericFLOAT = function() {
-		Characteristic.call(this, 'ValueFLOAT', 'E244CA80-813E-423A-86BD-02F293B857A0');
-		this.setProps({
-		  format:   Characteristic.Formats.FLOAT,
-		  minStep: 0.01,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericFLOAT.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
-	inherits(Characteristic.GenericFLOAT, Characteristic);		
-	
-	Characteristic.GenericBOOL = function() {
-		Characteristic.call(this, 'ValueBOOL', 'E244CA80-813E-423A-86BD-02F293B857A0');
-		this.setProps({
-		  format:   Characteristic.Formats.BOOL,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericBOOL.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
-	inherits(Characteristic.GenericBOOL, Characteristic);	
-
-	Characteristic.GenericSTRING = function() {
-		Characteristic.call(this, 'ValueSTRING', 'E244CA80-813E-423A-86BD-02F293B857A0');
+	Characteristic.NotificationText = function() {
+		Characteristic.call(this, 'Label', 'E244CA80-813E-423A-86BD-02F293B857A0');
 		this.setProps({
 		  format:   Characteristic.Formats.STRING,
 		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
 		});
-		this.value = this.getDefaultValue();
+		this.value = '';
 	};
-	Characteristic.GenericSTRING.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
-	inherits(Characteristic.GenericSTRING, Characteristic);		
+	Characteristic.NotificationText.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
+	inherits(Characteristic.NotificationText, Characteristic);	
 
 	/**
 	 * Custom Service 'Power Monitor'
@@ -2495,7 +2411,7 @@ function RegisterCustomCharacteristics() {
 
 		// Required Characteristics
 		/*this.addCharacteristic(Characteristic.NotificationCode);*/
-		//this.addCharacteristic(Characteristic.NotificationText);
+		this.addCharacteristic(Characteristic.NotificationText);
 
 		// Optional Characteristics
 		this.addOptionalCharacteristic(Characteristic.Name);
