@@ -438,7 +438,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					HBservice = {
 						controlService : new Service.NotificationService(eqLogic.name),
-						characteristics : [Characteristic.Name,/*Characteristic.NotificationCode,*/Characteristic.NotificationText]
+						characteristics : [/*Characteristic.Name,Characteristic.NotificationCode,*/Characteristic.NotificationText]
 					};
 					HBservice.controlService.getCharacteristic(Characteristic.NotificationText).displayName = cmd.state.name;
 					HBservice.controlService.cmd_id = cmd.state.id;
@@ -1914,6 +1914,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				switch(subCharact.UUID) {
 					case Characteristic.TimeInterval.UUID :
 						intervalValue = true;
+					break;
+					case Characteristic.NotificationText.UUID :
+						subCharact.setValue(sanitizeValue(update.option.value,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.SecuritySystemCurrentState.UUID :
 						that.log('debug',"Current",alarmMode);
