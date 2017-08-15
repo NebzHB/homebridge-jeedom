@@ -437,7 +437,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.generic.forEach(function(cmd) {
 				if (cmd.state) {
 					HBservice = {
-						controlService : new Service.NotificationService(eqLogic.name),
+						controlService : new Service.CustomService(eqLogic.name),
 						characteristics : []
 					};
 					
@@ -2418,20 +2418,6 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Characteristic.AirPressure, Characteristic);	
 	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
-	
-	Characteristic.NotificationCode = function() {
-		Characteristic.call(this, 'Notification Code', '381C47A3-CB06-4177-8E3D-A1B4C22EB031');
-		this.setProps({
-		  format:   Characteristic.Formats.UINT8,
-		  maxValue: 255,
-		  minValue: 0,
-		  minStep: 1,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY ]
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.NotificationCode.UUID = '381C47A3-CB06-4177-8E3D-A1B4C22EB031';
-	inherits(Characteristic.NotificationCode, Characteristic);
 
 	Characteristic.GenericINT = function() {
 		Characteristic.call(this, 'ValueINT', '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263');
@@ -2497,21 +2483,16 @@ function RegisterCustomCharacteristics() {
 	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
 
 	/**
-	 * Custom Service 'Notification Service'
+	 * Custom Service 'Custom Service'
 	 */
 	 
-	Service.NotificationService = function (displayName, subtype) {
+	Service.CustomService = function (displayName, subtype) {
 		Service.call(this, displayName, 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7', subtype);
 
-		// Required Characteristics
-		/*this.addCharacteristic(Characteristic.NotificationCode);*/
-		//this.addCharacteristic(Characteristic.NotificationText);
-
-		// Optional Characteristics
 		this.addOptionalCharacteristic(Characteristic.Name);
 	};
-	inherits(Service.NotificationService, Service);	
-	Service.NotificationService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
+	inherits(Service.CustomService, Service);	
+	Service.CustomService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
 	
 	// End of custom Services and Characteristics	
 }
