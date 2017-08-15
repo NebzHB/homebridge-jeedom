@@ -438,18 +438,62 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					HBservice = {
 						controlService : new Service.NotificationService(eqLogic.name),
-						characteristics : [/*Characteristic.Name,Characteristic.NotificationCode,*/Characteristic.NotificationText]
+						characteristics : []
 					};
-					HBservice.controlService.getCharacteristic(Characteristic.NotificationText).displayName = cmd.state.name;
+					
+					var props = {};
+					var unite = '';
+					if(cmd.state.subType=="numeric") {
+						that.log('debug','Le générique',cmd.state.name,'est un numérique');
+						// test if default value is Float or Int ?
+						var CharactToSet=Characteristic.GenericFLOAT;
+						var NumericGenericType='float';
+						if(cmd.state.currentValue.toString().indexOf('.') == -1) {
+							CharactToSet=Characteristic.GenericINT;
+							NumericGenericType='int';
+						}
+						that.log('debug','Sur base de sa valeur actuelle',cmd.state.currentValue,', on determine un type :',NumericGenericType);
+						HBservice.characteristics.push(CharactToSet);
+						HBservice.controlService.addCharacteristic(CharactToSet);
+						HBservice.controlService.getCharacteristic(CharactToSet).displayName = cmd.state.name;
+						
+						unite = cmd.state.unite ? cmd.state.unite : '';
+						if(unite) props.unit=unite;
+						if(cmd.state.configuration) {
+							if(NumericGenericType=='float'){
+								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined) props.maxValue = parseFloat(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined) props.minValue = parseFloat(cmd.state.configuration.minValue);
+							} else if (NumericGenericType=='int'){
+								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined) props.maxValue = parseInt(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined) props.minValue = parseInt(cmd.state.configuration.minValue);
+							}
+						}
+						if(Object.keys(props).length !== 0) {
+							that.log('debug','On lui set les props suivants :',props);
+							HBservice.controlService.getCharacteristic(CharactToSet).setProps(props);
+						}
+					} else if (cmd.state.subType=="binary") {
+						that.log('debug','Le générique',cmd.state.name,'est un booléen');
+						HBservice.characteristics.push(Characteristic.GenericBOOL);
+						HBservice.controlService.addCharacteristic(Characteristic.GenericBOOL);
+						HBservice.controlService.getCharacteristic(Characteristic.GenericBOOL).displayName = cmd.state.name;
+					} else if (cmd.state.subType=="string") {
+						that.log('debug','Le générique',cmd.state.name,'est une chaîne');
+						HBservice.characteristics.push(Characteristic.GenericSTRING);
+						HBservice.controlService.addCharacteristic(Characteristic.GenericSTRING);
+						HBservice.controlService.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
+						
+						unite = cmd.state.unite ? cmd.state.unite : '';
+						if(unite) props.unit=unite;
+						if(Object.keys(props).length !== 0) {
+							that.log('debug','On lui set les props suivants :',props);
+							HBservice.controlService.getCharacteristic(Characteristic.GenericSTRING).setProps(props);
+						}
+					}					
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					var unite = cmd.state.unite ? cmd.state.unite : '';
-					var props={};
-					if(unite) {
-						props.unit=unite;
-						HBservice.controlService.getCharacteristic(Characteristic.NotificationText).setProps(props);
-					}
+					
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -1126,9 +1170,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.OutletInUse.UUID :
 				returnValue = parseFloat(cmdList.power) > 1.0 ? true : false;
 			break;
-			case Characteristic.NotificationCode.UUID :
+			case Characteristic.GenericFLOAT.UUID :
+			case Characteristic.GenericINT.UUID :
+			case Characteristic.GenericBOOL.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'GENERIC_INFO' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
 			break;
-			case Characteristic.NotificationText.UUID :
+			case Characteristic.GenericSTRING.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GENERIC_INFO' && cmd.id == cmds[0]) {
 						let maxSize = 64;
@@ -1893,278 +1945,281 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 	if (isNaN(value))
 		value = (update.option.value === 'true');
 	
-	if (update.name == 'cmd::update' && 
-	    update.option.value != undefined && 
-	    update.option.cmd_id) {
-		//that.log('debug','cmd : '+JSON.stringify(cmd));
-		var cmd_id,cmd2_id,cmd3_id,cmds;
-		for (i = 0; i < that.updateSubscriptions.length; i++) {
-			subscription = that.updateSubscriptions[i];
-			if (subscription.service.subtype) {
-				IDs = subscription.service.subtype.split('-');
-				cmds = IDs[1].split('|');
-				cmd_id = cmds[0];
-				cmd2_id = IDs[2];
-				cmd3_id = IDs[3];
-			}
-			subCharact = subscription.characteristic;
-			if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id) {
-				var intervalValue = false;
-				var mode_PRESENT,mode_AWAY,mode_NIGHT,t,modesCmd,v;
-				switch(subCharact.UUID) {
-					case Characteristic.TimeInterval.UUID :
-						intervalValue = true;
-					break;
-					case Characteristic.NotificationText.UUID :
-						subCharact.setValue(sanitizeValue(update.option.value,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.SecuritySystemCurrentState.UUID :
-						that.log('debug',"Current",alarmMode);
-						if (cmd2_id == update.option.cmd_id) { 
-							if(value == 1) {// if ALARM_STATE == 1 : RING !
-								that.log('debug',"ALARM !!!");
-								subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,subCharact), undefined, 'fromJeedom');
-								alarmMode = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
-							} else {
-								alarmMode = null;
-							}
-						} else if (cmd_id == update.option.cmd_id) { 
-							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
-								if(alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
-									that.log('debug',"disarmed");
-									subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.DISARMED,subCharact), undefined, 'fromJeedom');
-									alarmMode = Characteristic.SecuritySystemCurrentState.DISARMED;
-								}
-							} else {
-								alarmMode = null;
-							}
-						} else if(cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
-							if(alarmMode != Characteristic.SecuritySystemCurrentState.DISARMED && alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
-								that.log('debug',"value : ",update.option.display_value);
-								// we set the mode Strings
-								modesCmd = IDs[4].split('|');
-								for(const c in modesCmd) {
-									if (modesCmd.hasOwnProperty(c)) {
-										t = modesCmd[c].split('=');
-										switch (parseInt(c)) {
-												case 0:
-													mode_PRESENT = t[1];
-												break;
-												case 1:
-													mode_AWAY = t[1];
-												break;
-												case 2:
-													mode_NIGHT = t[1];
-												break;
-										}
-									}
-								}
-								v=Characteristic.SecuritySystemCurrentState.DISARMED;
-								switch(update.option.display_value) {
-									case mode_PRESENT :
-										v=Characteristic.SecuritySystemCurrentState.STAY_ARM;
-									break;
-									case mode_AWAY :
-										v=Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-									break;
-									case mode_NIGHT :
-										v=Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
-									break;
-								}
-								subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
-								alarmMode = null;
-							}
- 						}
-					break;
-					case Characteristic.SecuritySystemTargetState.UUID :
-						that.log('debug',"Target",alarmModeTarget);
-						if (cmd_id == update.option.cmd_id) { 
-							if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
-								that.log('debug',"disarm");
-								subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemTargetState.DISARM,subCharact), undefined, 'fromJeedom');
-								alarmModeTarget = Characteristic.SecuritySystemTargetState.DISARM;
-							} else {
-								alarmModeTarget = null;
-							}
-						} else if (cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
-							if(alarmModeTarget != Characteristic.SecuritySystemTargetState.DISARM) {
-								that.log('debug',"value : ",update.option.display_value);
-								// we set the mode Strings)
-								modesCmd = IDs[4].split('|');
-								for(const c in modesCmd) {
-									if (modesCmd.hasOwnProperty(c)) {
-										t = modesCmd[c].split('=');
-										switch (parseInt(c)) {
-												case 0:
-													mode_PRESENT = t[1];
-												break;
-												case 1:
-													mode_AWAY = t[1];
-												break;
-												case 2:
-													mode_NIGHT = t[1];
-												break;
-										}
-									}
-								}
-								v=Characteristic.SecuritySystemTargetState.DISARM;
-								switch(update.option.display_value) {
-									case mode_PRESENT :
-										v=Characteristic.SecuritySystemTargetState.STAY_ARM;
-									break;
-									case mode_AWAY :
-										v=Characteristic.SecuritySystemTargetState.AWAY_ARM;
-									break;
-									case mode_NIGHT :
-										v=Characteristic.SecuritySystemTargetState.NIGHT_ARM;
-									break;
-									case 0 : // if ALARM RING
-										v=alarmModeTarget; // display previous mode
-									break;
-								}
-								subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
-								alarmModeTarget = v;
-							}
-						}			
-					break;
-					case Characteristic.SmokeDetected.UUID :
-						//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert ?
-						newValue = toBool(value);
-						if(newValue === false) newValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
-						else newValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.LeakDetected.UUID :
-						//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert ?
-						newValue = toBool(value);
-						if(newValue === false) newValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
-						else newValue = Characteristic.LeakDetected.LEAK_DETECTED;
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.StatusTampered.UUID :
-						// not managing the invertBinary
-						if(value == 0 || isNaN(value))
-							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.NOT_TAMPERED,subCharact), undefined, 'fromJeedom');
-						else
-							subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.MotionDetected.UUID :
-						//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert
-						newValue = toBool(value);
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.ContactSensorState.UUID :
-						newValue = parseInt(cmds[1])==0 ? toBool(value) : !toBool(value); // invertBinary ?
-						if(newValue === false) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
-						else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.ChargingState.UUID :
-						if (cmds[1] != 'NOT') { // have BATTERY_CHARGING
-							// not managing the invertBinary
-							newValue = toBool(value);
-							if(newValue === false) newValue = Characteristic.ChargingState.NOT_CHARGING;
-							else newValue = Characteristic.ChargingState.CHARGING;
+	var cmd_id,cmd2_id,cmd3_id,cmds;
+	for (i = 0; i < that.updateSubscriptions.length; i++) {
+		subscription = that.updateSubscriptions[i];
+		if (subscription.service.subtype) {
+			IDs = subscription.service.subtype.split('-');
+			cmds = IDs[1].split('|');
+			cmd_id = cmds[0];
+			cmd2_id = IDs[2];
+			cmd3_id = IDs[3];
+		}
+		subCharact = subscription.characteristic;
+		if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id) {
+			var intervalValue = false;
+			var mode_PRESENT,mode_AWAY,mode_NIGHT,t,modesCmd,v;
+			switch(subCharact.UUID) {
+				case Characteristic.TimeInterval.UUID :
+					intervalValue = true;
+				break;
+				case Characteristic.GenericFLOAT.UUID :
+				case Characteristic.GenericINT.UUID :
+				case Characteristic.GenericBOOL.UUID :
+					subCharact.setValue(sanitizeValue(update.option.value,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.GenericSTRING.UUID :
+					let maxSize = 64;
+					value = update.option.value.toString().substring(0,maxSize);
+					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.SecuritySystemCurrentState.UUID :
+					that.log('debug',"Current",alarmMode);
+					if (cmd2_id == update.option.cmd_id) { 
+						if(value == 1) {// if ALARM_STATE == 1 : RING !
+							that.log('debug',"ALARM !!!");
+							subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,subCharact), undefined, 'fromJeedom');
+							alarmMode = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 						} else {
-							newValue = Characteristic.ChargingState.NOT_CHARGEABLE;
-						}						
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.CurrentDoorState.UUID :
-						v=Characteristic.CurrentDoorState.OPEN; // if not -> OPEN
-						HRreturnValue="OPENDef";
-						switch(parseInt(value)) {
-							case 255 :
-								v=Characteristic.CurrentDoorState.OPEN; // 0
-								HRreturnValue="OPEN";
-							break;
-							case 0 :
-								v=Characteristic.CurrentDoorState.CLOSED; // 1
-								HRreturnValue="CLOSED";
-							break;
-							case 254 : 
-								v=Characteristic.CurrentDoorState.OPENING; // 2
-								HRreturnValue="OPENING";
-							break;
-							case 252 :
-								v=Characteristic.CurrentDoorState.CLOSING; // 3
-								HRreturnValue="CLOSING";
-							break;
-							case 253 :
-								v=Characteristic.CurrentDoorState.STOPPED; // 4
-								HRreturnValue="STOPPED";
-							break;
+							alarmMode = null;
 						}
-						that.log('debug','Etat(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
-						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.TargetDoorState.UUID :
-						v=Characteristic.TargetDoorState.OPEN; // if not -> OPEN
-						HRreturnValue="OPENDef";
-						switch(parseInt(value)) {
-							case 255 :
-								v=Characteristic.TargetDoorState.OPEN; // 0
-								HRreturnValue="OPEN";
-							break;
-							case 0 :
-								v=Characteristic.TargetDoorState.CLOSED; // 1
-								HRreturnValue="CLOSED";
-							break;
-							case 254 : 
-								v=Characteristic.TargetDoorState.OPEN; // 0
-								HRreturnValue="OPEN";
-							break;
-							case 252 :
-								v=Characteristic.TargetDoorState.CLOSED; // 1
-								HRreturnValue="CLOSED";
-							break;
-							case 253 :
-								v=Characteristic.TargetDoorState.OPEN; // 0
-								HRreturnValue="OPEN";
-							break;
+					} else if (cmd_id == update.option.cmd_id) { 
+						if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
+							if(alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
+								that.log('debug',"disarmed");
+								subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemCurrentState.DISARMED,subCharact), undefined, 'fromJeedom');
+								alarmMode = Characteristic.SecuritySystemCurrentState.DISARMED;
+							}
+						} else {
+							alarmMode = null;
 						}
-						that.log('debug','Target(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
-						subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.ProgrammableSwitchEvent.UUID :
-						that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
-						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.LockCurrentState.UUID :
-						newValue = toBool(value) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
-						that.log('debug','LockCurrentState(sub) : ',newValue);
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.LockTargetState.UUID :
-						newValue = toBool(value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
-						that.log('debug','LockTargetState(sub) : ',newValue);
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.CurrentPosition.UUID :
-					case Characteristic.TargetPosition.UUID :
-						if (value >= subCharact.props.minValue && value <= subCharact.props.maxValue)
-							subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.OutletInUse.UUID :
-						if (update.power != undefined) {
-							newValue = parseFloat(update.power) > 1.0 ? true : false;
-							subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+					} else if(cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
+						if(alarmMode != Characteristic.SecuritySystemCurrentState.DISARMED && alarmMode != Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED) {
+							that.log('debug',"value : ",update.option.display_value);
+							// we set the mode Strings
+							modesCmd = IDs[4].split('|');
+							for(const c in modesCmd) {
+								if (modesCmd.hasOwnProperty(c)) {
+									t = modesCmd[c].split('=');
+									switch (parseInt(c)) {
+											case 0:
+												mode_PRESENT = t[1];
+											break;
+											case 1:
+												mode_AWAY = t[1];
+											break;
+											case 2:
+												mode_NIGHT = t[1];
+											break;
+									}
+								}
+							}
+							v=Characteristic.SecuritySystemCurrentState.DISARMED;
+							switch(update.option.display_value) {
+								case mode_PRESENT :
+									v=Characteristic.SecuritySystemCurrentState.STAY_ARM;
+								break;
+								case mode_AWAY :
+									v=Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+								break;
+								case mode_NIGHT :
+									v=Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+								break;
+							}
+							subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+							alarmMode = null;
 						}
-					break;
-					case Characteristic.Brightness.UUID :
-						newValue = Math.round(value * 100/99);
+					}
+				break;
+				case Characteristic.SecuritySystemTargetState.UUID :
+					that.log('debug',"Target",alarmModeTarget);
+					if (cmd_id == update.option.cmd_id) { 
+						if(value == 0) {// if ALARM_ENABLE_STATE == 0 : disabled
+							that.log('debug',"disarm");
+							subCharact.setValue(sanitizeValue(Characteristic.SecuritySystemTargetState.DISARM,subCharact), undefined, 'fromJeedom');
+							alarmModeTarget = Characteristic.SecuritySystemTargetState.DISARM;
+						} else {
+							alarmModeTarget = null;
+						}
+					} else if (cmd3_id == update.option.cmd_id) { // else switch with value of ALARM_MODE
+						if(alarmModeTarget != Characteristic.SecuritySystemTargetState.DISARM) {
+							that.log('debug',"value : ",update.option.display_value);
+							// we set the mode Strings)
+							modesCmd = IDs[4].split('|');
+							for(const c in modesCmd) {
+								if (modesCmd.hasOwnProperty(c)) {
+									t = modesCmd[c].split('=');
+									switch (parseInt(c)) {
+											case 0:
+												mode_PRESENT = t[1];
+											break;
+											case 1:
+												mode_AWAY = t[1];
+											break;
+											case 2:
+												mode_NIGHT = t[1];
+											break;
+									}
+								}
+							}
+							v=Characteristic.SecuritySystemTargetState.DISARM;
+							switch(update.option.display_value) {
+								case mode_PRESENT :
+									v=Characteristic.SecuritySystemTargetState.STAY_ARM;
+								break;
+								case mode_AWAY :
+									v=Characteristic.SecuritySystemTargetState.AWAY_ARM;
+								break;
+								case mode_NIGHT :
+									v=Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+								break;
+								case 0 : // if ALARM RING
+									v=alarmModeTarget; // display previous mode
+								break;
+							}
+							subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+							alarmModeTarget = v;
+						}
+					}			
+				break;
+				case Characteristic.SmokeDetected.UUID :
+					//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert ?
+					newValue = toBool(value);
+					if(newValue === false) newValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+					else newValue = Characteristic.SmokeDetected.SMOKE_DETECTED;
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.LeakDetected.UUID :
+					//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert ?
+					newValue = toBool(value);
+					if(newValue === false) newValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+					else newValue = Characteristic.LeakDetected.LEAK_DETECTED;
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.StatusTampered.UUID :
+					// not managing the invertBinary
+					if(value == 0 || isNaN(value))
+						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.NOT_TAMPERED,subCharact), undefined, 'fromJeedom');
+					else
+						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.MotionDetected.UUID :
+					//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert
+					newValue = toBool(value);
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.ContactSensorState.UUID :
+					newValue = parseInt(cmds[1])==0 ? toBool(value) : !toBool(value); // invertBinary ?
+					if(newValue === false) newValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+					else newValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.ChargingState.UUID :
+					if (cmds[1] != 'NOT') { // have BATTERY_CHARGING
+						// not managing the invertBinary
+						newValue = toBool(value);
+						if(newValue === false) newValue = Characteristic.ChargingState.NOT_CHARGING;
+						else newValue = Characteristic.ChargingState.CHARGING;
+					} else {
+						newValue = Characteristic.ChargingState.NOT_CHARGEABLE;
+					}						
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.CurrentDoorState.UUID :
+					v=Characteristic.CurrentDoorState.OPEN; // if not -> OPEN
+					HRreturnValue="OPENDef";
+					switch(parseInt(value)) {
+						case 255 :
+							v=Characteristic.CurrentDoorState.OPEN; // 0
+							HRreturnValue="OPEN";
+						break;
+						case 0 :
+							v=Characteristic.CurrentDoorState.CLOSED; // 1
+							HRreturnValue="CLOSED";
+						break;
+						case 254 : 
+							v=Characteristic.CurrentDoorState.OPENING; // 2
+							HRreturnValue="OPENING";
+						break;
+						case 252 :
+							v=Characteristic.CurrentDoorState.CLOSING; // 3
+							HRreturnValue="CLOSING";
+						break;
+						case 253 :
+							v=Characteristic.CurrentDoorState.STOPPED; // 4
+							HRreturnValue="STOPPED";
+						break;
+					}
+					that.log('debug','Etat(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
+					subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.TargetDoorState.UUID :
+					v=Characteristic.TargetDoorState.OPEN; // if not -> OPEN
+					HRreturnValue="OPENDef";
+					switch(parseInt(value)) {
+						case 255 :
+							v=Characteristic.TargetDoorState.OPEN; // 0
+							HRreturnValue="OPEN";
+						break;
+						case 0 :
+							v=Characteristic.TargetDoorState.CLOSED; // 1
+							HRreturnValue="CLOSED";
+						break;
+						case 254 : 
+							v=Characteristic.TargetDoorState.OPEN; // 0
+							HRreturnValue="OPEN";
+						break;
+						case 252 :
+							v=Characteristic.TargetDoorState.CLOSED; // 1
+							HRreturnValue="CLOSED";
+						break;
+						case 253 :
+							v=Characteristic.TargetDoorState.OPEN; // 0
+							HRreturnValue="OPEN";
+						break;
+					}
+					that.log('debug','Target(sub) Garage/Barrier Homekit: '+v+' soit en Jeedom:'+value+" ("+HRreturnValue+")");
+					subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.ProgrammableSwitchEvent.UUID :
+					that.log('debug',"Valeur de ProgrammableSwitchEvent :"+value);
+					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.LockCurrentState.UUID :
+					newValue = toBool(value) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+					that.log('debug','LockCurrentState(sub) : ',newValue);
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.LockTargetState.UUID :
+					newValue = toBool(value) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+					that.log('debug','LockTargetState(sub) : ',newValue);
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.CurrentPosition.UUID :
+				case Characteristic.TargetPosition.UUID :
+					if (value >= subCharact.props.minValue && value <= subCharact.props.maxValue)
+						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.OutletInUse.UUID :
+					if (update.power != undefined) {
+						newValue = parseFloat(update.power) > 1.0 ? true : false;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
-					case Characteristic.On.UUID :
-						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
-					break;
-					default :
-						subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
-					break;
-				} 
-			}
+					}
+				break;
+				case Characteristic.Brightness.UUID :
+					newValue = Math.round(value * 100/99);
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.On.UUID :
+					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+				break;
+				default :
+					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+				break;
+			} 
 		}
 	}
+
 	if (update.color) {
 		var found=false;
 		for (i = 0; i < that.updateSubscriptions.length; i++) {
@@ -2378,16 +2433,51 @@ function RegisterCustomCharacteristics() {
 	Characteristic.NotificationCode.UUID = '381C47A3-CB06-4177-8E3D-A1B4C22EB031';
 	inherits(Characteristic.NotificationCode, Characteristic);
 
-	Characteristic.NotificationText = function() {
-		Characteristic.call(this, 'Label', 'E244CA80-813E-423A-86BD-02F293B857A0');
+	Characteristic.GenericINT = function() {
+		Characteristic.call(this, 'ValueINT', '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263');
+		this.setProps({
+		  format:   Characteristic.Formats.INT,
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.GenericINT.UUID = '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263';
+	inherits(Characteristic.GenericINT, Characteristic);	
+	
+	Characteristic.GenericFLOAT = function() {
+		Characteristic.call(this, 'ValueFLOAT', '0168A695-70A7-4AF7-A800-417D30055719');
+		this.setProps({
+		  format:   Characteristic.Formats.FLOAT,
+		  minStep: 0.01,
+		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.GenericFLOAT.UUID = '0168A695-70A7-4AF7-A800-417D30055719';
+	inherits(Characteristic.GenericFLOAT, Characteristic);		
+	
+	Characteristic.GenericBOOL = function() {
+		Characteristic.call(this, 'ValueBOOL', 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB');
+		this.setProps({
+		  format:   Characteristic.Formats.BOOL,
+		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.GenericBOOL.UUID = 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB';
+	inherits(Characteristic.GenericBOOL, Characteristic);	
+
+	Characteristic.GenericSTRING = function() {
+		Characteristic.call(this, 'ValueSTRING', 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1');
 		this.setProps({
 		  format:   Characteristic.Formats.STRING,
 		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
 		});
 		this.value = this.getDefaultValue();
 	};
-	Characteristic.NotificationText.UUID = 'E244CA80-813E-423A-86BD-02F293B857A0';
-	inherits(Characteristic.NotificationText, Characteristic);	
+	Characteristic.GenericSTRING.UUID = 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1';
+	inherits(Characteristic.GenericSTRING, Characteristic);		
 
 	/**
 	 * Custom Service 'Power Monitor'
@@ -2411,17 +2501,17 @@ function RegisterCustomCharacteristics() {
 	 */
 	 
 	Service.NotificationService = function (displayName, subtype) {
-		Service.call(this, displayName, '074D8CE9-5B4B-48D5-9990-D98850C2F3FE', subtype);
+		Service.call(this, displayName, 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7', subtype);
 
 		// Required Characteristics
 		/*this.addCharacteristic(Characteristic.NotificationCode);*/
-		this.addCharacteristic(Characteristic.NotificationText);
+		//this.addCharacteristic(Characteristic.NotificationText);
 
 		// Optional Characteristics
 		this.addOptionalCharacteristic(Characteristic.Name);
 	};
 	inherits(Service.NotificationService, Service);	
-	Service.NotificationService.UUID = '074D8CE9-5B4B-48D5-9990-D98850C2F3FE';
+	Service.NotificationService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
 	
 	// End of custom Services and Characteristics	
 }
