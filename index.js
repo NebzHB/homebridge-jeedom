@@ -423,7 +423,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.MotionSensor(eqLogic.name),
 						characteristics : [Characteristic.MotionDetected]
 					};
-					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					if(eqLogic.services.sabotage) {
+						HBservice.characteristics.push(Characteristic.StatusTampered);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+					}
+					if(eqLogic.services.defect) {
+						HBservice.characteristics.push(Characteristic.StatusFault);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+					}
 					HBservice.controlService.cmd_id = cmd.presence.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -523,7 +530,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.TemperatureSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentTemperature]
 					};
-					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					if(eqLogic.services.sabotage) {
+						HBservice.characteristics.push(Characteristic.StatusTampered);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+					}
+					if(eqLogic.services.defect) {
+						HBservice.characteristics.push(Characteristic.StatusFault);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+					}
 					HBservice.controlService.cmd_id = cmd.temperature.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -541,7 +555,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.HumiditySensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentRelativeHumidity]
 					};
-					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					if(eqLogic.services.sabotage) {
+						HBservice.characteristics.push(Characteristic.StatusTampered);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+					}
+					if(eqLogic.services.defect) {
+						HBservice.characteristics.push(Characteristic.StatusFault);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+					}
 					HBservice.controlService.cmd_id = cmd.humidity.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -558,7 +579,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.SmokeSensor(eqLogic.name),
 						characteristics : [Characteristic.SmokeDetected]
 					};
-					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					if(eqLogic.services.sabotage) {
+						HBservice.characteristics.push(Characteristic.StatusTampered);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+					}
+					if(eqLogic.services.defect) {
+						HBservice.characteristics.push(Characteristic.StatusFault);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+					}
 					HBservice.controlService.cmd_id = cmd.smoke.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -575,7 +603,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.LeakSensor(eqLogic.name),
 						characteristics : [Characteristic.LeakDetected]
 					};
-					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					if(eqLogic.services.sabotage) {
+						HBservice.characteristics.push(Characteristic.StatusTampered);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+					}
+					if(eqLogic.services.defect) {
+						HBservice.characteristics.push(Characteristic.StatusFault);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+					}
 					HBservice.controlService.cmd_id = cmd.flood.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -608,7 +643,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.LightSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentAmbientLightLevel]
 					};
-					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					if(eqLogic.services.sabotage) {
+						HBservice.characteristics.push(Characteristic.StatusTampered);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+					}
+					if(eqLogic.services.defect) {
+						HBservice.characteristics.push(Characteristic.StatusFault);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+					}
 					HBservice.controlService.cmd_id = cmd.brightness.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -751,7 +793,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.SecuritySystem(eqLogic.name),
 						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
 					};
-					if(eqLogic.services.sabotage) HBservice.characteristics.push(Characteristic.StatusTampered);
+					if(eqLogic.services.sabotage) {
+						HBservice.characteristics.push(Characteristic.StatusTampered);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+					}
+					if(eqLogic.services.defect) {
+						HBservice.characteristics.push(Characteristic.StatusFault);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+					}
 					HBservice.controlService.cmd_id = cmd.enable_state.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -1514,7 +1563,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 						break;
 					}
 				}
-			break;			
+			break;	
+			case Characteristic.StatusFault.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'DEFECT' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
 			case Characteristic.CurrentAmbientLightLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == cmds[0]) {
