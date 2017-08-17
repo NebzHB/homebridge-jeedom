@@ -1566,8 +1566,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;	
 			case Characteristic.StatusFault.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'DEFECT' && cmd.id == cmds[0]) {
-						returnValue = cmd.currentValue;
+					if (cmd.generic_type == 'DEFECT') {
+						returnValue = toBool(cmd.currentValue);
+						if(!returnValue) returnValue = Characteristic.StatusFault.NO_FAULT;
+						else returnValue = Characteristic.StatusFault.GENERAL_FAULT;
 						break;
 					}
 				}
@@ -2151,6 +2153,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					newValue = toBool(value);
 					if(newValue === false) newValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
 					else newValue = Characteristic.LeakDetected.LEAK_DETECTED;
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.StatusFault.UUID :
+					newValue = toBool(value);
+					if(newValue === false) newValue = Characteristic.StatusFault.NO_FAULT;
+					else newValue = Characteristic.StatusFault.GENERAL_FAULT;
 					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.StatusTampered.UUID :
