@@ -264,7 +264,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.Lightbulb(eqLogic.name),
 						characteristics : [Characteristic.On]
 					};
-					if(cmd_slider) { //Etat est maintenant une luminosité 0-100 ou 0-254... à voir le max
+					if(cmd_slider) {
 						maxBright = parseInt(cmd_slider.configuration.maxValue) || undefined;
 						HBservice.controlService.cmd_id = cmd.state.id;
 						LightType = "Slider";
