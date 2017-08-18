@@ -1923,6 +1923,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							}		
 							found = true;
 						}
+					break;
 					case 'FLAP_SLIDER' :
 						if(value >= 0 && cmd.id == cmds[3]) {
 							cmdId = cmd.id;
@@ -1941,6 +1942,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							cmdId = cmd.id;					
 							found = true;
 						}
+					break;
 					case 'ENERGY_ON' :
 						if((value == 255 || action == 'turnOn') && cmd.id == cmds[1]) {
 							cmdId = cmd.id;					
@@ -1952,6 +1954,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							cmdId = cmd.id;					
 							found = true;
 						}
+					break;
 					case 'ENERGY_OFF' :
 						if((value == 0 || action == 'turnOff') && cmd.id == cmds[2]) {
 							cmdId = cmd.id;					
