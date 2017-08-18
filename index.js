@@ -143,6 +143,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			
 			devices.map(function(device) {
 				if (device.isVisible == '1' && 
+					device.isEnable == '1' &&
 				    device.object_id != null && 
 				    device.sendToHomebridge != '0') { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
 
@@ -158,6 +159,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					that.log('┌──── ' + that.rooms[device.object_id] + ' > ' +device.name+' ('+device.id+')');
 					var Messg= '│ Accessoire ';
 					Messg   += device.isVisible == '1' ? 'visible' : 'invisible';
+					Messg   += device.isEnable == '1' ? ', activé' : ', désactivé';
 					Messg   += device.object_id != null ? '' : ', pas dans une pièce';
 					Messg   += device.sendToHomebridge != '0' ? '' : ', pas coché pour Homebridge';
 					that.log(Messg);
