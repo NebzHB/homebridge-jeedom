@@ -61,7 +61,7 @@ function JeedomPlatform(logger, config, api) {
 		}else{
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
-		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this);
+		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this,config.myPlugin);
 		this.rooms = {};
 		this.updateSubscriptions = [];
 		
@@ -145,7 +145,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				if (device.isVisible == '1' && 
 					device.isEnable == '1' &&
 				    device.object_id != null && 
-				    device.sendToHomebridge != '0') { // we dont receive not visible and empty room, so the only test here is sendToHomebridge
+				    device.sendToHomebridge != '0') {
 
 					that.AccessoireCreateHomebridge(
 						that.jeedomClient.ParseGenericType(
@@ -156,6 +156,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				}
 				else
 				{
+					that.log('debug','eqLogic > '+JSON.stringify(device).replace("\n",''));
 					that.log('┌──── ' + that.rooms[device.object_id] + ' > ' +device.name+' ('+device.id+')');
 					var Messg= '│ Accessoire ';
 					Messg   += device.isVisible == '1' ? 'visible' : 'invisible';
