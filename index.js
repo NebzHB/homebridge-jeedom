@@ -2037,7 +2037,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
 					console.error(err.stack);
 				});
-			},800);
+			},500);
 		}
 	}
 	catch(e){
