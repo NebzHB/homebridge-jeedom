@@ -49,9 +49,9 @@ function JeedomPlatform(logger, config, api) {
 		this.config = config || {};
 		this.accessories = [];
 		this.debugLevel = config.debugLevel || debug.ERROR;
-		this.alarms = config.alarms || [];
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
+		this.myPlugin = config.myPlugin;
 		
 		if (!config.url || 
 		    config.url == "http://:80" ||
@@ -876,31 +876,34 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.enable_state.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					var thisAlarm = that.alarms[eqLogic.id];
 					var away_mode_id,away_mode_label,present_mode_label,present_mode_id,night_mode_label,night_mode_id;
-					if(thisAlarm) {
-						if(thisAlarm.mode_away) {
-							away_mode_label = thisAlarm.mode_away.name;
-							away_mode_id = thisAlarm.mode_away.id;
+					if(eqLogic.alarmModes) {
+						if(eqLogic.alarmModes.SetModeAbsent) {
+							let splitted = eqLogic.alarmModes.SetModeAbsent.split('|');
+							away_mode_label = splitted[1];
+							away_mode_id = splitted[0];
 						}
 						else
 							that.log('warn','Pas de config du mode Absent');
-						if(thisAlarm.mode_present) {
-							present_mode_label = thisAlarm.mode_present.name;
-							present_mode_id = thisAlarm.mode_present.id;
+						if(eqLogic.alarmModes.SetModePresent) {
+							let splitted = eqLogic.alarmModes.SetModePresent.split('|');
+							present_mode_label = splitted[1];
+							present_mode_id = splitted[0];
 						}
 						else
 							that.log('warn','Pas de config du mode Présent');
-						if(thisAlarm.mode_night) {
-							night_mode_label = thisAlarm.mode_night.name;
-							night_mode_id =thisAlarm.mode_night.id;
+						if(eqLogic.alarmModes.SetModeNuit) {
+							let splitted = eqLogic.alarmModes.SetModeNuit.split('|');
+							night_mode_label = splitted[1];
+							night_mode_id = splitted[0];
 						}
 						else
 							that.log('warn','Pas de config du mode Nuit');
 					}
-					/*else {
-						that.log('warn','Pas de config de l\'alarme'); // NOT YET DONE
-					}*/
+					else {
+						if(that.myPlugin == "homebridge")
+							that.log('warn','Pas de config de l\'alarme');
+					}
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.enable_state.id + '-' + cmd_state + '-' + cmd_mode + '-' + present_mode_id+'='+present_mode_label+'|'+away_mode_id+'='+away_mode_label+'|'+night_mode_id+'='+night_mode_label;
 					HBservices.push(HBservice);
 					HBservice = null;
