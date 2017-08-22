@@ -885,14 +885,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 						else
 							that.log('warn','Pas de config du mode À distance/Absence');
-						if(eqLogic.alarmModes.SetModePresent && eqLogic.alarmModes.SetModeAbsent != "NOT") {
+						if(eqLogic.alarmModes.SetModePresent && eqLogic.alarmModes.SetModePresent != "NOT") {
 							let splitted = eqLogic.alarmModes.SetModePresent.split('|');
 							present_mode_label = splitted[1];
 							present_mode_id = splitted[0];
 						}
 						else
 							that.log('warn','Pas de config du mode Domicile/Présence');
-						if(eqLogic.alarmModes.SetModeNuit && eqLogic.alarmModes.SetModeAbsent != "NOT") {
+						if(eqLogic.alarmModes.SetModeNuit && eqLogic.alarmModes.SetModeNuit != "NOT") {
 							let splitted = eqLogic.alarmModes.SetModeNuit.split('|');
 							night_mode_label = splitted[1];
 							night_mode_id = splitted[0];
