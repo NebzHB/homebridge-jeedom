@@ -1249,10 +1249,14 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 			break;
 			case Characteristic.Hue.UUID :
+				this.log("debug","Hue set : ",value);
+				//this.command("setValue",value,service,IDs);
 				rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
 				this.syncColorCharacteristics(rgb, service, IDs);
 			break;
 			case Characteristic.Saturation.UUID :
+				this.log("debug","Sat set : ",value);
+				//this.command("setValue",value,service,IDs);
 				rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
 				this.syncColorCharacteristics(rgb, service, IDs);
 			break;
@@ -1922,7 +1926,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 						}
 					break;
 					case 'LIGHT_SLIDER' :
-						if(cmd.id == cmds[5]) {
+						if(action == 'setValue' && cmd.id == cmds[5]) {
 							cmdId = cmd.id;
 							if (action == 'turnOn' && cmds[2]) {
 								cmdId=cmds[2];
@@ -1934,7 +1938,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 						}
 					break;
 					case 'FLAP_SLIDER' :
-						if(value >= 0 && cmd.id == cmds[3]) {
+						if(value >= 0 && cmd.id == cmds[3]) {// should add action == 'setValue'
 							cmdId = cmd.id;
 							if (action == 'turnOn' && cmds[1]) {
 								cmdId=cmds[1];
@@ -1971,7 +1975,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 						}
 					break;
 					case 'LIGHT_SET_COLOR' :
-						if(action == 'setRGB') {
+						if(action == 'setRGB' && cmd.id == cmds[4]) {
 							cmdId = cmd.id;
 							found = true;
 						}
@@ -2037,7 +2041,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
 					console.error(err.stack);
 				});
-			},500);
+			},800);
 		}
 	}
 	catch(e){
@@ -2472,6 +2476,7 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 	service.RGBValue.red = rgb.r;
 	service.RGBValue.green = rgb.g;
 	service.RGBValue.blue = rgb.b;
+	console.log(h,s,v,rgb);
 	return rgb;
 };
 
@@ -2507,19 +2512,21 @@ JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service)
 // -- IDs : eqLogic ID
 // -- Return : nothing
 JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) {
-	switch (--service.countColorCharacteristics) {
+	/*switch (--service.countColorCharacteristics) {
 	case -1:
-		service.countColorCharacteristics = 2;
+		service.countColorCharacteristics = 2;*/
 		var that = this;
+		clearTimeout(service.timeoutIdColorCharacteristics);
 		service.timeoutIdColorCharacteristics = setTimeout(function() {
-			if (service.countColorCharacteristics < 2)
-				return;
+			//if (service.countColorCharacteristics < 2)
+			//	return;
 			var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
+			that.log("debug","---------setRGB : ",rgbColor);
 			that.command('setRGB', rgbColor, service, IDs);
-			service.countColorCharacteristics = 0;
-			service.timeoutIdColorCharacteristics = 0;
+			//service.countColorCharacteristics = 0;
+			//service.timeoutIdColorCharacteristics = 0;
 		}, 1000);
-		break;
+		/*break;
 	case 0:
 		var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
 		this.command('setRGB', rgbColor, service, IDs);
@@ -2528,7 +2535,7 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 		break;
 	default:
 		break;
-	}
+	}*/
 };
 
 // -- RegisterCustomCharacteristics
