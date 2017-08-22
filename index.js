@@ -68,6 +68,7 @@ function JeedomPlatform(logger, config, api) {
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
 		this.pollingID = null;
+		this.temporizator = null;
 		
 		this.pollerPeriod = config.pollerperiod;
 		if ( typeof this.pollerPeriod == 'string')
@@ -1874,6 +1875,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 			}
 		}
 		// /ALARM		
+		var needToTemporize=false;
 		for (const cmd of cmdList) {
 			if(!found) {
 				switch (cmd.generic_type) {
@@ -1928,6 +1930,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 								cmdId=cmds[3];
 							}		
 							found = true;
+							needToTemporize=true;
 						}
 					break;
 					case 'FLAP_SLIDER' :
@@ -2018,12 +2021,24 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 			}
 		}
 		
-		that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
-			that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
-		}).catch(function(err, response) {
-			that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
-			console.error(err.stack);
-		});
+		if(!needToTemporize) {
+			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+				that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+			}).catch(function(err, response) {
+				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
+				console.error(err.stack);
+			});
+		} else {
+			clearTimeout(that.temporizator);
+			that.temporizator = setTimeout(function(){
+				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+					that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+				}).catch(function(err, response) {
+					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
+					console.error(err.stack);
+				});
+			},800);
+		}
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction command :',e);	
