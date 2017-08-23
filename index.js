@@ -1948,6 +1948,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
 							value =	Math.round(value * 99/100);							
 							found = true;
+							needToTemporize=true;
 						}
 					break;
 					case 'LIGHT_ON' :
@@ -1978,6 +1979,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 						if(action == 'setRGB' && cmd.id == cmds[4]) {
 							cmdId = cmd.id;
 							found = true;
+							needToTemporize=true;
 						}
 					break;
 					case 'ALARM_RELEASED' :
@@ -2041,7 +2043,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + IDs[0] , err , response);
 					console.error(err.stack);
 				});
-			},800);
+			},500);
 		}
 	}
 	catch(e){
@@ -2516,8 +2518,8 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 	case -1:
 		service.countColorCharacteristics = 2;*/
 		var that = this;
-		clearTimeout(service.timeoutIdColorCharacteristics);
-		service.timeoutIdColorCharacteristics = setTimeout(function() {
+		/*clearTimeout(service.timeoutIdColorCharacteristics);
+		service.timeoutIdColorCharacteristics = setTimeout(function() {*/
 			//if (service.countColorCharacteristics < 2)
 			//	return;
 			var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
@@ -2525,7 +2527,7 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 			that.command('setRGB', rgbColor, service, IDs);
 			//service.countColorCharacteristics = 0;
 			//service.timeoutIdColorCharacteristics = 0;
-		}, 1000);
+		//}, 1000);
 		/*break;
 	case 0:
 		var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
