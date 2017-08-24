@@ -2,7 +2,7 @@
 
 _term() { 
   echo "SIGTERM recu!" 
-  kill -TERM "$child" 2>/dev/null
+  kill -SIGTERM "$child" 2>/dev/null
 }
 
 trap _term SIGTERM SIGINT
