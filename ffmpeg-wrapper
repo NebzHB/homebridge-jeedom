@@ -1,2 +1,13 @@
-#!/bin/bash
+#!/bin/bash 
+
+_term() { 
+  echo "SIGTERM recu!" 
+  kill -SIGTERM "$child" 2>/dev/null
+}
+
+trap _term SIGTERM SIGINT
+
 sudo /usr/bin/avconv $@
+
+child=$! 
+wait "$child"
