@@ -268,17 +268,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.Lightbulb(eqLogic.name),
 						characteristics : [Characteristic.On]
 					};
-					if(cmd_slider && cmd_slider.configuration && cmd_slider.configuration.maxValue && parseInt(cmd_slider.configuration.maxValue)) {
-						maxBright = parseInt(cmd_slider.configuration.maxValue);
+					if(cmd_slider) {
+						if(cmd_slider.configuration && cmd_slider.configuration.maxValue && parseInt(cmd_slider.configuration.maxValue))
+							maxBright = parseInt(cmd_slider.configuration.maxValue);
+						else
+							maxBright = 100; // if not set in Jeedom it's 100
 						HBservice.controlService.cmd_id = cmd.state.id;
 						LightType = "Slider";
 						HBservice.characteristics.push(Characteristic.Brightness);
 						HBservice.controlService.addCharacteristic(Characteristic.Brightness);
 					} else {
-						if(!cmd_slider)
-							that.log('info','La lumière n\'a pas de variateur');
-						else
-							that.log('warn','La lumière n\'a pas de variateur car aucune valeur maximale ne lui a été attribué.');
+						that.log('info','La lumière n\'a pas de variateur');;
 					}
 					if(cmd_color) {
 						LightType = "RGB";
