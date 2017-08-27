@@ -234,7 +234,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.light.forEach(function(cmd) {
 				if (cmd.state) {
 					let LightType="Switch";
-					let cmd_on,cmd_off,cmd_slider,cmd_slider_id,cmd_color,cmd_setcolor,maxBright;
+					let cmd_on,cmd_off,cmd_slider,cmd_slider_id,cmd_color,cmd_setcolor,maxBright,status_active;
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
 							if (cmd2.on.value == cmd.state.id) {
@@ -299,9 +299,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					} else {
 						that.log('info','La lumière n\'a pas de couleurs');
 					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						status_active = eqLogic.services.status_active[0].status_active.id;
+					}
 					that.log('info','La lumière est du type :',LightType+','+maxBright);
 					HBservice.controlService.subtype = LightType;
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'|'+ cmd_color + '|' + cmd_on + '|' + cmd_off + '|' + cmd_setcolor + '|' + cmd_slider_id + '-' + HBservice.controlService.subtype+','+maxBright;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'|'+ cmd_color + '|' + cmd_on + '|' + cmd_off + '|' + cmd_setcolor + '|' + cmd_slider_id + '-' + HBservice.controlService.subtype+','+maxBright + ((status_active)?'-'+status_active:'');
 					HBservices.push(HBservice);
 				}
 				/*if (cmd.color) { // don't work fine
@@ -1378,6 +1383,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				hsv = that.updateHomeKitColorFromJeedom(returnValue, service);
 				returnValue = Math.round(hsv.v);
 			break;
+			case Characteristic.StatusActive.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'ACTIVE') {
+						//returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						returnValue = toBool(cmd.currentValue);					
+						break;
+					}
+				}
+			break;
 			case Characteristic.SmokeDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SMOKE' && cmd.id == cmds[0]) {
@@ -2284,6 +2298,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					if(newValue === false) newValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
 					else newValue = Characteristic.LeakDetected.LEAK_DETECTED;
 					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.StatusActive.UUID :
+					subCharact.setValue(sanitizeValue(update.option.value,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.StatusFault.UUID :
 					newValue = toBool(value);
