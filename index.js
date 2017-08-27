@@ -234,7 +234,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.light.forEach(function(cmd) {
 				if (cmd.state) {
 					let LightType="Switch";
-					let cmd_on,cmd_off,cmd_slider,cmd_slider_id,cmd_color,cmd_setcolor,maxBright,status_active;
+					let cmd_on,cmd_off,cmd_slider,cmd_slider_id,cmd_color,cmd_setcolor,maxBright;
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
 							if (cmd2.on.value == cmd.state.id) {
@@ -299,14 +299,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					} else {
 						that.log('info','La lumière n\'a pas de couleurs');
 					}
+					HBservice.controlService.statusArr = [];
 					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
 						HBservice.characteristics.push(Characteristic.StatusActive);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
-						status_active = eqLogic.services.status_active[0].status_active.id;
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					that.log('info','La lumière est du type :',LightType+','+maxBright);
 					HBservice.controlService.subtype = LightType;
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'|'+ cmd_color + '|' + cmd_on + '|' + cmd_off + '|' + cmd_setcolor + '|' + cmd_slider_id + '-' + HBservice.controlService.subtype+','+maxBright + ((status_active)?'-'+status_active:'');
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'|'+ cmd_color + '|' + cmd_on + '|' + cmd_off + '|' + cmd_setcolor + '|' + cmd_slider_id + '-' + HBservice.controlService.subtype+','+maxBright;
 					HBservices.push(HBservice);
 				}
 				/*if (cmd.color) { // don't work fine
@@ -504,13 +505,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.MotionSensor(eqLogic.name),
 						characteristics : [Characteristic.MotionDetected]
 					};
-					if(eqLogic.services.sabotage) {
+					HBservice.controlService.statusArr = [];
+					if(eqLogic.services.sabotage && eqLogic.services.sabotage[0].sabotage) {
 						HBservice.characteristics.push(Characteristic.StatusTampered);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+						HBservice.controlService.statusArr.push(eqLogic.services.sabotage[0].sabotage.id);
 					}
-					if(eqLogic.services.defect) {
+					if(eqLogic.services.defect && eqLogic.services.defect[0].defect) {
 						HBservice.characteristics.push(Characteristic.StatusFault);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+						HBservice.controlService.statusArr.push(eqLogic.services.defect[0].defect.id);
+					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					HBservice.controlService.cmd_id = cmd.presence.id;
 					if (!HBservice.controlService.subtype)
@@ -611,13 +620,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.TemperatureSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentTemperature]
 					};
-					if(eqLogic.services.sabotage) {
+					HBservice.controlService.statusArr = [];
+					if(eqLogic.services.sabotage && eqLogic.services.sabotage[0].sabotage) {
 						HBservice.characteristics.push(Characteristic.StatusTampered);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+						HBservice.controlService.statusArr.push(eqLogic.services.sabotage[0].sabotage.id);
 					}
-					if(eqLogic.services.defect) {
+					if(eqLogic.services.defect && eqLogic.services.defect[0].defect) {
 						HBservice.characteristics.push(Characteristic.StatusFault);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+						HBservice.controlService.statusArr.push(eqLogic.services.defect[0].defect.id);
+					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					HBservice.controlService.cmd_id = cmd.temperature.id;
 					if (!HBservice.controlService.subtype)
@@ -636,13 +653,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.HumiditySensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentRelativeHumidity]
 					};
-					if(eqLogic.services.sabotage) {
+					HBservice.controlService.statusArr = [];
+					if(eqLogic.services.sabotage && eqLogic.services.sabotage[0].sabotage) {
 						HBservice.characteristics.push(Characteristic.StatusTampered);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+						HBservice.controlService.statusArr.push(eqLogic.services.sabotage[0].sabotage.id);
 					}
-					if(eqLogic.services.defect) {
+					if(eqLogic.services.defect && eqLogic.services.defect[0].defect) {
 						HBservice.characteristics.push(Characteristic.StatusFault);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+						HBservice.controlService.statusArr.push(eqLogic.services.defect[0].defect.id);
+					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					HBservice.controlService.cmd_id = cmd.humidity.id;
 					if (!HBservice.controlService.subtype)
@@ -660,13 +685,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.SmokeSensor(eqLogic.name),
 						characteristics : [Characteristic.SmokeDetected]
 					};
-					if(eqLogic.services.sabotage) {
+					HBservice.controlService.statusArr = [];
+					if(eqLogic.services.sabotage && eqLogic.services.sabotage[0].sabotage) {
 						HBservice.characteristics.push(Characteristic.StatusTampered);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+						HBservice.controlService.statusArr.push(eqLogic.services.sabotage[0].sabotage.id);
 					}
-					if(eqLogic.services.defect) {
+					if(eqLogic.services.defect && eqLogic.services.defect[0].defect) {
 						HBservice.characteristics.push(Characteristic.StatusFault);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+						HBservice.controlService.statusArr.push(eqLogic.services.defect[0].defect.id);
+					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					HBservice.controlService.cmd_id = cmd.smoke.id;
 					if (!HBservice.controlService.subtype)
@@ -684,13 +717,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.LeakSensor(eqLogic.name),
 						characteristics : [Characteristic.LeakDetected]
 					};
-					if(eqLogic.services.sabotage) {
+					HBservice.controlService.statusArr = [];
+					if(eqLogic.services.sabotage && eqLogic.services.sabotage[0].sabotage) {
 						HBservice.characteristics.push(Characteristic.StatusTampered);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+						HBservice.controlService.statusArr.push(eqLogic.services.sabotage[0].sabotage.id);
 					}
-					if(eqLogic.services.defect) {
+					if(eqLogic.services.defect && eqLogic.services.defect[0].defect) {
 						HBservice.characteristics.push(Characteristic.StatusFault);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+						HBservice.controlService.statusArr.push(eqLogic.services.defect[0].defect.id);
+					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					HBservice.controlService.cmd_id = cmd.flood.id;
 					if (!HBservice.controlService.subtype)
@@ -724,13 +765,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.LightSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentAmbientLightLevel]
 					};
-					if(eqLogic.services.sabotage) {
+					HBservice.controlService.statusArr = [];
+					if(eqLogic.services.sabotage && eqLogic.services.sabotage[0].sabotage) {
 						HBservice.characteristics.push(Characteristic.StatusTampered);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+						HBservice.controlService.statusArr.push(eqLogic.services.sabotage[0].sabotage.id);
 					}
-					if(eqLogic.services.defect) {
+					if(eqLogic.services.defect && eqLogic.services.defect[0].defect) {
 						HBservice.characteristics.push(Characteristic.StatusFault);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+						HBservice.controlService.statusArr.push(eqLogic.services.defect[0].defect.id);
+					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					HBservice.controlService.cmd_id = cmd.brightness.id;
 					if (!HBservice.controlService.subtype)
@@ -874,13 +923,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.SecuritySystem(eqLogic.name),
 						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
 					};
-					if(eqLogic.services.sabotage) {
+					HBservice.controlService.statusArr = [];
+					if(eqLogic.services.sabotage && eqLogic.services.sabotage[0].sabotage) {
 						HBservice.characteristics.push(Characteristic.StatusTampered);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+						HBservice.controlService.statusArr.push(eqLogic.services.sabotage[0].sabotage.id);
 					}
-					if(eqLogic.services.defect) {
+					if(eqLogic.services.defect && eqLogic.services.defect[0].defect) {
 						HBservice.characteristics.push(Characteristic.StatusFault);
 						HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+						HBservice.controlService.statusArr.push(eqLogic.services.defect[0].defect.id);
+					}
+					if(eqLogic.services.status_active && eqLogic.services.status_active[0].status_active) {
+						HBservice.characteristics.push(Characteristic.StatusActive);
+						HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+						HBservice.controlService.statusArr.push(eqLogic.services.status_active[0].status_active.id);
 					}
 					HBservice.controlService.cmd_id = cmd.enable_state.id;
 					if (!HBservice.controlService.subtype)
@@ -1308,6 +1365,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 	try{
 		var that = this;
 		var cmds = IDs[1].split('|');
+		var eqLogicStatus=[];
+		if (service.statusArr) {
+			eqLogicStatus=service.statusArr;
+		}
 		var returnValue = 0;
 		var HRreturnValue;
 		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]);
@@ -1385,7 +1446,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.StatusActive.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'ACTIVE') {
+					if (cmd.generic_type == 'ACTIVE' && eqLogicStatus.indexOf(cmd.id) != -1) {
 						//returnValue = cmds[1]==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						returnValue = toBool(cmd.currentValue);					
 						break;
@@ -1683,7 +1744,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;	
 			case Characteristic.StatusFault.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'DEFECT') {
+					if (cmd.generic_type == 'DEFECT' && eqLogicStatus.indexOf(cmd.id) != -1) {
 						returnValue = toBool(cmd.currentValue);
 						if(!returnValue) returnValue = Characteristic.StatusFault.NO_FAULT;
 						else returnValue = Characteristic.StatusFault.GENERAL_FAULT;
@@ -1740,7 +1801,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'SABOTAGE') {
+					if (cmd.generic_type == 'SABOTAGE' && eqLogicStatus.indexOf(cmd.id) != -1) {
 						// not managing the invertBinary
 						returnValue = cmd.currentValue;
 						if(returnValue == 0) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
@@ -2158,8 +2219,13 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			cmd2_id = IDs[2];
 			cmd3_id = IDs[3];
 		}
+		var eqLogicStatus=[];
+		if (subscription.service.statusArr && subscription.service.statusArr.length) {
+			eqLogicStatus=subscription.service.statusArr;
+			//that.log('debug',"------------status :",eqLogicStatus,update.option.cmd_id);
+		}
 		subCharact = subscription.characteristic;
-		if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id) {
+		if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
 			var intervalValue = false;
 			var mode_PRESENT,mode_AWAY,mode_NIGHT,t,modesCmd,v;
 			switch(subCharact.UUID) {
