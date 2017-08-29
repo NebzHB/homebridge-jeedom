@@ -6,7 +6,7 @@
     * Plugin séparé de mobile.
     * Récupération de la configuration du plugin mobile s'il est installé.
     * Meilleure réparation et installation plus poussée pour éviter des problèmes divers
-    * Installation de NodeJS 6 LTS sur toutes les architectures
+    * (Installation de NodeJS 6 LTS sur toutes les architectures) ... quand les autres dev se seront mis à jour...
     * Type Generic Info supporté pour les infos Jeedom de type Numerique, Binaire, Autre.
 [IMPORTANT]
 ne pas modifier ce type dans Jeedom pendant que homebridge fonctionne
@@ -17,6 +17,8 @@ Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
     * Nouveau design de l'app, simplification, plus besoin de choisir les plugins.
     * Fenêtre "Information" pour donner des éléments importants de votre configuration en cas de demande d'aide sur le forum (à la demande)
     * Debug des périphériques en non visible ou désactivés dans les logs
+	* Temporisation des Slider des lumières et des volets, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500mx
+	* Types Génériques Status Defectueux, Sabotage et Status Actif (tous les trois binaires)
 
 ==== v1.2.1
     * Bugfix : capteurs Fenêtres
