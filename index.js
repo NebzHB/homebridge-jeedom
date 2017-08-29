@@ -891,20 +891,30 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 // -- eqLogic : the jeedom eqLogic
 JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
 	HBservice.controlService.statusArr = [];
-	if(services.sabotage && services.sabotage[0].sabotage) {
-		HBservice.characteristics.push(Characteristic.StatusTampered);
-		HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
-		HBservice.controlService.statusArr.push(services.sabotage[0].sabotage.id);
+	var sabotage,defect,status_active;
+	if(services.sabotage) {
+		for(let s in services.sabotage) { if(services.sabotage[s] !== null) {sabotage=services.sabotage[s];break;} }
+		if(sabotage) {
+			HBservice.characteristics.push(Characteristic.StatusTampered);
+			HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
+			HBservice.controlService.statusArr.push(sabotage.sabotage.id);
+		}
 	}
-	if(services.defect && services.defect[0].defect) {
-		HBservice.characteristics.push(Characteristic.StatusFault);
-		HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
-		HBservice.controlService.statusArr.push(services.defect[0].defect.id);
+	if(services.defect) {
+		for(let s in services.defect) { if(services.defect[s] !== null) {defect=services.defect[s]; break;} }
+		if(defect) {
+			HBservice.characteristics.push(Characteristic.StatusFault);
+			HBservice.controlService.addCharacteristic(Characteristic.StatusFault);
+			HBservice.controlService.statusArr.push(defect.defect.id);
+		}
 	}
 	if(services.status_active && services.status_active[0].status_active) {
-		HBservice.characteristics.push(Characteristic.StatusActive);
-		HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
-		HBservice.controlService.statusArr.push(services.status_active[0].status_active.id);
+		for(let s in services.status_active) { if(services.status_active[s] !== null) {status_active=services.status_active[s]; break;} }
+		if(status_active) {
+			HBservice.characteristics.push(Characteristic.StatusActive);
+			HBservice.controlService.addCharacteristic(Characteristic.StatusActive);
+			HBservice.controlService.statusArr.push(status_active.status_active.id);
+		}
 	}
 	return HBservice;
 }
