@@ -2503,37 +2503,39 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			} 
 		}
 	}
-/*
+
 	if (update.color) {
 		var found=false;
 		for (i = 0; i < that.updateSubscriptions.length; i++) {
 			subscription = that.updateSubscriptions[i];
 			IDs = subscription.service.subtype.split('-');
-			if (IDs[1] == update.option.cmd_id && subscription.service.HSBValue) {
+			var colorCmd = IDs[1].split('|');
+			colorCmd = colorCmd[1];
+			if (colorCmd == update.option.cmd_id && subscription.service.HSBValue) {
 				var hsv = that.updateHomeKitColorFromJeedom(update.color, subscription.service);
 				subCharact =  subscription.characteristic;
 				switch(subCharact.UUID)
 				{
-					case Characteristic.On.UUID :
+					/*case Characteristic.On.UUID :
 						//that.log('debug','update On :'+hsv.v == 0 ? false : true);
 						newValue = hsv.v == 0 ? false : true;
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
+					break;*/
 					case Characteristic.Hue.UUID :
-						//that.log('debug','update Hue :'+Math.round(hsv.h));
+						that.log('debug','-----update Hue :'+Math.round(hsv.h));
 						newValue = Math.round(hsv.h);
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
 					case Characteristic.Saturation.UUID :
-						//that.log('debug','update Sat :'+Math.round(hsv.s));
+						that.log('debug','-----update Sat :'+Math.round(hsv.s));
 						newValue = Math.round(hsv.s);
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
-					case Characteristic.Brightness.UUID :
+					/*case Characteristic.Brightness.UUID :
 						//that.log('debug','update Bright :'+Math.round(hsv.v));
 						newValue = Math.round(hsv.v);
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;
+					break;*/
 				}
 				found=true;
 			}
@@ -2542,7 +2544,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				break;
 			}
 		}
-	}*/
+	}
 };
 
 // -- updateJeedomColorFromHomeKit
