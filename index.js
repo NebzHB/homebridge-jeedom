@@ -1376,7 +1376,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		switch (characteristic.UUID) {
 			case Characteristic.On.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == cmds[0]) {
+					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType == 'binary' && cmd.id == cmds[0]) {
 						if(parseInt(cmd.currentValue) == 0) returnValue=false;
 						else returnValue=true;
 						break;
@@ -1497,7 +1497,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.Brightness.UUID :
 				returnValue = 0;
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == cmds[0]) {
+					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType != 'binary' && cmd.id == cmds[0]) {
 						let maxJeedom = IDs[2].split(',');
 						maxJeedom = parseInt(maxJeedom[1]);
 						returnValue = parseInt(cmd.currentValue);
