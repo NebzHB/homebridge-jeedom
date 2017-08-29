@@ -263,7 +263,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if (cmd_on && !cmd_off) that.log('warn','Pas de type générique "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande OFF'); 
 					if (!cmd_on && cmd_off) that.log('warn','Pas de type générique "Action/Lumière ON" ou reférence à l\'état non définie sur la commande ON');
 					if (!cmd_setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur" ou de type générique "Info/Lumière Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
-					if (!cmd_color) that.log('warn','Pas de type générique "Info/Lumière Couleur"');
 					HBservice = {
 						controlService : new Service.Lightbulb(eqLogic.name),
 						characteristics : [Characteristic.On]
@@ -310,65 +309,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'|'+ cmd_color + '|' + cmd_on + '|' + cmd_off + '|' + cmd_setcolor + '|' + cmd_slider_id + '-' + HBservice.controlService.subtype+','+maxBright;
 					HBservices.push(HBservice);
 				}
-				/*if (cmd.color) { // don't work fine
-					HBservice = {
-						controlService : new Service.Lightbulb(eqLogic.name),
-						characteristics : [Characteristic.On, Characteristic.Brightness, Characteristic.Hue, Characteristic.Saturation]
-					};
-					HBservice.controlService.cmd_id = cmd.color.id;
-					HBservice.controlService.HSBValue = {
-						hue : 0,
-						saturation : 0,
-						brightness : 0
-					};
-					HBservice.controlService.RGBValue = {
-						red : 0,
-						green : 0,
-						blue : 0
-					};
-					HBservice.controlService.countColorCharacteristics = 0;
-					HBservice.controlService.timeoutIdColorCharacteristics = 0;
-					HBservice.controlService.subtype = 'RGB';
-					if (!HBservice.controlService.subtype)
-						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.color.id + '-' + HBservice.controlService.subtype;
-					HBservices.push(HBservice);
-				} else if (cmd.state) {
-					var cmd_on = 0;
-					var cmd_off = 0;
-					var cmd_slider = 0;
-					eqServicesCopy.light.forEach(function(cmd2) {
-						if (cmd2.on) {
-							if (cmd2.on.value == cmd.state.id) {
-								cmd_on = cmd2.on.id;
-							}
-						} else if (cmd2.off) {
-							if (cmd2.off.value == cmd.state.id) {
-								cmd_off = cmd2.off.id;
-							}
-						} else if (cmd2.slider) {
-							if (cmd2.slider.value == cmd.state.id) {
-								cmd_slider = cmd2.slider.id;
-							}
-						}
-					});
-					if (cmd_slider == 0) {
-						HBservice = {
-							controlService : new Service.Lightbulb(eqLogic.name),
-							characteristics : [Characteristic.On]
-						};
-					} else {
-						HBservice = {
-							controlService : new Service.Lightbulb(eqLogic.name),
-							characteristics : [Characteristic.On, Characteristic.Brightness]
-						};
-					}
-					HBservice.controlService.cmd_id = eqLogic.services.light.id;
-					if (!HBservice.controlService.subtype)
-						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '|' + cmd_on + '|' + cmd_off + '|' + cmd_slider + '-' + HBservice.controlService.subtype;
-					HBservices.push(HBservice);
-				}*/
 			});
 			if(!HBservice) {
 				that.log('warn','Pas de type générique "Info/Lumière Etat"');
