@@ -301,7 +301,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.statusArr = [];
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					that.log('info','La lumière est du type :',LightType+','+maxBright);
 					HBservice.controlService.subtype = LightType;
@@ -345,7 +345,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
@@ -385,7 +385,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
@@ -409,7 +409,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					var cmd_id_consumption=0;
 					if(eqServicesCopy.consumption) {
@@ -458,7 +458,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.presence.id;
 					if (!HBservice.controlService.subtype)
@@ -478,7 +478,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					var props = {};
 					var unite = '';
@@ -564,7 +564,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.temperature.id;
 					if (!HBservice.controlService.subtype)
@@ -585,7 +585,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.humidity.id;
 					if (!HBservice.controlService.subtype)
@@ -605,7 +605,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.smoke.id;
 					if (!HBservice.controlService.subtype)
@@ -625,7 +625,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.flood.id;
 					if (!HBservice.controlService.subtype)
@@ -645,7 +645,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.opening.id;
 					if (!HBservice.controlService.subtype)
@@ -665,7 +665,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.brightness.id;
 					if (!HBservice.controlService.subtype)
@@ -715,7 +715,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
@@ -754,7 +754,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
@@ -792,7 +792,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			};
 			
 			// add Active, Tampered and Defect Characteristics if needed
-			HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+			HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 			
 			HBservice.controlService.cmd_id = eqLogic.services.thermostat.id;
 			if (!HBservice.controlService.subtype)
@@ -823,7 +823,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqLogic.services);
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					HBservice.controlService.cmd_id = cmd.enable_state.id;
 					if (!HBservice.controlService.subtype)
