@@ -277,7 +277,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.Brightness);
 						HBservice.controlService.addCharacteristic(Characteristic.Brightness);
 					} else {
-						that.log('info','La lumière n\'a pas de variateur');;
+						that.log('info','La lumière n\'a pas de variateur');
 					}
 					if(cmd_color) {
 						LightType = "RGB";
@@ -921,7 +921,7 @@ JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
 		}
 	}
 	return HBservice;
-}
+};
 
 // -- createAccessory
 // -- Desc : Create the JeedomBridgedAccessory object
@@ -1298,7 +1298,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		if(service.customValues) {
 			customValues=service.customValues;
 		} else {
-			customValues=['OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0];
+			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0};
 		}
 		var returnValue = 0;
 		var HRreturnValue;
@@ -2159,7 +2159,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		if(subscription.service.customValues) {
 			customValues=subscription.service.customValues;
 		} else {
-			customValues=['OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0];
+			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0};
 		}
 		subCharact = subscription.characteristic;
 		if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
