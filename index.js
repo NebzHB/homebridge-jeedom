@@ -714,6 +714,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
 					};
 					
+					if(eqLogic.customValues) {
+						HBservice.controlService.customValues = eqLogic.customValues;
+					}
+					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -1290,6 +1294,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		if (service.statusArr) {
 			eqLogicStatus=service.statusArr;
 		}
+		var customValues=[];
+		if(service.customValues) {
+			customValues=service.customValues;
+		} else {
+			customValues=['OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0];
+		}
 		var returnValue = 0;
 		var HRreturnValue;
 		var cmdList = that.jeedomClient.getDeviceCmd(IDs[0]);
@@ -1577,23 +1587,23 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
-								case 255 :
+								case customValues.OPEN :
 									returnValue=Characteristic.TargetDoorState.OPEN; //0
 									HRreturnValue="OPEN";	
 								break;
-								case 0 :
+								case customValues.CLOSED :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case 254 :
+								case customValues.OPENING :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
-								case 252 :
+								case customValues.CLOSING :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case 253 :
+								case customValues.STOPPED :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
@@ -1610,23 +1620,23 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
-								case 255 :
+								case customValues.OPEN :
 									returnValue=Characteristic.CurrentDoorState.OPEN; //0
 									HRreturnValue="OPEN";
 								break;
-								case 0 :
+								case customValues.CLOSED :
 									returnValue=Characteristic.CurrentDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case 254 :
+								case customValues.OPENING :
 									returnValue=Characteristic.CurrentDoorState.OPENING; // 2
 									HRreturnValue="OPENING";
 								break;
-								case 252 :
+								case customValues.CLOSING :
 									returnValue=Characteristic.CurrentDoorState.CLOSING; // 3
 									HRreturnValue="CLOSING";
 								break;
-								case 253 :
+								case customValues.STOPPED :
 									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 									HRreturnValue="STOPPED";
 								break;
@@ -2145,6 +2155,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			eqLogicStatus=subscription.service.statusArr;
 			//that.log('debug',"------------status :",eqLogicStatus,update.option.cmd_id);
 		}
+		var customValues=[];
+		if(subscription.service.customValues) {
+			customValues=subscription.service.customValues;
+		} else {
+			customValues=['OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0];
+		}
 		subCharact = subscription.characteristic;
 		if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
 			var intervalValue = false;
@@ -2328,23 +2344,23 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					v=Characteristic.CurrentDoorState.OPEN; // if not -> OPEN
 					HRreturnValue="OPENDef";
 					switch(parseInt(value)) {
-						case 255 :
+						case customValues.OPEN :
 							v=Characteristic.CurrentDoorState.OPEN; // 0
 							HRreturnValue="OPEN";
 						break;
-						case 0 :
+						case customValues.CLOSED :
 							v=Characteristic.CurrentDoorState.CLOSED; // 1
 							HRreturnValue="CLOSED";
 						break;
-						case 254 : 
+						case customValues.OPENING : 
 							v=Characteristic.CurrentDoorState.OPENING; // 2
 							HRreturnValue="OPENING";
 						break;
-						case 252 :
+						case customValues.CLOSING :
 							v=Characteristic.CurrentDoorState.CLOSING; // 3
 							HRreturnValue="CLOSING";
 						break;
-						case 253 :
+						case customValues.STOPPED :
 							v=Characteristic.CurrentDoorState.STOPPED; // 4
 							HRreturnValue="STOPPED";
 						break;
@@ -2356,23 +2372,23 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					v=Characteristic.TargetDoorState.OPEN; // if not -> OPEN
 					HRreturnValue="OPENDef";
 					switch(parseInt(value)) {
-						case 255 :
+						case customValues.OPEN :
 							v=Characteristic.TargetDoorState.OPEN; // 0
 							HRreturnValue="OPEN";
 						break;
-						case 0 :
+						case customValues.CLOSED :
 							v=Characteristic.TargetDoorState.CLOSED; // 1
 							HRreturnValue="CLOSED";
 						break;
-						case 254 : 
+						case customValues.OPENING : 
 							v=Characteristic.TargetDoorState.OPEN; // 0
 							HRreturnValue="OPEN";
 						break;
-						case 252 :
+						case customValues.CLOSING :
 							v=Characteristic.TargetDoorState.CLOSED; // 1
 							HRreturnValue="CLOSED";
 						break;
-						case 253 :
+						case customValues.STOPPED :
 							v=Characteristic.TargetDoorState.OPEN; // 0
 							HRreturnValue="OPEN";
 						break;
