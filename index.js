@@ -554,7 +554,30 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice = null;
 				}
 			});
-		}						
+		}			
+		if (eqLogic.services.speaker) {
+			eqLogic.services.speaker.forEach(function(cmd) {
+				if (cmd.volume) {
+					HBservice = {
+						controlService : new Service.Speaker(eqLogic.name),
+						characteristics : [Characteristic.Volume]
+					};
+					eqServicesCopy.speaker.forEach(function(cmd2) {
+						if (cmd2.mute) {
+							HBservice.characteristics.push(Characteristic.Mute);
+							HBservice.controlService.addCharacteristic(Characteristic.Mute);
+							cmd_mute = cmd2.mute;
+						}
+					});
+					HBservice.controlService.cmd_id = cmd.volume.id;
+					if (!HBservice.controlService.subtype)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.volume.id +'|'+ cmd_mute.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}			
 		if (eqLogic.services.temperature) {
 			eqLogic.services.temperature.forEach(function(cmd) {
 				if (cmd.temperature) {
@@ -1180,6 +1203,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.On.UUID :
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
 			break;
+			case Characteristic.Mute.UUID :
+					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
+			break;
 			case Characteristic.TargetTemperature.UUID :
 				if (Math.abs(value - characteristic.value) >= 0.5) {
 					value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
@@ -1673,6 +1699,22 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 					}
 				}
 			break;	
+			case Characteristic.Volume.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == cmds[0]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.Mute.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SPEAKER_MUTE' && cmd.id == cmds[1]) {
+						returnValue = toBool(cmd.currentValue);
+						break;
+					}
+				}
+			break;	
 			case Characteristic.StatusFault.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'DEFECT' && eqLogicStatus.indexOf(cmd.id) != -1) {
@@ -1958,6 +2000,18 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							value =	Math.round(value * 99/100);							
 							found = true;
 							needToTemporize=true;
+						}
+					break;
+					case 'SPEAKER_VOLUME' :
+						if(action == 'setValue' && cmd.id == cmds[0]) {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'SPEAKER_MUTE' :
+						if((action == 'turnOn' || action == 'turnOff') && cmd.id == cmds[1]) {
+							cmdId = cmd.id;
+							found = true;
 						}
 					break;
 					case 'LIGHT_ON' :
@@ -2318,6 +2372,13 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					else
 						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 				break;
+				case Characteristic.Volume.UUID :
+					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+				break;	
+				case Characteristic.Mute.UUID :
+					newValue = toBool(value);
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;	
 				case Characteristic.MotionDetected.UUID :
 					//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert
 					newValue = toBool(value);
