@@ -562,6 +562,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.Speaker(eqLogic.name),
 						characteristics : [Characteristic.Volume]
 					};
+					var cmd_mute, cmd_set_volume;
 					eqServicesCopy.speaker.forEach(function(cmd2) {
 						if (cmd2.mute) {
 							if (cmd2.mute.value == cmd.volume.id) {
