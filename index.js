@@ -554,7 +554,59 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice = null;
 				}
 			});
-		}						
+		}			
+		if (eqLogic.services.speaker) {
+			eqLogic.services.speaker.forEach(function(cmd) {
+				if (cmd.mute) {
+					HBservice = {
+						controlService : new Service.Speaker(eqLogic.name),
+						characteristics : [Characteristic.Mute]
+					};
+					var cmd_mute_toggle_id,cmd_mute_on_id,cmd_mute_off_id, cmd_set_volume_id, cmd_volume_id;
+					eqServicesCopy.speaker.forEach(function(cmd2) {
+						if (cmd2.mute_toggle) {
+							if (cmd2.mute_toggle.value == cmd.mute.id) {
+								cmd_mute_toggle_id = cmd2.mute_toggle.id;
+							}
+						} else if (cmd2.mute_on) {
+							if (cmd2.mute_on.value == cmd.mute.id) {
+								cmd_mute_on_id = cmd2.mute_on.id;
+							}
+						} else if (cmd2.mute_off) {
+							if (cmd2.mute_off.value == cmd.mute.id) {
+								cmd_mute_off_id = cmd2.mute_off.id;
+							}
+						} else if (cmd2.set_volume) {
+							eqServicesCopy.speaker.forEach(function(cmd3) {
+								if (cmd3.volume) {
+									cmd_volume_id = cmd3.volume.id;
+								}
+							});
+							if (cmd_volume_id && cmd2.set_volume.value == cmd_volume_id) {
+								HBservice.characteristics.push(Characteristic.Volume);
+								HBservice.controlService.addCharacteristic(Characteristic.Volume);
+								cmd_set_volume_id = cmd2.set_volume.id;
+							}
+						}
+						
+					});
+					if(!cmd_set_volume_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Volume" ou reférence à l\'état "Info/Haut-Parleur Volume" non définie sur la commande "Action/Haut-Parleur Volume" ou pas de type génériqe "Info/Haut-Parleur Volume"');
+					if(!cmd_mute_toggle_id && !cmd_mute_on_id && cmd_mute_off_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Mute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur Mute"');	
+					if(!cmd_mute_toggle_id && cmd_mute_on_id && !cmd_mute_off_id) that.log('warn','Pas de type générique "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur UnMute"');	
+					if(!cmd_mute_toggle_id && !cmd_mute_on_id && !cmd_mute_off_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur ces commande');	
+					HBservice.controlService.cmd_id = cmd.mute.id;
+					if (!HBservice.controlService.subtype)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.mute.id +'|'+ cmd_volume_id +'|'+ cmd_mute_toggle_id +'|'+ cmd_mute_on_id +'|'+ cmd_mute_off_id +'|'+ cmd_set_volume_id + '-' + cmd_volume_id;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Haut-Parleur Mute"');
+			} else {
+				HBservice = null;
+			}
+		}			
 		if (eqLogic.services.temperature) {
 			eqLogic.services.temperature.forEach(function(cmd) {
 				if (cmd.temperature) {
@@ -1180,6 +1232,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.On.UUID :
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
 			break;
+			case Characteristic.Mute.UUID :
+					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service, IDs);
+			break;
 			case Characteristic.TargetTemperature.UUID :
 				if (Math.abs(value - characteristic.value) >= 0.5) {
 					value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
@@ -1673,6 +1728,22 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 					}
 				}
 			break;	
+			case Characteristic.Mute.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SPEAKER_MUTE' && cmd.id == cmds[0]) {
+						returnValue = toBool(cmd.currentValue);
+						break;
+					}
+				}
+			break;
+			case Characteristic.Volume.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == cmds[1]) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
 			case Characteristic.StatusFault.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'DEFECT' && eqLogicStatus.indexOf(cmd.id) != -1) {
@@ -1958,6 +2029,31 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							value =	Math.round(value * 99/100);							
 							found = true;
 							needToTemporize=true;
+						}
+					break;
+					case 'SPEAKER_SET_VOLUME' :
+						if(action == 'setValue' && cmd.id == cmds[5]) {
+							cmdId = cmd.id;
+							found = true;
+							needToTemporize=true;
+						}
+					break;
+					case 'SPEAKER_MUTE_TOGGLE' :
+						if((action == 'turnOn' || action == 'turnOff') && cmd.id == cmds[2]) {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'SPEAKER_MUTE_ON' :
+						if(action == 'turnOn' && cmd.id == cmds[3]) {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'SPEAKER_MUTE_OFF' :
+						if(action == 'turnOff' && cmd.id == cmds[4]) {
+							cmdId = cmd.id;
+							found = true;
 						}
 					break;
 					case 'LIGHT_ON' :
@@ -2318,6 +2414,15 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					else
 						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 				break;
+				case Characteristic.Mute.UUID :
+					newValue = toBool(update.option.value);
+					//that.log('debug','-------mute in jeedom is set to ',newValue);
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.Volume.UUID :
+					//that.log('debug','-------volume in jeedom is set to ',update.option.value);
+					subCharact.setValue(sanitizeValue(update.option.value,subCharact), undefined, 'fromJeedom');
+				break;	
 				case Characteristic.MotionDetected.UUID :
 					//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert
 					newValue = toBool(value);
