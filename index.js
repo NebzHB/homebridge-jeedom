@@ -557,33 +557,45 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}			
 		if (eqLogic.services.speaker) {
 			eqLogic.services.speaker.forEach(function(cmd) {
-				if (cmd.volume) {
+				if (cmd.mute) {
 					HBservice = {
 						controlService : new Service.Speaker(eqLogic.name),
-						characteristics : [Characteristic.Volume]
+						characteristics : [Characteristic.Mute]
 					};
-					var cmd_mute, cmd_set_volume;
+					var cmd_set_mute_id, cmd_set_volume_id, cmd_volume_id;
 					eqServicesCopy.speaker.forEach(function(cmd2) {
-						if (cmd2.mute) {
-							if (cmd2.mute.value == cmd.volume.id) {
-								HBservice.characteristics.push(Characteristic.Mute);
-								HBservice.controlService.addCharacteristic(Characteristic.Mute);
-								cmd_mute = cmd2.mute;
+						if (cmd2.set_mute) {
+							if (cmd2.set_mute.value == cmd.mute.id) {
+								cmd_set_mute_id = cmd2.set_mute.id;
 							}
 						} else if (cmd2.set_volume) {
-							if (cmd2.set_volume.value == cmd.volume.id) {
-								cmd_set_volume = cmd2.set_volume;
+							eqServicesCopy.speaker.forEach(function(cmd3) {
+								if (cmd3.volume) {
+									cmd_volume_id = cmd3.volume.id;
+								}
+							});
+							if (cmd_volume_id && cmd2.set_volume.value == cmd_volume_id) {
+								HBservice.characteristics.push(Characteristic.Volume);
+								HBservice.controlService.addCharacteristic(Characteristic.Volume);
+								cmd_set_volume_id = cmd2.set_volume.id;
 							}
 						}
+						
 					});
-					HBservice.controlService.cmd_id = cmd.volume.id;
+					if(!cmd_set_mute_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Mute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur Mute"');
+					if(!cmd_set_volume_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Volume" ou reférence à l\'état "Info/Haut-Parleur Volume" non définie sur la commande "Action/Haut-Parleur Volume" ou pas de type génériqe "Info/Haut-Parleur Volume"');
+					HBservice.controlService.cmd_id = cmd.mute.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.volume.id +'|'+ cmd_set_volume.id +'|'+ cmd_mute.id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.mute.id +'|'+ cmd_volume_id +'|'+ cmd_set_mute_id +'|'+ cmd_set_volume_id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
-					HBservice = null;
 				}
 			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Haut-Parleur Mute"');
+			} else {
+				HBservice = null;
+			}
 		}			
 		if (eqLogic.services.temperature) {
 			eqLogic.services.temperature.forEach(function(cmd) {
@@ -1707,9 +1719,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 			break;	
 			case Characteristic.Mute.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SPEAKER_MUTE' && cmd.id == cmds[0]) {
+						returnValue = toBool(cmd.currentValue);
+						break;
+					}
+				}
+			break;
 			case Characteristic.Volume.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == cmds[0]) {
+					if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == cmds[1]) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -2002,13 +2021,14 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							needToTemporize=true;
 						}
 					break;
-					case 'SPEAKER_VOLUME' :
-						if(action == 'setValue' && cmd.id == cmds[1]) {
+					case 'SPEAKER_SET_VOLUME' :
+						if(action == 'setValue' && cmd.id == cmds[3]) {
 							cmdId = cmd.id;
 							found = true;
+							needToTemporize=true;
 						}
 					break;
-					case 'SPEAKER_MUTE' :
+					case 'SPEAKER_SET_MUTE' :
 						if((action == 'turnOn' || action == 'turnOff') && cmd.id == cmds[2]) {
 							cmdId = cmd.id;
 							found = true;
@@ -2373,6 +2393,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.Mute.UUID :
+					newValue = toBool(value);
+					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
 				case Characteristic.Volume.UUID :
 					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 				break;	
