@@ -562,11 +562,19 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.Speaker(eqLogic.name),
 						characteristics : [Characteristic.Mute]
 					};
-					var cmd_set_mute_id, cmd_set_volume_id, cmd_volume_id;
+					var cmd_mute_toggle_id,cmd_mute_on_id,cmd_mute_off_id, cmd_set_volume_id, cmd_volume_id;
 					eqServicesCopy.speaker.forEach(function(cmd2) {
-						if (cmd2.set_mute) {
-							if (cmd2.set_mute.value == cmd.mute.id) {
-								cmd_set_mute_id = cmd2.set_mute.id;
+						if (cmd2.mute_toggle) {
+							if (cmd2.mute_toggle.value == cmd.mute.id) {
+								cmd_mute_toggle_id = cmd2.mute_toggle.id;
+							}
+						} else if (cmd2.mute_on) {
+							if (cmd2.mute_on.value == cmd.mute.id) {
+								cmd_mute_on_id = cmd2.mute_on.id;
+							}
+						} else if (cmd2.mute_off) {
+							if (cmd2.mute_off.value == cmd.mute.id) {
+								cmd_mute_off_id = cmd2.mute_off.id;
 							}
 						} else if (cmd2.set_volume) {
 							eqServicesCopy.speaker.forEach(function(cmd3) {
@@ -582,12 +590,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 						
 					});
-					if(!cmd_set_mute_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Mute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur Mute"');
 					if(!cmd_set_volume_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Volume" ou reférence à l\'état "Info/Haut-Parleur Volume" non définie sur la commande "Action/Haut-Parleur Volume" ou pas de type génériqe "Info/Haut-Parleur Volume"');
+					if(!cmd_mute_toggle_id && !cmd_mute_on_id && cmd_mute_off_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Mute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur Mute"');	
+					if(!cmd_mute_toggle_id && cmd_mute_on_id && !cmd_mute_off_id) that.log('warn','Pas de type générique "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur UnMute"');	
+					if(!cmd_mute_toggle_id && !cmd_mute_on_id && !cmd_mute_off_id) that.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur ces commande');	
 					HBservice.controlService.cmd_id = cmd.mute.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.mute.id +'|'+ cmd_volume_id +'|'+ cmd_set_mute_id +'|'+ cmd_set_volume_id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.mute.id +'|'+ cmd_volume_id +'|'+ cmd_mute_toggle_id +'|'+ cmd_mute_on_id +'|'+ cmd_mute_off_id +'|'+ cmd_set_volume_id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 				}
 			});
@@ -2022,14 +2032,26 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
-						if(action == 'setValue' && cmd.id == cmds[3]) {
+						if(action == 'setValue' && cmd.id == cmds[5]) {
 							cmdId = cmd.id;
 							found = true;
 							needToTemporize=true;
 						}
 					break;
-					case 'SPEAKER_SET_MUTE' :
+					case 'SPEAKER_MUTE_TOGGLE' :
 						if((action == 'turnOn' || action == 'turnOff') && cmd.id == cmds[2]) {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'SPEAKER_MUTE_ON' :
+						if(action == 'turnOn' && cmd.id == cmds[3]) {
+							cmdId = cmd.id;
+							found = true;
+						}
+					break;
+					case 'SPEAKER_MUTE_OFF' :
+						if(action == 'turnOff' && cmd.id == cmds[4]) {
 							cmdId = cmd.id;
 							found = true;
 						}
