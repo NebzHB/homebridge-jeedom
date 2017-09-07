@@ -597,7 +597,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.cmd_id = cmd.mute.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.mute.id +'|'+ cmd_volume_id +'|'+ cmd_mute_toggle_id +'|'+ cmd_mute_on_id +'|'+ cmd_mute_off_id +'|'+ cmd_set_volume_id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.mute.id +'|'+ cmd_volume_id +'|'+ cmd_mute_toggle_id +'|'+ cmd_mute_on_id +'|'+ cmd_mute_off_id +'|'+ cmd_set_volume_id + '-' + cmd_volume_id;
 					HBservices.push(HBservice);
 				}
 			});
@@ -2415,11 +2415,13 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.Mute.UUID :
-					newValue = toBool(value);
+					newValue = toBool(update.option.value);
+					//that.log('debug','-------mute in jeedom is set to ',newValue);
 					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.Volume.UUID :
-					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+					//that.log('debug','-------volume in jeedom is set to ',update.option.value);
+					subCharact.setValue(sanitizeValue(update.option.value,subCharact), undefined, 'fromJeedom');
 				break;	
 				case Characteristic.MotionDetected.UUID :
 					//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert
