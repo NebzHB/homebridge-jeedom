@@ -235,38 +235,47 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					let LightType="Switch";
 					let cmd_on,cmd_off,cmd_slider,cmd_slider_id,cmd_color,cmd_setcolor,maxBright;
+					HBservice = {
+						controlService : new Service.Lightbulb(eqLogic.name),
+						characteristics : [Characteristic.On]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
 							if (cmd2.on.value == cmd.state.id) {
 								cmd_on = cmd2.on.id;
+								HBservice.controlService.actions.on=cmd2.on.id;
 							}
 						} else if (cmd2.off) {
 							if (cmd2.off.value == cmd.state.id) {
 								cmd_off = cmd2.off.id;
+								HBservice.controlService.actions.off=cmd2.off.id;
 							}
 						} else if (cmd2.slider) {
 							if (cmd2.slider.value == cmd.state.id) {
 								cmd_slider = cmd2.slider;
 								cmd_slider_id = cmd_slider.id;
+								HBservice.controlService.actions.slider=cmd2.slider.id;
 							}
 						} else if (cmd2.setcolor) {
 							eqServicesCopy.light.forEach(function(cmd3) {
 								if (cmd3.color) {
 									cmd_color = cmd3.color.id;
+									HBservice.controlService.infos.color=cmd3.color.id;
 								}
 							});
 							if (cmd_color && cmd2.setcolor.value == cmd_color) {
 								cmd_setcolor = cmd2.setcolor.id;
+								HBservice.controlService.actions.setcolor=cmd2.setcolor.id;
 							}
 						}
 					});
 					if (cmd_on && !cmd_off) that.log('warn','Pas de type générique "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande OFF'); 
 					if (!cmd_on && cmd_off) that.log('warn','Pas de type générique "Action/Lumière ON" ou reférence à l\'état non définie sur la commande ON');
 					if (!cmd_setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur" ou de type générique "Info/Lumière Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
-					HBservice = {
-						controlService : new Service.Lightbulb(eqLogic.name),
-						characteristics : [Characteristic.On]
-					};
+					
 					if(cmd_slider) {
 						if(cmd_slider.configuration && cmd_slider.configuration.maxValue && parseInt(cmd_slider.configuration.maxValue))
 							maxBright = parseInt(cmd_slider.configuration.maxValue);
@@ -318,6 +327,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.flap) {
 			eqLogic.services.flap.forEach(function(cmd) {
 				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.WindowCovering(eqLogic.name),
+						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
 					var cmd_up = 0;
 					var cmd_down = 0;
 					var cmd_slider = 0;
@@ -339,10 +355,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if (cmd_up && !cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down'); 
 					if (!cmd_up && cmd_down) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
 					if(!cmd_up && !cmd_down && !cmd_slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Slider');
-					HBservice = {
-						controlService : new Service.WindowCovering(eqLogic.name),
-						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
-					};
+					
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -364,6 +377,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.energy) {
 			eqLogic.services.energy.forEach(function(cmd) {
 				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.Switch(eqLogic.name),
+						characteristics : [Characteristic.On]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
 					var cmd_on = 0;
 					var cmd_off = 0;
 					eqServicesCopy.energy.forEach(function(cmd2) {
@@ -379,10 +399,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 					if(!cmd_on) that.log('warn','Pas de type générique "Action/Prise Bouton On" ou reférence à l\'état non définie sur la commande On');
 					if(!cmd_off) that.log('warn','Pas de type générique "Action/Prise Bouton Off" ou reférence à l\'état non définie sur la commande Off');
-					HBservice = {
-						controlService : new Service.Switch(eqLogic.name),
-						characteristics : [Characteristic.On]
-					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -407,7 +423,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.PowerMonitor(eqLogic.name),
 						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.power=cmd.power.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -437,6 +455,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.BatteryService(eqLogic.name),
 						characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery]
 					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.battery=cmd.battery.id;
 					var cmd_charging='NOT';
 					if (cmd.batteryCharging)
 						cmd_charging = cmd.batteryCharging.id;
@@ -456,7 +477,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.MotionSensor(eqLogic.name),
 						characteristics : [Characteristic.MotionDetected]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.presence=cmd.presence.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -476,7 +499,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.CustomService(eqLogic.name),
 						characteristics : []
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -546,6 +571,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.TemperatureSensor(eqLogic.name),
 						characteristics : [Characteristic.UVIndex]
 					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.uv=cmd.uv.id;
 					HBservice.controlService.cmd_id = cmd.uv.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -562,6 +590,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.Speaker(eqLogic.name),
 						characteristics : [Characteristic.Mute]
 					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.mute=cmd.mute.id;
 					var cmd_mute_toggle_id,cmd_mute_on_id,cmd_mute_off_id, cmd_set_volume_id, cmd_volume_id;
 					eqServicesCopy.speaker.forEach(function(cmd2) {
 						if (cmd2.mute_toggle) {
@@ -614,7 +645,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.TemperatureSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentTemperature]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.temperature=cmd.temperature.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -635,7 +668,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.HumiditySensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentRelativeHumidity]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.humidity=cmd.humidity.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -655,7 +690,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.SmokeSensor(eqLogic.name),
 						characteristics : [Characteristic.SmokeDetected]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.smoke=cmd.smoke.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -675,7 +712,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.LeakSensor(eqLogic.name),
 						characteristics : [Characteristic.LeakDetected]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.flood=cmd.flood.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -695,7 +734,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.ContactSensor(eqLogic.name),
 						characteristics : [Characteristic.ContactSensorState]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.opening=cmd.opening.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -715,7 +756,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.LightSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentAmbientLightLevel]
 					};
-					
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.brightness=cmd.brightness.id;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -729,19 +772,33 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			});
 		}
 		if (eqLogic.services.energy2) { // not used
-			HBservice = {
-				controlService : new Service.Outlet(eqLogic.name),
-				characteristics : [Characteristic.On, Characteristic.OutletInUse]
-			};
-			if (!HBservice.controlService.subtype)
-				HBservice.controlService.subtype = '';
-			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.brightness.id + '-' + HBservice.controlService.subtype;
-			HBservices.push(HBservice);
-			HBservice = null;
+			eqLogic.services.energy2.forEach(function(cmd) {
+				if (cmd.energy2) {
+					HBservice = {
+						controlService : new Service.Outlet(eqLogic.name),
+						characteristics : [Characteristic.On, Characteristic.OutletInUse]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.energy2=cmd.energy2.id;
+					if (!HBservice.controlService.subtype)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.energy2.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
 		}
 		if (eqLogic.services.GarageDoor) {
 			eqLogic.services.GarageDoor.forEach(function(cmd) {
 				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.GarageDoorOpener(eqLogic.name),
+						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
 					var cmd_on = 0;
 					var cmd_off = 0;
 					var cmd_toggle = 0;
@@ -761,10 +818,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					});
 					if(!cmd_toggle) that.log('warn','Pas de type générique "Action/Portail ou garage bouton toggle" ou reférence à l\'état non définie sur la commande Toggle');
-					HBservice = {
-						controlService : new Service.GarageDoorOpener(eqLogic.name),
-						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
-					};
 					
 					if(eqLogic.customValues) {
 						HBservice.controlService.customValues = eqLogic.customValues;
@@ -789,6 +842,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.lock) {
 			eqLogic.services.lock.forEach(function(cmd) {
 				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.LockMechanism(eqLogic.name),
+						characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
 					var cmd_on = 0;
 					var cmd_off = 0;
 					eqServicesCopy.lock.forEach(function(cmd2) {
@@ -804,10 +864,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 					if(!cmd_on) that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir" ou reférence à l\'état non définie sur la commande On');
 					if(!cmd_off) that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer" ou reférence à l\'état non définie sur la commande Off');
-					HBservice = {
-						controlService : new Service.LockMechanism(eqLogic.name),
-						characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
-					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -832,6 +888,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.Doorbell(eqLogic.name),
 						characteristics : [Characteristic.ProgrammableSwitchEvent]
 					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
 					HBservice.controlService.cmd_id = cmd.state.id;
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
@@ -841,25 +900,38 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
-		if (eqLogic.services.thermostat) { // only one -> will change
-			HBservice = {
-				controlService : new Service.Thermostat(eqLogic.name),
-				characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
-			};
-			
-			// add Active, Tampered and Defect Characteristics if needed
-			HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
-			
-			HBservice.controlService.cmd_id = eqLogic.services.thermostat.id;
-			if (!HBservice.controlService.subtype)
-				HBservice.controlService.subtype = '';
-			HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.services.thermostat.id + '-' + HBservice.controlService.subtype;
-			HBservices.push(HBservice);
-			HBservice = null;
+		if (eqLogic.services.thermostat) {
+			eqLogic.services.thermostat.forEach(function(cmd) {
+				if(cmd.state) {
+					HBservice = {
+						controlService : new Service.Thermostat(eqLogic.name),
+						characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.state=cmd.state.id;
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					HBservice.controlService.cmd_id = cmd.state.id;
+					if (!HBservice.controlService.subtype)
+						HBservice.controlService.subtype = '';
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id + '-' + HBservice.controlService.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
 		}
 		if (eqLogic.services.alarm) {
 			eqLogic.services.alarm.forEach(function(cmd) {
 				if(cmd.enable_state) {
+					HBservice = {
+						controlService : new Service.SecuritySystem(eqLogic.name),
+						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
+					};
+					HBservice.controlService.actions={};
+					HBservice.controlService.infos={};
+					HBservice.controlService.infos.enable_state=cmd.enable_state.id;
 					var cmd_state = 0;
 					var cmd_mode = 0;
 					eqServicesCopy.alarm.forEach(function(cmd2) {
@@ -873,10 +945,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							}
 						}
 					});
-					HBservice = {
-						controlService : new Service.SecuritySystem(eqLogic.name),
-						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
-					};
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -2226,9 +2294,8 @@ var alarmModeTarget = null;
 JeedomPlatform.prototype.updateSubscribers = function(update) {
 	var that = this;
 	var i,subscription,IDs,subCharact,HRreturnValue;
-	var FC = update.option.value[0];
 	
-	if(FC == '#') update.color=update.option.value;
+	if(update.option.value[0] == '#') update.color=update.option.value;
 	else update.color=undefined;
 	
 	var value = parseInt(update.option.value);
