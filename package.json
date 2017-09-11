@@ -25,9 +25,10 @@
   "dependencies": {
     "request": "^2.81.0"
   },
-  "author": "Thomas MARTINEZ",
+  "author": "Benjamin RENARD <nebz@nebz.be>",
   "contributors": [
-      "Benjamin RENARD <nebz@nebz.be>"
+      "Nechry",
+      "bphoque"
   ],
   "license": "GPL2",
   "bugs": {
