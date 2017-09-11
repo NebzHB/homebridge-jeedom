@@ -20,6 +20,7 @@ Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
     * Temporisation des Slider des lumières et des volets, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500mx
     * Types Génériques Status Defectueux (spécifique homebridge), Sabotage et Status Actif (spécifique homebridge) (tous les trois binaires)
     * Possibilité de personnaliser les etats des Portes de Garage (Ouvert (255), En Ouverture (254), Stopé (253), En Fermeture (252), Fermé (0)) avec d'autres valeurs.
+    * Les types spécifiques à Homebridge : j'ai maintenant la possibilité d'avoir des types spécifiques pour homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais complètent ceux-ci. Il faut néanmoins les définir manuellement dans le plugin. (les types génériques restent utilisés principalement, ces types sont des compléments pour les types génériques qui n'existent pas)
     * Nouveaux types spécifiques à homebridge : Speakers, il devrait fonctionner avec sonos par exemple (à tester), les types sont Info/Haut-parleur Mute (binaire), Info/Haut-parleur Volume (pourcentage), Action/Haut-parleur Mute, Action/Haut-parleur Unmute, Action/Haut-parleur Volume (typiquement un slider)
 [IMPORTANT]
 Info/Haut-parleur Mute est obligatoire, c'est étrange mais c'est une obligation coté Homekit
