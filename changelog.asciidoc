@@ -2,7 +2,7 @@
 
 === Homebridge
 
-==== v1.2.2
+==== v1.3
     * Plugin séparé de mobile.
     * Récupération de la configuration du plugin mobile s'il est installé.
     * Meilleure réparation et installation plus poussée pour éviter des problèmes divers
