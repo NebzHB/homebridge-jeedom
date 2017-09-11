@@ -20,9 +20,8 @@ Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
     * Temporisation des Slider des lumières et des volets, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500mx
     * Type Générique Sabotage supporté (binaire)
     * Possibilité de personnaliser les etats des Portes de Garage (Ouvert (255), En Ouverture (254), Stopé (253), En Fermeture (252), Fermé (0)) avec d'autres valeurs.
-    * Les types spécifiques à Homebridge : j'ai maintenant la possibilité d'avoir des types spécifiques pour homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais complètent ceux-ci. Il faut néanmoins les définir manuellement dans le plugin. (les types génériques restent utilisés principalement, ces types sont des compléments pour les types génériques qui n'existent pas)
+    * Les types spécifiques à Homebridge : j'ai maintenant la possibilité de créer des types spécifiques pour homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais complètent ceux-ci. Il faut néanmoins les définir manuellement dans le plugin. (les types génériques restent utilisés principalement, ces types sont un ajout pour les types génériques qui n'existent pas)
     * Nouveaux types spécifiques à homebridge : 
-    * Nouveaux types spécifique à homebridge : 
       ** Status Defectueux (binaire : 0:non/ 1:oui -> peut-être mappé à un binaire représentant par exemple un lien mort chez z-wave) 
       ** Status Actif (binaire : 0:non/ 1:oui -> peut-etre mappé au status "online" d'une xiaomi yeelight par exemple)
       ** Haut-parleurs, il devrait fonctionner avec sonos par exemple (à tester), les types sont : 
