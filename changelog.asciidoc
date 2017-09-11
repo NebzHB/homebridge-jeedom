@@ -10,15 +10,15 @@
     * Type Generic Info supporté pour les infos Jeedom de type Numerique, Binaire, Autre.
 [IMPORTANT]
 ne pas modifier ce type dans Jeedom pendant que homebridge fonctionne
-    * Lumières : corrigé, du simple interrupteur, avec luminosité seulement ou RGB, toutes fonctionnent.
+    * Lumières : corrigé, du simple interrupteur, avec luminosité seulement ou RGB, toutes fonctionnent. (pas encore... dépend du plugin)
 [TIP]
 Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
     * Alarme : les modes sont liable aux modes HomeKit : Absent, Nuit, Présent, Désactivé. Fonctionne en consultation ET action.
-    * Nouveau design de l'app, simplification, plus besoin de choisir les plugins.
-    * Fenêtre "Information" pour donner des éléments importants de votre configuration en cas de demande d'aide sur le forum (à la demande)
+    * Nouveau design du plugin, simplification, plus besoin de choisir les plugins.
+    * Fenêtre "Information" (en niveau de log "info" ou "debug") pour donner des éléments importants de votre configuration en cas de demande d'aide sur le forum (à la demande)
     * Debug des périphériques en non visible ou désactivés dans les logs
-    * Temporisation des Slider des lumières et des volets, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500mx
-    * Type Générique Sabotage supporté (binaire)
+    * Temporisation des Slider des lumières et des volets et volumes, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500ms
+    * Type Générique officiel Sabotage supporté (binaire)
     * Possibilité de personnaliser les etats des Portes de Garage (Ouvert (255), En Ouverture (254), Stopé (253), En Fermeture (252), Fermé (0)) avec d'autres valeurs.
     * Les types spécifiques à Homebridge : j'ai maintenant la possibilité de créer des types spécifiques pour homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais complètent ceux-ci. Il faut néanmoins les définir manuellement dans le plugin. (les types génériques restent utilisés principalement, ces types sont un ajout pour les types génériques qui n'existent pas)
     * Nouveaux types spécifiques à homebridge : 
