@@ -7,7 +7,7 @@
     * Récupération de la configuration du plugin mobile s'il est installé.
     * Meilleure réparation et installation plus poussée pour éviter des problèmes divers
     * (Installation de NodeJS 6 LTS sur toutes les architectures) ... quand les autres dev se seront mis à jour...
-    * Type Generic Info supporté pour les infos Jeedom de type Numerique, Binaire, Autre.
+    * Type Generic Info supporté pour les infos Jeedom de type Numerique, Binaire, Autre dans l'application Eve uniquement (pas encore disponnible dans "Maison")
 [IMPORTANT]
 ne pas modifier ce type dans Jeedom pendant que homebridge fonctionne
     * Lumières : corrigé, du simple interrupteur, avec luminosité seulement ou RGB, toutes fonctionnent. (pas encore... dépend du plugin)
