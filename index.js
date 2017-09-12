@@ -1022,6 +1022,9 @@ JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
 			HBservice.characteristics.push(Characteristic.StatusTampered);
 			HBservice.controlService.addCharacteristic(Characteristic.StatusTampered);
 			HBservice.controlService.statusArr.push(sabotage.sabotage.id);
+			HBservice.controlService.sabotageInverted = 0;
+			if(sabotage.sabotage.display)
+				HBservice.controlService.sabotageInverted = sabotage.sabotage.display.invertBinary;
 		}
 	}
 	if(services.defect) {
@@ -1416,6 +1419,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		var eqLogicStatus=[];
 		if (service.statusArr) {
 			eqLogicStatus=service.statusArr;
+		}
+		var eqLogicSabotageInverted=0;
+		if (service.sabotageInverted) {
+			eqLogicSabotageInverted=service.sabotageInverted;
 		}
 		var customValues=[];
 		if(service.customValues) {
@@ -1872,9 +1879,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE' && eqLogicStatus.indexOf(cmd.id) != -1) {
-						// not managing the invertBinary
-						returnValue = cmd.currentValue;
-						if(returnValue == 0) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
+						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						//returnValue = cmd.currentValue;
+						if(returnValue === false) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						else returnValue=Characteristic.StatusTampered.TAMPERED;
 						break;
 					}
@@ -2318,6 +2325,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			eqLogicStatus=subscription.service.statusArr;
 			//that.log('debug',"------------status :",eqLogicStatus,update.option.cmd_id);
 		}
+		var eqLogicSabotageInverted=0;
+		if (subscription.service.sabotageInverted) {
+			eqLogicSabotageInverted=subscription.service.sabotageInverted;
+		}
 		var customValues=[];
 		if(subscription.service.customValues) {
 			customValues=subscription.service.customValues;
@@ -2475,8 +2486,8 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.StatusTampered.UUID :
-					// not managing the invertBinary
-					if(value == 0 || isNaN(value))
+					newValue = eqLogicSabotageInverted==0 ? toBool(value) : !toBool(value); // invertBinary ?
+					if(newValue === false || isNaN(newValue))
 						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.NOT_TAMPERED,subCharact), undefined, 'fromJeedom');
 					else
 						subCharact.setValue(sanitizeValue(Characteristic.StatusTampered.TAMPERED,subCharact), undefined, 'fromJeedom');
