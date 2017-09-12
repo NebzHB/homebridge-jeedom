@@ -7,7 +7,7 @@ _term() {
 
 trap _term SIGTERM SIGINT
 
-sudo /usr/bin/avconv $@
+sudo /usr/bin/avconv $@ &
 
 child=$! 
 wait "$child"
