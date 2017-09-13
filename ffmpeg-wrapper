@@ -2,12 +2,11 @@
 
 _term() { 
   echo "SIGTERM recu!" 
-  sudo kill -SIGTERM "$child" 2>/dev/null
+  sudo kill -SIGTERM "$child" >/dev/null 2>&1
 }
 
 trap _term SIGTERM SIGINT
 
 sudo /usr/bin/avconv $@ &
-
 child=$! 
 wait "$child"
