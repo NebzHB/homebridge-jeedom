@@ -27,6 +27,7 @@ debug.ERROR = 400;
 debug.NO = 1000;
 var hasError = false;
 const DEV_DEBUG=false;
+const GenericAssociated = ['GENERIC_INFO','SHOCK','UV','PRESSURE','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -1455,7 +1456,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			case Characteristic.GenericINT.UUID :
 			case Characteristic.GenericBOOL.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'GENERIC_INFO' && cmd.id == cmds[0]) {
+					if (GenericAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == cmds[0]) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -1463,7 +1464,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 			break;
 			case Characteristic.GenericSTRING.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'GENERIC_INFO' && cmd.id == cmds[0]) {
+					if (GenericAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == cmds[0]) {
 						let maxSize = 64;
 						returnValue = cmd.currentValue.toString().substring(0,maxSize);
 						break;
