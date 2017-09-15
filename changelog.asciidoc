@@ -6,11 +6,11 @@
     * Plugin séparé de mobile.
     * Récupération de la configuration du plugin mobile s'il est installé.
     * Meilleure réparation et installation plus poussée pour éviter des problèmes divers
-    * (Installation de NodeJS 6 LTS sur toutes les architectures) ... quand les autres dev se seront mis à jour...
+    * (Installation de NodeJS 6 LTS sur toutes les architectures) ... (pas encore, quand les autres dev se seront mis à jour...)
     * Type "Info/Générique" supporté pour les infos Jeedom de type Numerique, Binaire, Autre dans l'application Eve uniquement (pas encore disponnible dans "Maison")
 [IMPORTANT]
 ne pas modifier ce type dans Jeedom pendant que homebridge fonctionne
-    * Les types génériques "Info/Choc", "Info/Vent (direction)", "Info/Vent (vitesse)", "Info/Pluie (mm/h)", "Info/Pluie (accumulation)", "Info/Pression", "Info/Son (dB)", "Info/CO2" sont gérés comme des "Info/Génériques" et affichés dans Eve.
+    * Les types génériques "Info/Choc", "Info/Vent (direction)", "Info/Vent (vitesse)", "Info/Pluie (mm/h)", "Info/Pluie (accumulation)", "Info/Pression", "Info/Son (dB)" sont gérés comme des "Info/Génériques" et affichés dans Eve.
     * Lumières : corrigé, du simple interrupteur, avec luminosité seulement ou RGB, toutes fonctionnent. (pas encore... dépend du plugin)
 [TIP]
 Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
