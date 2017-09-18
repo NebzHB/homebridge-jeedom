@@ -1438,7 +1438,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 		switch (characteristic.UUID) {
 			case Characteristic.On.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType == 'binary' && cmd.id == cmds[0]) {
+					if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == cmds[0]) {
 						if(parseInt(cmd.currentValue) == 0) returnValue=false;
 						else returnValue=true;
 						break;
@@ -2612,11 +2612,14 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					if(maxJeedom) {
 						newValue = Math.round((newValue / maxJeedom)*100);
 					}
-					//that.log('debug','---------update Bright:',newValue,value);
+					that.log('debug','---------update Bright:',newValue,value,maxJeedom);
 					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.On.UUID :
 					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.Hue.UUID :
+				case Characteristic.Saturation.UUID :
 				break;
 				default :
 					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
