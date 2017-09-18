@@ -1390,6 +1390,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					if(maxJeedom) {
 						value = Math.round((value / 100)*maxJeedom);
 					}
+					this.log('debug','---------set Bright:',oldValue,'% soit',value,' / ',maxJeedom);
 					//this.log('debug','----------set Brightness in jeedom to :',value+'('+oldValue+')/'+maxJeedom);
 					this.command('setValue', value, service, IDs);
 				//}
@@ -1566,6 +1567,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 						if(maxJeedom) {
 							returnValue = Math.round((returnValue / maxJeedom)*100);
 						}
+						that.log('debug','---------update Bright(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
 						//that.log('debug','------------Brightness jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
 						break;
 					}
@@ -2612,7 +2614,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					if(maxJeedom) {
 						newValue = Math.round((newValue / maxJeedom)*100);
 					}
-					that.log('debug','---------update Bright:',newValue,value,maxJeedom);
+					that.log('debug','---------update Bright:',newValue,'% soit',value,' / ',maxJeedom);
 					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.On.UUID :
