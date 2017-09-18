@@ -2135,7 +2135,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 						}
 					break;
 					case 'LIGHT_ON' :
-						if((value == 255 || action == 'turnOn') && cmd.id == cmds[2]) {
+						if((action == 'turnOn') && cmd.id == cmds[2]) {
 							cmdId = cmd.id;					
 							found = true;
 						}
@@ -2147,7 +2147,7 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 						}
 					break;
 					case 'LIGHT_OFF' :
-						if((value == 0 || action == 'turnOff') && cmd.id == cmds[3]) {
+						if((action == 'turnOff') && cmd.id == cmds[3]) {
 							cmdId = cmd.id;					
 							found = true;
 						}
