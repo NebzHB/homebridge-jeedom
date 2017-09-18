@@ -2732,8 +2732,8 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 	case -1:
 		service.countColorCharacteristics = 2;*/
 		var that = this;
-		/*clearTimeout(service.timeoutIdColorCharacteristics);
-		service.timeoutIdColorCharacteristics = setTimeout(function() {*/
+		clearTimeout(service.timeoutIdColorCharacteristics);
+		service.timeoutIdColorCharacteristics = setTimeout(function() {
 			//if (service.countColorCharacteristics < 2)
 			//	return;
 			var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
@@ -2741,7 +2741,7 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service, IDs) 
 			that.command('setRGB', rgbColor, service, IDs);
 			//service.countColorCharacteristics = 0;
 			//service.timeoutIdColorCharacteristics = 0;
-		//}, 1000);
+		}, 500);
 		/*break;
 	case 0:
 		var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
