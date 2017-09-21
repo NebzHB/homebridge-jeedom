@@ -144,7 +144,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			});
 			
 			devices.map(function(device) {
-				if (device.isVisible == '1' && 
+				if (//device.isVisible == '1' && 
 					device.isEnable == '1' &&
 				    device.object_id != null && 
 				    device.sendToHomebridge != '0') {
