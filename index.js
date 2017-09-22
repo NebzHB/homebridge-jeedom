@@ -2212,6 +2212,13 @@ JeedomPlatform.prototype.command = function(action, value, service, IDs) {
 							needToTemporize=true;
 						}
 					break;
+					case 'LIGHT_SET_COLOR_TEMP' :
+						if(action == 'setValue' && cmd.id == cmds[7]) {
+							cmdId = cmd.id;
+							found = true;
+							needToTemporize=true;
+						}
+					break;
 					case 'ALARM_RELEASED' :
 						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.DISARM) {
 								that.log('debug',"setAlarmMode",value,cmd.id);
