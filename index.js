@@ -236,6 +236,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					let LightType="Switch";
 					let cmd_on,cmd_off,cmd_slider,cmd_slider_id,cmd_color,cmd_setcolor,maxBright;
+					let cmd_color_temp = {};
+					let cmd_setcolor_temp = {};
 					HBservice = {
 						controlService : new Service.Lightbulb(eqLogic.name),
 						characteristics : [Characteristic.On]
@@ -271,10 +273,22 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 								cmd_setcolor = cmd2.setcolor.id;
 								HBservice.controlService.actions.setcolor=cmd2.setcolor.id;
 							}
+						} else if (cmd2.setcolor_temp) {
+							eqServicesCopy.light.forEach(function(cmd3) {
+								if (cmd3.color_temp) {
+									cmd_color_temp = cmd3.color_temp;
+									HBservice.controlService.infos.color_temp=cmd3.color_temp.id;
+								}
+							});
+							if (cmd_color_temp.id && cmd2.setcolor_temp.value == cmd_color_temp.id) {
+								cmd_setcolor_temp = cmd2.setcolor_temp;
+								HBservice.controlService.actions.setcolor_temp=cmd2.setcolor_temp.id;
+							}
 						}
 					});
 					if (cmd_on && !cmd_off) that.log('warn','Pas de type générique "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande OFF'); 
 					if (!cmd_on && cmd_off) that.log('warn','Pas de type générique "Action/Lumière ON" ou reférence à l\'état non définie sur la commande ON');
+					if (!cmd_on && !cmd_off) that.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande ON et OFF');
 					if (!cmd_setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur" ou de type générique "Info/Lumière Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
 					
 					if(cmd_slider) {
@@ -283,14 +297,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						else
 							maxBright = 100; // if not set in Jeedom it's 100
 						HBservice.controlService.cmd_id = cmd.state.id;
-						LightType = "Slider";
+						LightType += "_Slider";
 						HBservice.characteristics.push(Characteristic.Brightness);
 						HBservice.controlService.addCharacteristic(Characteristic.Brightness);
 					} else {
 						that.log('info','La lumière n\'a pas de variateur');
 					}
 					if(cmd_color) {
-						LightType = "RGB";
+						LightType += "_RGB";
 						HBservice.characteristics.push(Characteristic.Hue);
 						HBservice.controlService.addCharacteristic(Characteristic.Hue);
 						HBservice.characteristics.push(Characteristic.Saturation);
@@ -308,6 +322,26 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					} else {
 						that.log('info','La lumière n\'a pas de couleurs');
 					}
+					if(cmd_color_temp.id) {
+						LightType += "_Temp";
+						var props = {};
+						if(cmd_setcolor_temp.configuration && cmd_setcolor_temp.configuration.minValue && parseInt(cmd_setcolor_temp.configuration.minValue))
+							props.minValue = parseInt(cmd_setcolor_temp.configuration.minValue);
+						else
+							props.minValue = 0; // if not set in Jeedom it's 0
+						if(cmd_setcolor_temp.configuration && cmd_setcolor_temp.configuration.maxValue && parseInt(cmd_setcolor_temp.configuration.maxValue))
+							props.maxValue = parseInt(cmd_setcolor_temp.configuration.maxValue);
+						else
+							props.maxValue = 100; // if not set in Jeedom it's 100
+						
+						var unite = cmd_color_temp.unite ? cmd_color_temp.unite : '';
+						if(unite) props.unit=unite;
+						HBservice.characteristics.push(Characteristic.ColorTemperature);
+						HBservice.controlService.addCharacteristic(Characteristic.ColorTemperature);
+						HBservice.controlService.getCharacteristic(Characteristic.ColorTemperature).setProps(props);
+					} else {
+						that.log('info','La lumière n\'a pas de température de couleurs');
+					}
 					HBservice.controlService.statusArr = [];
 					
 					// add Active, Tampered and Defect Characteristics if needed
@@ -315,7 +349,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					that.log('info','La lumière est du type :',LightType+','+maxBright);
 					HBservice.controlService.subtype = LightType;
-					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'|'+ cmd_color + '|' + cmd_on + '|' + cmd_off + '|' + cmd_setcolor + '|' + cmd_slider_id + '-' + HBservice.controlService.subtype+','+maxBright;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.state.id +'|'+ cmd_color + '|' + cmd_on + '|' + cmd_off + '|' + cmd_setcolor + '|' + cmd_slider_id + '|' + cmd_color_temp.id + '|' + cmd_setcolor_temp.id + '-' + HBservice.controlService.subtype+','+maxBright;
 					HBservices.push(HBservice);
 				}
 			});
@@ -1217,7 +1251,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 			var service = accessory.services[s];
 			if (service.subtype) {
 				var subtypeParams = service.subtype.split('-');
-				if (subtypeParams.length == 3 && subtypeParams[2] == 'RGB') {
+				if (subtypeParams.length == 3 && subtypeParams[2].indexOf('RGB') != -1) {
 					service.HSBValue = {
 						hue : 0,
 						saturation : 0,
@@ -1365,6 +1399,10 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					this.command(action, value, service, IDs);
 				}
 			break;
+			case Characteristic.ColorTemperature.UUID :
+				this.log("debug","ColorTemperature set : ",value);
+				this.command('setValue', value, service, IDs);
+			break;
 			case Characteristic.Hue.UUID :
 				this.log("debug","Hue set : ",value);
 				//this.command("setValue",value,service,IDs);
@@ -1506,6 +1544,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, I
 				}
 				hsv = that.updateHomeKitColorFromJeedom(returnValue, service);
 				returnValue = Math.round(hsv.v);
+			break;
+			case Characteristic.ColorTemperature.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LIGHT_COLOR_TEMP') {
+						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
 			break;
 			case Characteristic.StatusActive.UUID :
 				for (const cmd of cmdList) {
@@ -2616,6 +2663,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					}
 					that.log('debug','---------update Bright:',newValue,'% soit',value,' / ',maxJeedom);
 					subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
+				break;
+				case Characteristic.ColorTemperature.UUID :
+					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 				break;
 				case Characteristic.On.UUID :
 					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
