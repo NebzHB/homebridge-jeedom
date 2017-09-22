@@ -2393,7 +2393,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0};
 		}
 		subCharact = subscription.characteristic;
-		if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
+		if (cmd_id == update.option.cmd_id || IDs.indexOf(update.option.cmd_id) != -1 || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
 			var intervalValue = false;
 			var mode_PRESENT,mode_AWAY,mode_NIGHT,t,modesCmd,v;
 			switch(subCharact.UUID) {
