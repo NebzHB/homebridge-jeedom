@@ -833,7 +833,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.controlService.infos.push(cmd.energy2.id);
 					if (!HBservice.controlService.subtype)
 						HBservice.controlService.subtype = '';
-					HBservice.controlService.subtype = eqLogic.id + '-' + eqLogic.energy2.id + '-' + HBservice.controlService.subtype;
+					HBservice.controlService.subtype = eqLogic.id + '-' + cmd.energy2.id + '-' + HBservice.controlService.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -2388,14 +2388,13 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 	var that = this;
 	var i,subscription,IDs,subCharact,HRreturnValue;
 	
-	if(update.option.value[0] == '#') update.color=update.option.value;
+	/*if(update.option.value[0] == '#') update.color=update.option.value;
 	else update.color=undefined;
 	
 	var value = parseInt(update.option.value);
 	var newValue=0;
 	if (isNaN(value))
-		value = (update.option.value === 'true');
-	
+		value = (update.option.value === 'true');*/
 	var cmd_id,cmd2_id,cmd3_id,cmds;
 	for (i = 0; i < that.updateSubscriptions.length; i++) {
 		subscription = that.updateSubscriptions[i];
@@ -2416,7 +2415,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			eqLogicInfos=subscription.service.infos;
 			//if (DEV_DEBUG) that.log('debug',"------------status :",eqLogicInfos,update.option.cmd_id);
 		}
-		var eqLogicSabotageInverted=0;
+		/*var eqLogicSabotageInverted=0;
 		if (subscription.service.sabotageInverted) {
 			eqLogicSabotageInverted=subscription.service.sabotageInverted;
 		}
@@ -2425,10 +2424,18 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			customValues=subscription.service.customValues;
 		} else {
 			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0};
-		}
+		}*/
 		subCharact = subscription.characteristic;
+		//that.log('debug','subscripCharact:',update.option.cmd_id,IDs,eqLogicStatus);
+		if(cmds.indexOf(update.option.cmd_id) != -1 || IDs.indexOf(update.option.cmd_id) != -1 || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
+			that.log('debug','reallyUpdate:',update.option.cmd_id,IDs,eqLogicStatus);
+			let returnValue = that.getAccessoryValue(subCharact, subscription.service, IDs);
+			subCharact.setValue(sanitizeValue(returnValue,subCharact), undefined, 'fromJeedom');
+		}
+		
+		/*
 		if (cmd_id == update.option.cmd_id || cmd2_id == update.option.cmd_id || cmd3_id == update.option.cmd_id || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
-		//if (cmd_id == update.option.cmd_id || IDs.indexOf(update.option.cmd_id) != -1 || eqLogicInfos.indexOf(update.option.cmd_id) != -1 || eqLogicStatus.indexOf(update.option.cmd_id) != -1) {
+			that.log('debug',update.option.cmd_id,'-------','cmd_id:'+cmd_id,'cmd2_id:'+cmd2_id,'cmd3_id:'+cmd3_id,'status:'+eqLogicStatus);
 			var intervalValue = false;
 			var mode_PRESENT,mode_AWAY,mode_NIGHT,t,modesCmd,v;
 			switch(subCharact.UUID) {
@@ -2444,6 +2451,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					let maxSize = 64;
 					value = update.option.value.toString().substring(0,maxSize);
 					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
+
 				break;
 				case Characteristic.SecuritySystemCurrentState.UUID :
 					that.log('debug',"Current",alarmMode);
@@ -2552,7 +2560,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							subCharact.setValue(sanitizeValue(v,subCharact), undefined, 'fromJeedom');
 							alarmModeTarget = v;
 						}
-					}			
+					}	
 				break;
 				case Characteristic.SmokeDetected.UUID :
 					//newValue = cmds[1]==0 ? toBool(value) : !toBool(value); // invertBinary ? // no need to invert ?
@@ -2720,10 +2728,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					subCharact.setValue(sanitizeValue(value,subCharact), undefined, 'fromJeedom');
 				break;
 			} 
-		}
+		}*/
 	}
 
-	if (update.color) {
+	/*if (update.color) {
 		var found=false;
 		for (i = 0; i < that.updateSubscriptions.length; i++) {
 			subscription = that.updateSubscriptions[i];
@@ -2735,11 +2743,6 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				subCharact =  subscription.characteristic;
 				switch(subCharact.UUID)
 				{
-					/*case Characteristic.On.UUID :
-						//that.log('debug','update On :'+hsv.v == 0 ? false : true);
-						newValue = hsv.v == 0 ? false : true;
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;*/
 					case Characteristic.Hue.UUID :
 						if (DEV_DEBUG) that.log('debug','-----update Hue :'+Math.round(hsv.h));
 						newValue = Math.round(hsv.h);
@@ -2750,11 +2753,6 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						newValue = Math.round(hsv.s);
 						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
 					break;
-					/*case Characteristic.Brightness.UUID :
-						//that.log('debug','update Bright :'+Math.round(hsv.v));
-						newValue = Math.round(hsv.v);
-						subCharact.setValue(sanitizeValue(newValue,subCharact), undefined, 'fromJeedom');
-					break;*/
 				}
 				found=true;
 			}
@@ -2763,7 +2761,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				break;
 			}
 		}
-	}
+	}*/
 };
 
 // -- updateJeedomColorFromHomeKit
