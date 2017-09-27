@@ -1964,7 +1964,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'SABOTAGE' && eqLogicStatus.indexOf(cmd.id) != -1) {
 						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						//returnValue = cmd.currentValue;
-						if(returnValue === false) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
+						if(returnValue === true) returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						else returnValue=Characteristic.StatusTampered.TAMPERED;
 						break;
 					}
