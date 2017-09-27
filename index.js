@@ -1962,7 +1962,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE' && eqLogicStatus.indexOf(cmd.id) != -1) {
-						if(cmd.currentValue == "") cmd.currentValue = true; // jeedom haven't received the value yet
 						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						//returnValue = cmd.currentValue;
 						if(returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
