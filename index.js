@@ -1493,6 +1493,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		if (service.statusArr) {
 			eqLogicStatus=service.statusArr;
 		}
+		var eqLogicInfos=[];
+		if (service.infos && service.infos.length) {
+			eqLogicInfos=service.infos;
+		}
+		var eqLogicActions=[];
+		if (service.actions && service.actions.length) {
+			eqLogicActions=service.actions;
+		}
 		var eqLogicSabotageInverted=0;
 		if (service.sabotageInverted) {
 			eqLogicSabotageInverted=service.sabotageInverted;
@@ -1671,12 +1679,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					let currentValue = cmd.currentValue;
 					
 					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
-						that.log('debug',"Alarm_enable_state=",currentValue);
+						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
-						that.log('debug',"alarm_mode=",currentValue);
+						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
 						modesCmd = IDs[4].split('|');
 						
 						for(const c in modesCmd) {
@@ -1697,19 +1705,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						}
 						switch (currentValue) {
 							case mode_PRESENT:
-								that.log('debug',"renvoie present",Characteristic.SecuritySystemTargetState.STAY_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie present",Characteristic.SecuritySystemTargetState.STAY_ARM);
 								returnValue = Characteristic.SecuritySystemTargetState.STAY_ARM;
 							break;
 							case mode_AWAY:
-								that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
 								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;
 							case mode_NIGHT:
-								that.log('debug',"renvoie nuit",Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie nuit",Characteristic.SecuritySystemTargetState.NIGHT_ARM);
 								returnValue = Characteristic.SecuritySystemTargetState.NIGHT_ARM;
 							break;
 							default: // back compatibility
-								that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
 								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;
 						}
@@ -1721,17 +1729,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					let currentValue = cmd.currentValue;
 					
 					if (cmd.generic_type == 'ALARM_STATE' && currentValue == 1) {
-						that.log('debug',"Alarm_State=",currentValue);
+						if (DEV_DEBUG) that.log('debug',"Alarm_State=",currentValue);
 						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
-						that.log('debug',"Alarm_enable_state=",currentValue);
+						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
 						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
-						that.log('debug',"alarm_mode=",currentValue);
+						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
 						modesCmd = IDs[4].split('|');
 						
 						for(const c in modesCmd) {
@@ -1752,19 +1760,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						}
 						switch (currentValue) {
 							case mode_PRESENT:
-								that.log('debug',"renvoie present",Characteristic.SecuritySystemCurrentState.STAY_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie present",Characteristic.SecuritySystemCurrentState.STAY_ARM);
 								returnValue = Characteristic.SecuritySystemCurrentState.STAY_ARM;
 							break;
 							case mode_AWAY:
-								that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
 								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 							break;
 							case mode_NIGHT:
-								that.log('debug',"renvoie nuit",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie nuit",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);
 								returnValue = Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
 							break;
 							default: // back compatibility
-								that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
 								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 							break;
 						}
@@ -1829,7 +1837,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="OPEN";
 								break;
 						}
-						that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						if (DEV_DEBUG) that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						break;
 					}
 				}	
@@ -1862,7 +1870,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="STOPPED";
 								break;
 						}
-						that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						if (DEV_DEBUG) that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						break;
 					}
 				}
@@ -1885,7 +1893,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.LockCurrentState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
-						that.log('debug','LockCurrentState : ',cmd.currentValue);
+						if (DEV_DEBUG) that.log('debug','LockCurrentState : ',cmd.currentValue);
 						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 					}
 				}
@@ -1893,7 +1901,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.LockTargetState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
-						that.log('debug','LockTargetState : ',cmd.currentValue);
+						if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue);
 						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 					}
 				}
@@ -1951,7 +1959,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE' && eqLogicStatus.indexOf(cmd.id) != -1) {
-						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						//returnValue = cmd.currentValue;
 						if(returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
 						else returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
@@ -2003,7 +2011,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.ProgrammableSwitchEvent.UUID :
 				returnValue = cmdList.currentValue;
-				that.log('debug','GetState ProgrammableSwitchEvent: '+returnValue);
+				if (DEV_DEBUG) that.log('debug','GetState ProgrammableSwitchEvent: '+returnValue);
 			break;
 			case Characteristic.OutletInUse.UUID :
 				returnValue = parseFloat(cmdList.power) > 1.0 ? true : false;
