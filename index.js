@@ -1359,9 +1359,9 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
-			let returnValue = this.getAccessoryValue(characteristic, service);
-			this.log('info','[Demande d\'Homekit] Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'->'+returnValue,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
-			callback(undefined, sanitizeValue(returnValue,characteristic));
+			let returnValue = sanitizeValue(this.getAccessoryValue(characteristic, service),characteristic);
+			this.log('info','[Demande d\'Homekit] Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'('+returnValue+')','\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+			callback(undefined, returnValue);
 		}.bind(this));
 	}
 	catch(e){
