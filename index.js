@@ -1193,8 +1193,8 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			let cachedValues=jeedomAccessory.delServices(HBAccessory);
-			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
+			/*let cachedValues=*/jeedomAccessory.delServices(HBAccessory);
+			jeedomAccessory.addServices(HBAccessory,services2Add/*,cachedValues*/);
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
@@ -2627,10 +2627,10 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 // -- newAccessory : accessory to add the services too
 // -- services : services to be added
 // -- Return : nothing
-JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,cachedValues) {
+JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services/*,cachedValues*/) {
 	var service;
 	try {
-		var cachedValue, characteristic;
+		var /*cachedValue,*/ characteristic;
 		for (var s = 0; s < services.length; s++) {
 			service = services[s];
 			
@@ -2640,10 +2640,10 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 				for (var i = 0; i < service.characteristics.length; i++) {
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
 					
-					cachedValue = cachedValues[service.controlService.subtype+characteristic.displayName];
+					/*cachedValue = cachedValues[service.controlService.subtype+characteristic.displayName];
 					if(cachedValue != undefined && cachedValue != null){
 						characteristic.setValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
-					}
+					}*/
 					
 					characteristic.props.needsBinding = true;
 					if (characteristic.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
@@ -2678,7 +2678,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	var service;
 	try {
 			var serviceList=[];
-			var cachedValues=[];
+			//var cachedValues=[];
 			for(var t=0; t< accessory.services.length;t++) { 
 				if(accessory.services[t].UUID != Service.AccessoryInformation.UUID && 
 				   accessory.services[t].UUID != Service.BridgingState.UUID)
@@ -2688,11 +2688,11 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 				this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
 				for (const c of service.characteristics) {
 					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
-					cachedValues[service.subtype+c.displayName]=c.value;
+					//cachedValues[service.subtype+c.displayName]=c.value;
 				}
 				accessory.removeService(service);
 			}
-			return cachedValues;
+			//return cachedValues;
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction delServices :',e,JSON.stringify(service));
