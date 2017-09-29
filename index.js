@@ -75,7 +75,7 @@ function JeedomPlatform(logger, config, api) {
 		if ( typeof this.pollerPeriod == 'string')
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		else if (!this.pollerPeriod)
-			this.pollerPeriod = 0.5; // 0.5 is Nice between 2 calls
+			this.pollerPeriod = 0.05; // 0.05 is Nice between 2 calls
 		
 		if (api) {
 			this.api = api;
