@@ -281,7 +281,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if (Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande OFF'); 
 					if (!Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON" ou reférence à l\'état non définie sur la commande ON');
 					if (!Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande ON et OFF');
-					if (!Serv.actions.setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur" ou de type générique "Info/Lumière Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
+					if (Serv.infos.color && !Serv.actions.setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
+					if (!Serv.infos.color && Serv.actions.setcolor) that.log('warn','Pas de type générique "Info/Lumière Couleur"');
+					if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) that.log('warn','Pas de type générique "Action/Lumière Température Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
+					if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) that.log('warn','Pas de type générique "Info/Lumière Température Couleur"');
 					
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
@@ -312,8 +315,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						};
 						//Serv.countColorCharacteristics = 0;
 						Serv.timeoutIdColorCharacteristics = 0;
-					} else {
-						that.log('info','La lumière n\'a pas de couleurs');
 					}
 					if(Serv.infos.color_temp) {
 						LightType += "_Temp";
@@ -332,8 +333,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.ColorTemperature);
 						Serv.addCharacteristic(Characteristic.ColorTemperature);
 						Serv.getCharacteristic(Characteristic.ColorTemperature).setProps(props);
-					} else {
-						that.log('info','La lumière n\'a pas de température de couleurs');
 					}
 					
 					// add Active, Tampered and Defect Characteristics if needed
@@ -1372,7 +1371,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				this.log("debug","ColorTemperature set : ",value);
-				this.command('setValue', value, service);
+				this.command('setValueTemp', value, service);
 			break;
 			case Characteristic.Hue.UUID :
 				this.log("debug","Hue set : ",value);
@@ -2024,19 +2023,19 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			if(!found) {
 				switch (cmd.generic_type) {
 					case 'FLAP_DOWN' :
-						if(action == 'flapDown' && cmd.id == service.actions.down.id) {
+						if(action == 'flapDown' && service.actions.down && cmd.id == service.actions.down.id) {
 							cmdId = cmd.id;
 							found = true;
 						}
 					break;
 					case 'FLAP_UP' :
-						if(action == 'flapUp'  && cmd.id == service.actions.up.id) {
+						if(action == 'flapUp' && service.actions.up && cmd.id == service.actions.up.id) {
 							cmdId = cmd.id;
 							found = true;
 						}
 					break;
 					case 'FLAP_SLIDER' :
-						if(value >= 0 && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
+						if(value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.down) {
 								cmdId=service.actions.down.id;
@@ -2080,7 +2079,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'LIGHT_SLIDER' :
-						if(action == 'setValue' && cmd.id == service.actions.slider.id) {
+						if(action == 'setValue' && service.actions.slider && cmd.id == service.actions.slider.id) {
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.on) {
 								cmdId=service.actions.on.id;
@@ -2092,63 +2091,63 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
-						if(action == 'setValue' && cmd.id == service.actions.set_volume.id) {
+						if(action == 'setValue' && service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
 							cmdId = cmd.id;
 							found = true;
 							needToTemporize=true;
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
-						if((action == 'turnOn' || action == 'turnOff') && cmd.id == service.actions.mute_toggle.id) {
+						if((action == 'turnOn' || action == 'turnOff') && service.actions.mute_toggle && cmd.id == service.actions.mute_toggle.id) {
 							cmdId = cmd.id;
 							found = true;
 						}
 					break;
 					case 'SPEAKER_MUTE_ON' :
-						if(action == 'turnOn' && cmd.id == service.actions.mute_on.id) {
+						if(action == 'turnOn' && service.actions.mute_on && cmd.id == service.actions.mute_on.id) {
 							cmdId = cmd.id;
 							found = true;
 						}
 					break;
 					case 'SPEAKER_MUTE_OFF' :
-						if(action == 'turnOff' && cmd.id == service.actions.mute_off.id) {
+						if(action == 'turnOff' && service.actions.mute_off && cmd.id == service.actions.mute_off.id) {
 							cmdId = cmd.id;
 							found = true;
 						}
 					break;
 					case 'LIGHT_ON' :
-						if((action == 'turnOn') && cmd.id == service.actions.on.id) {
+						if((action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
 							cmdId = cmd.id;					
 							found = true;
 						}
 					break;
 					case 'ENERGY_ON' :
-						if((value == 255 || action == 'turnOn') && cmd.id == service.actions.on.id) {
+						if((value == 255 || action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
 							cmdId = cmd.id;					
 							found = true;
 						}
 					break;
 					case 'LIGHT_OFF' :
-						if((action == 'turnOff') && cmd.id == service.actions.off.id) {
+						if((action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;					
 							found = true;
 						}
 					break;
 					case 'ENERGY_OFF' :
-						if((value == 0 || action == 'turnOff') && cmd.id == service.actions.off.id) {
+						if((value == 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;					
 							found = true;
 						}
 					break;
 					case 'LIGHT_SET_COLOR' :
-						if(action == 'setRGB' && cmd.id == service.actions.setcolor.id) {
+						if(action == 'setRGB' && service.actions.setcolor && cmd.id == service.actions.setcolor.id) {
 							cmdId = cmd.id;
 							found = true;
 							needToTemporize=true;
 						}
 					break;
 					case 'LIGHT_SET_COLOR_TEMP' :
-						if(action == 'setValue' && cmd.id == service.actions.setcolor_temp.id) {
+						if(action == 'setValueTemp' && service.actions.setcolor_temp && cmd.id == service.actions.setcolor_temp.id) {
 							cmdId = cmd.id;
 							found = true;
 							needToTemporize=true;
