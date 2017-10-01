@@ -253,11 +253,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
-							if (cmd2.on.value == cmd.state.id || cmd2.on.value == Serv.infos.state_bool.id) {
+							if (cmd2.on.value == cmd.state.id || (Serv.infos.state_bool && cmd2.on.value == Serv.infos.state_bool.id)) {
 								Serv.actions.on=cmd2.on;
 							}
 						} else if (cmd2.off) {
-							if (cmd2.off.value == cmd.state.id || cmd2.off.value == Serv.infos.state_bool.id) {
+							if (cmd2.off.value == cmd.state.id || (Serv.infos.state_bool && cmd2.off.value == Serv.infos.state_bool.id)) {
 								Serv.actions.off=cmd2.off;
 							}
 						} else if (cmd2.slider) {
@@ -928,12 +928,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if(cmd.state) {
 					HBservice = {
 						controlService : new Service.Thermostat(eqLogic.name),
-						characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
+						characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState,Characteristic.On,Characteristic.GenericSTRING]
 					};
 					let Serv = HBservice.controlService;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
+					eqServicesCopy.thermostat.forEach(function(cmd2) {
+						if (cmd2.state_name) {
+							Serv.infos.state_name=cmd.state_name;
+						}
+					});
+					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -2831,7 +2837,7 @@ function RGBtoHSV(r, g, b) {
 // -- Return : Object found
 function findMyID(obj,id) {
 	for(var o in obj) {
-        if( obj.hasOwnProperty( o ) && obj[o].id==id) {
+        if( obj.hasOwnProperty( o ) && obj[o].id && obj[o].id==id) {
             return obj[o];
         }
     }
