@@ -245,13 +245,19 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
 					Serv.cmd_id = cmd.state.id;
+					eqServicesCopy.light.forEach(function(cmd1) {
+						if (cmd1.state_bool) {
+								Serv.infos.state_bool=cmd1.state_bool;
+								//break;
+						}
+					});
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
-							if (cmd2.on.value == cmd.state.id) {
+							if (cmd2.on.value == cmd.state.id || cmd2.on.value == Serv.infos.state_bool.id) {
 								Serv.actions.on=cmd2.on;
 							}
 						} else if (cmd2.off) {
-							if (cmd2.off.value == cmd.state.id) {
+							if (cmd2.off.value == cmd.state.id || cmd2.off.value == Serv.infos.state_bool.id) {
 								Serv.actions.off=cmd2.off;
 							}
 						} else if (cmd2.slider) {
@@ -1431,7 +1437,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			// Switch or Light
 			case Characteristic.On.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
+					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType == 'binary' && cmd.id == service.cmd_id) {
+						if(parseInt(cmd.currentValue) == 0) returnValue=false;
+						else returnValue=true;
+						break;
+					}
+					if (cmd.generic_type == 'LIGHT_STATE_BOOL' && cmd.id == service.infos.state_bool.id) {
 						if(parseInt(cmd.currentValue) == 0) returnValue=false;
 						else returnValue=true;
 						break;
