@@ -2837,7 +2837,7 @@ function RGBtoHSV(r, g, b) {
 // -- Return : Object found
 function findMyID(obj,id) {
 	for(var o in obj) {
-        if( obj.hasOwnProperty( o ) && obj[o].id && obj[o].id==id) {
+        if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && obj[o].id==id) {
             return obj[o];
         }
     }
