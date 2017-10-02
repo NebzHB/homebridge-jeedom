@@ -974,6 +974,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 						else
 							that.log('warn','Pas de config du mode Climatisation');
+						if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
+							Serv.thermo.off = {};
+							let splitted = eqLogic.thermoModes.Off.split('|');
+							Serv.thermo.off.mode_label = splitted[1];
+							Serv.thermo.off.mode_id = splitted[0];
+						}
 					}
 					else {
 						if(that.myPlugin == "homebridge")
@@ -1755,7 +1761,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.TargetHeatingCoolingState.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'THERMOSTAT_SET_MODE') {
+					if (cmd.generic_type == 'THERMOSTAT_MODE') {
 						var mode_CLIM = service.thermo.clim && service.thermo.clim.mode_label || undefined;
 						var mode_CHAUF = service.thermo.chauf && service.thermo.chauf.mode_label || undefined;
 						that.log('info','TargetThermo :',mode_CLIM,mode_CHAUF,cmd.currentValue);
@@ -2110,10 +2116,11 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		}
 		// /ALARM	
 		// THERMOSTAT
-		var id_CHAUF,id_CLIM;
+		var id_CHAUF,id_CLIM,id_OFF;
 		if(action == 'TargetHeatingCoolingState') {
 			id_CHAUF = 	service.thermo.chauf && service.thermo.chauf.mode_id || undefined;
 			id_CLIM = 	service.thermo.clim && service.thermo.clim.mode_id || undefined;
+			id_OFF = 	service.thermo.off && service.thermo.off.mode_id || undefined;
 		}		
 		// /THERMOSTAT
 		var needToTemporize=false;
@@ -2298,10 +2305,26 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_SET_MODE' :
 						if(action == 'TargetHeatingCoolingState') {
+							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF) {
+								cmdId = id_OFF;
+								console.log("set OFF");
+								found = true;
+							}
+							if(value == Characteristic.TargetHeatingCoolingState.HEAT && id_CHAUF) {
+								cmdId = id_CHAUF;
+								console.log("set CHAUF");
+								found = true;
+							}
+							if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM) {
+								cmdId = id_CLIM;
+								console.log("set CLIM");
+								found = true;
+							}
+							/*
 							if(cmd.name == 'Off') {
 								cmdId = cmd.id;
 								found = true;
-							}
+							}*/
 						}
 					break;
 				}
