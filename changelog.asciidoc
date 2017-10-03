@@ -11,21 +11,22 @@
 [IMPORTANT]
 ne pas modifier ce type dans Jeedom pendant que homebridge fonctionne
     * Les types génériques "Info/Choc", "Info/Vent (direction)", "Info/Vent (vitesse)", "Info/Pluie (mm/h)", "Info/Pluie (accumulation)", "Info/Pression", "Info/Son (dB)" sont gérés comme des "Info/Génériques" et affichés dans Eve.
-    * Lumières : corrigé, du simple interrupteur, avec luminosité seulement ou RGB, toutes fonctionnent. (pas encore... dépend du plugin)
+    * Lumières : Fonctionnement est corrigé pour certains plugins, Phillips Hue fonctionne, Lifx aussi, Z-Wave aussi, Ikea à venir, XiaomiHome (Yeelight) à venir. Support de la température de couleur.
 [TIP]
 Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
-    * Alarme : les modes sont liable aux modes HomeKit : Absent, Nuit, Présent, Désactivé. Fonctionne en consultation ET action.
-    * Nouveau design du plugin, simplification, plus besoin de choisir les plugins.
+    * Alarme : les modes sont liable aux modes imposés d'HomeKit : Absent, Nuit, Présent, Désactivé. Fonctionne en consultation ET action.
+    * Thermostat : (Fonctionne mieux dans Eve) : Température de consigne fonctionne, les modes peuvent être liés aux modes imposés d'HomeKit : Chauf., Clim.. L'asservissement se faisant dans Jeedom, le mode auto ne sert à rien dans Homekit. Le statut est dans un champ générique (visible dans Eve). (cette façon de faire permet de lier les modes et d'avoir une fonctionnalité supplémentaire que de vous montrer que votre chauffage chauffe simplement). Le verrouillage apparait aussi dans Eve.
+    * Nouveau design du plugin, simplification, plus besoin de choisir les plugins qui seront envoyés à homebridge, le choix est maintenant par equipement.
     * Fenêtre "DebugInfo" (en niveau de log "info" ou "debug") pour donner des éléments importants de votre configuration en cas de demande d'aide sur le forum (à la demande)
     * Périphériques invisibles ajoutés à homebridge, tant que "Envoyer dans homebridge" est coché.
     * Temporisation des Slider des lumières et des volets et volumes, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500ms
     * Type Générique officiel Sabotage supporté (binaire)
-    * Possibilité de personnaliser les etats des Portes de Garage (Ouvert (255), En Ouverture (254), Stopé (253), En Fermeture (252), Fermé (0)) avec d'autres valeurs.
+    * Possibilité de personnaliser les états des Portes de Garage (Ouvert (255), En Ouverture (254), Stopé (253), En Fermeture (252), Fermé (0)) avec d'autres valeurs.
     * Les types spécifiques à Homebridge : j'ai maintenant la possibilité de créer des types spécifiques pour homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais complètent ceux-ci. Il faut néanmoins les définir manuellement dans le plugin. (les types génériques restent utilisés principalement, ces types sont un ajout pour les types génériques qui n'existent pas)
     * Nouveaux types spécifiques à homebridge : 
       ** Status Defectueux (binaire : 0:non/ 1:oui -> peut-être mappé à un binaire représentant par exemple un lien mort chez z-wave) 
       ** Status Actif (binaire : 0:non/ 1:oui -> peut-etre mappé au status "online" d'une xiaomi yeelight par exemple)
-      ** Haut-parleurs, il devrait fonctionner avec sonos par exemple (à tester), les types sont : 
+      ** Haut-parleurs, il devrait fonctionner automatiquement avec le plugin sonos par exemple (à tester), les types sont : 
          *** Info/Haut-parleur Mute (binaire)
          *** Info/Haut-parleur Volume (pourcentage)
          *** Action/Haut-parleur Mute
