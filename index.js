@@ -946,6 +946,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							HBservice.characteristics.push(Characteristic.LockPhysicalControls);
 							Serv.addCharacteristic(Characteristic.LockPhysicalControls);
 							Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
+						} else if (cmd2.mode) {
+							Serv.infos.mode=cmd2.mode;
+						} else if (cmd2.setpoint) {
+							Serv.infos.setpoint=cmd2.setpoint;
 						} else if (cmd2.set_lock) {
 							Serv.actions.set_lock=cmd2.set_lock;
 						} else if (cmd2.set_unlock) {
@@ -1329,16 +1333,16 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
-					this.log('info','[Commande d\'Homekit] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+					this.log('info','[Commande d\'Homekit]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 					this.setAccessoryValue(value,characteristic,service);
 				} else
-					this.log('info','[Commande de Jeedom] Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
+					this.log('info','[Commande de Jeedom]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
 				callback();
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
 			let returnValue = sanitizeValue(this.getAccessoryValue(characteristic, service),characteristic);
-			this.log('info','[Demande d\'Homekit] Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'('+returnValue+')','\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+			this.log('info','[Demande d\'Homekit]','Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'('+returnValue+')','\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 			callback(undefined, returnValue);
 		}.bind(this));
 	}
@@ -1382,7 +1386,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service);
 			break;
 			case Characteristic.TargetHeatingCoolingState.UUID :
-				this.log('set target mode:',value);
+				this.log('debug','set target mode:',value);
 				this.command('TargetHeatingCoolingState', value, service);
 			break;
 			case Characteristic.TargetDoorState.UUID :
@@ -1423,17 +1427,17 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 			break;
 			case Characteristic.ColorTemperature.UUID :
-				this.log("debug","ColorTemperature set : ",value);
+				this.log('debug',"ColorTemperature set : ",value);
 				this.command('setValueTemp', value, service);
 			break;
 			case Characteristic.Hue.UUID :
-				this.log("debug","Hue set : ",value);
+				this.log('debug',"Hue set : ",value);
 				//this.command("setValue",value,service);
 				rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
 				this.syncColorCharacteristics(rgb, service);
 			break;
 			case Characteristic.Saturation.UUID :
-				this.log("debug","Sat set : ",value);
+				this.log('debug',"Sat set : ",value);
 				//this.command("setValue",value,service);
 				rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
 				this.syncColorCharacteristics(rgb, service);
@@ -1479,7 +1483,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		var returnValue = 0;
 		var HRreturnValue;
 		var cmdList = that.jeedomClient.getDeviceCmd(service.eqID);
-		var hsv,mode_PRESENT,mode_AWAY,mode_NIGHT;
+		var hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
 		switch (characteristic.UUID) {
 			// Switch or Light
 			case Characteristic.On.UUID :
@@ -1625,7 +1629,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.Hue.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR') {
-						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -1636,7 +1639,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.Saturation.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR') {
-						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -1647,7 +1649,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR_TEMP') {
-						//console.log("valeur " + cmd.generic_type + " : " + returnValue);
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -1672,6 +1673,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						switch (currentValue) {
 							case undefined:
+								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+							break;
 							default: // back compatibility
 								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
 								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
@@ -1715,6 +1719,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						switch (currentValue) {
 							case undefined:
+								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+							break;
 							default: // back compatibility
 								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
 								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
@@ -1739,9 +1746,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentHeatingCoolingState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
-						var mode_CLIM = service.thermo.clim && service.thermo.clim.mode_label || undefined;
-						var mode_CHAUF = service.thermo.chauf && service.thermo.chauf.mode_label || undefined;
-						that.log('info','CurrentThermo :',mode_CLIM,mode_CHAUF,cmd.currentValue);
+						
+						mode_CLIM = service.thermo.clim && service.thermo.clim.mode_label || undefined;
+						mode_CHAUF = service.thermo.chauf && service.thermo.chauf.mode_label || undefined;
+						
+						that.log('debug','CurrentThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
 							case 'Off':
 							case 'Aucun':
@@ -1762,9 +1771,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TargetHeatingCoolingState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
-						var mode_CLIM = service.thermo.clim && service.thermo.clim.mode_label || undefined;
-						var mode_CHAUF = service.thermo.chauf && service.thermo.chauf.mode_label || undefined;
-						that.log('info','TargetThermo :',mode_CLIM,mode_CHAUF,cmd.currentValue);
+						
+						mode_CLIM = service.thermo.clim && service.thermo.clim.mode_label || undefined;
+						mode_CHAUF = service.thermo.chauf && service.thermo.chauf.mode_label || undefined;
+						
+						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
 							case 'Off':
 							case 'Aucun':
@@ -2278,20 +2289,20 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'ALARM_SET_MODE' :
-						console.log("ALARM_SET_MODE","SetAlarmMode=",action,value);
+						that.log('debug',"ALARM_SET_MODE","SetAlarmMode=",action,value);
 						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.NIGHT_ARM && id_NIGHT) {
 							cmdId = id_NIGHT;
-							console.log("set nuit");
+							that.log('debug',"set nuit");
 							found = true;
 						}
 						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.AWAY_ARM && id_AWAY) {
 							cmdId = id_AWAY;
-							console.log("set absent");
+							that.log('debug',"set absent");
 							found = true;
 						}
 						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.STAY_ARM && id_PRESENT) {
 							cmdId = id_PRESENT;
-							console.log("set present");
+							that.log('debug',"set present");
 							found = true;
  						}
  					break;					
@@ -2307,17 +2318,17 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						if(action == 'TargetHeatingCoolingState') {
 							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF) {
 								cmdId = id_OFF;
-								console.log("set OFF");
+								that.log('debug',"set OFF");
 								found = true;
 							}
 							if(value == Characteristic.TargetHeatingCoolingState.HEAT && id_CHAUF) {
 								cmdId = id_CHAUF;
-								console.log("set CHAUF");
+								that.log('debug',"set CHAUF");
 								found = true;
 							}
 							if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM) {
 								cmdId = id_CLIM;
-								console.log("set CLIM");
+								that.log('debug',"set CLIM");
 								found = true;
 							}
 							/*
@@ -2333,7 +2344,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		
 		if(!needToTemporize) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
-				that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 			}).catch(function(err, response) {
 				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 				console.error(err.stack);
@@ -2342,7 +2353,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			clearTimeout(that.temporizator);
 			that.temporizator = setTimeout(function(){
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
-					that.log('info','[Commande envoyée à Jeedom] cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+					that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 				}).catch(function(err, response) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 					console.error(err.stack);
@@ -2398,7 +2409,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 						that.updateSubscribers(update);// Update subscribers
 				}
 				else {
-					if(DEV_DEBUG) that.log('debug','[Reçu Type non géré]: '+update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
+					if(DEV_DEBUG) that.log('debug','[Reçu Type non géré]',update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
 				}
 			});
 		}
@@ -2425,14 +2436,14 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		subCharact = that.updateSubscriptions[i].characteristic;
 		subService = that.updateSubscriptions[i].service;
 
-		//that.log('debug',"update :",update.option.cmd_id,JSON.stringify(subService.infos),JSON.stringify(subService.actions),JSON.stringify(subService.statusArr),subCharact.UUID);
+		// that.log('debug',"update :",update.option.cmd_id,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
 		let infoFound = findMyID(subService.infos,update.option.cmd_id);
 		let statusFound = findMyID(subService.statusArr,update.option.cmd_id);
 		if(	infoFound != -1 ||
 			statusFound != -1) {
-				let returnValue = that.getAccessoryValue(subCharact, subService);
-				//that.log('debug',"Update cmd:",update.option.cmd_id,((infoFound)?infoFound.name:''),returnValue,JSON.stringify(statusFound),subCharact.UUID);
-				subCharact.setValue(sanitizeValue(returnValue,subCharact), undefined, 'fromJeedom');
+				let returnValue = sanitizeValue(that.getAccessoryValue(subCharact, subService),subCharact);
+				that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+				subCharact.setValue(returnValue, undefined, 'fromJeedom');
 		}
 	}
 };
@@ -2469,7 +2480,7 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
 	if (!color)
 		color = '0,0,0';
-	//console.log("couleur :" + color);
+	//this.log('debug',"couleur :" + color);
 	//var colors = color.split(',');
 	var r = hexToR(color);
 	var g = hexToG(color);
@@ -2501,7 +2512,7 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
 			//if (service.countColorCharacteristics < 2)
 			//	return;
 			var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
-			if (DEV_DEBUG) that.log("debug","---------setRGB : ",rgbColor);
+			if (DEV_DEBUG) that.log('debug',"---------setRGB : ",rgbColor);
 			that.command('setRGB', rgbColor, service);
 			//service.countColorCharacteristics = 0;
 			//service.timeoutIdColorCharacteristics = 0;
