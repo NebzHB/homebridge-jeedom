@@ -1449,7 +1449,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				if(maxJeedom) {
 					value = Math.round((value / 100)*maxJeedom);
 				}
-				if (DEV_DEBUG) this.log('debug','---------set Bright:',oldValue,'% soit',value,' / ',maxJeedom);
+				this.log('debug','---------set Bright:',oldValue,'% soit',value,' / ',maxJeedom);
 				this.command('setValue', value, service);
 			break;
 			default :
@@ -2135,6 +2135,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		}		
 		// /THERMOSTAT
 		var needToTemporize=false;
+		var cmdFound;
 		for (const cmd of cmdList) {
 			if(!found) {
 				switch (cmd.generic_type) {
@@ -2142,12 +2143,14 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						if(action == 'flapDown' && service.actions.down && cmd.id == service.actions.down.id) {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 						}
 					break;
 					case 'FLAP_UP' :
 						if(action == 'flapUp' && service.actions.up && cmd.id == service.actions.up.id) {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 						}
 					break;
 					case 'FLAP_SLIDER' :
@@ -2161,6 +2164,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
 							value =	Math.round(value * 99/100);							
 							found = true;
+							cmdFound=cmd.generic_type;
 							needToTemporize=true;
 						}
 					break;					
@@ -2168,41 +2172,49 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						if(action == 'GBopen') {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 						}
 					break;
 					case 'GB_CLOSE' :
 						if(action == 'GBclose') {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 						}
 					break;
 					case 'GB_TOGGLE' :
 						if(action == 'GBtoggle') {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 						}
 					break;
 					case 'LOCK_OPEN' :
 						if(action == 'unsecure') {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 						}
 					break;
 					case 'LOCK_CLOSE' :
 						if(action == 'secure') {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 						}
 					break;
 					case 'LIGHT_SLIDER' :
 						if(action == 'setValue' && service.actions.slider && cmd.id == service.actions.slider.id) {
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.on) {
+								this.log('info','???????? should never go here ON');
 								cmdId=service.actions.on.id;
 							} else if (action == 'turnOff' && service.actions.off) {
+								this.log('info','???????? should never go here OFF');
 								cmdId=service.actions.off.id;
 							}		
 							found = true;
+							cmdFound=cmd.generic_type;
 							needToTemporize=true;
 						}
 					break;
@@ -2210,66 +2222,77 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						if(action == 'setValue' && service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
 							cmdId = cmd.id;
 							found = true;
+							cmdFound=cmd.generic_type;
 							needToTemporize=true;
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
 						if((action == 'turnOn' || action == 'turnOff') && service.actions.mute_toggle && cmd.id == service.actions.mute_toggle.id) {
 							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'SPEAKER_MUTE_ON' :
 						if(action == 'turnOn' && service.actions.mute_on && cmd.id == service.actions.mute_on.id) {
 							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'SPEAKER_MUTE_OFF' :
 						if(action == 'turnOff' && service.actions.mute_off && cmd.id == service.actions.mute_off.id) {
 							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'LIGHT_ON' :
 						if((action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
 							cmdId = cmd.id;					
+							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'ENERGY_ON' :
 						if((value == 255 || action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
-							cmdId = cmd.id;					
+							cmdId = cmd.id;			
+							cmdFound=cmd.generic_type;							
 							found = true;
 						}
 					break;
 					case 'LIGHT_OFF' :
 						if((action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;					
+							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'ENERGY_OFF' :
 						if((value == 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
-							cmdId = cmd.id;					
+							cmdId = cmd.id;		
+							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'THERMOSTAT_SET_LOCK' :
 						if((action == 'turnOn') && service.actions.set_lock && cmd.id == service.actions.set_lock.id) {
-							cmdId = cmd.id;					
+							cmdId = cmd.id;				
+							cmdFound=cmd.generic_type;							
 							found = true;
 						}
 					break;
 					case 'THERMOSTAT_SET_UNLOCK' :
 						if((action == 'turnOff') && service.actions.set_unlock && cmd.id == service.actions.set_unlock.id) {
 							cmdId = cmd.id;					
+							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'LIGHT_SET_COLOR' :
 						if(action == 'setRGB' && service.actions.setcolor && cmd.id == service.actions.setcolor.id) {
 							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
 							found = true;
 							needToTemporize=true;
 						}
@@ -2277,15 +2300,17 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					case 'LIGHT_SET_COLOR_TEMP' :
 						if(action == 'setValueTemp' && service.actions.setcolor_temp && cmd.id == service.actions.setcolor_temp.id) {
 							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
 							found = true;
 							needToTemporize=true;
 						}
 					break;
 					case 'ALARM_RELEASED' :
 						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.DISARM) {
-								that.log('debug',"setAlarmMode",value,cmd.id);
- 								cmdId = cmd.id;
- 								found = true;
+							that.log('debug',"setAlarmMode",value,cmd.id);
+							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
+							found = true;
 						}
 					break;
 					case 'ALARM_SET_MODE' :
@@ -2310,6 +2335,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						if(action == 'setTargetLevel') {
 							if(value > 0) {
 								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
 								found = true;
 							}
 						}
@@ -2344,7 +2370,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		
 		if(!needToTemporize) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
-				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
 			}).catch(function(err, response) {
 				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 				console.error(err.stack);
@@ -2439,8 +2465,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		// that.log('debug',"update :",update.option.cmd_id,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
 		let infoFound = findMyID(subService.infos,update.option.cmd_id);
 		let statusFound = findMyID(subService.statusArr,update.option.cmd_id);
-		if(	infoFound != -1 ||
-			statusFound != -1) {
+		if(	infoFound != -1 || statusFound != -1) {
 				let returnValue = sanitizeValue(that.getAccessoryValue(subCharact, subService),subCharact);
 				that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 				subCharact.setValue(returnValue, undefined, 'fromJeedom');
