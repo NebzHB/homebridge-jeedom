@@ -1943,7 +1943,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
-						if(returnValue > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+						if(returnValue===null || returnValue > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
 						else returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
 						break;
 					}
