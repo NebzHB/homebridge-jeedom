@@ -1920,7 +1920,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.BatteryLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						if(cmd.currentValue==="") returnValue=100; // Jeedom Cache not yet up to date
+						else returnValue = cmd.currentValue;
 						break;
 					}
 				}
@@ -1955,10 +1956,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						let eqLogicSabotageInverted=service.sabotageInverted || 0;
 						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						//returnValue = cmd.currentValue;
-						if(returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
+						if(cmd.currentValue!=="" && returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
 						else returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
-						
-						if(cmd.currentValue==="") returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						break;
 					}
 				}
