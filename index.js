@@ -1943,7 +1943,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
-						if(returnValue===null || returnValue > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+						if(cmd.currentValue==="" || returnValue > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
 						else returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
 						break;
 					}
@@ -1957,6 +1957,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						//returnValue = cmd.currentValue;
 						if(returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
 						else returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
+						
+						if(cmd.currentValue==="") returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
 						break;
 					}
 				}
