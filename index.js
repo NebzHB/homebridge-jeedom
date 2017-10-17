@@ -1804,7 +1804,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			// GarageDoor
 			case Characteristic.TargetDoorState.UUID :
 				HRreturnValue="OPENDef";
-				returnValue=Characteristic.TargetDoorState.OPEN; // if don't know -> OPEN
+				returnValue=Characteristic.TargetDoorState.CLOSED; // if don't know -> CLOSED
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
@@ -1837,7 +1837,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.CurrentDoorState.UUID :
 				HRreturnValue="OPENDef";
-				returnValue=Characteristic.CurrentDoorState.OPEN; // if don't know -> OPEN
+				returnValue=Characteristic.CurrentDoorState.CLOSED; // if don't know -> CLOSED
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
