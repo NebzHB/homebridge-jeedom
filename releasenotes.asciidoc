@@ -1,0 +1,75 @@
+Bonjour à tous,
+
+Comme vous l'aviez peut-être déjà lu entre les lignes dans plusieurs discussions, Homebridge est maintenant un plugin séparé à part entière ! Pas d'inquiétude, je garde un contact privilégié avec le développeur de l'app Mobile car nous partageons toujours les Types Génériques et quelques autres infos.
+Il est payant : 4€ mais ne vous inquiétez pas, si vous aviez acheté MobileApp avant la date de sortie, je vous l'offre :-)
+
+== Migration
+
+Ça se fait tout seul !!! Vous installez le nouveau plugin Homebridge et quand vous l'activez, Mobile désactive son démon, Homebridge va chercher la config de Mobile et redémarre son propre démon :-) C'est transparent ! (Ne pas désactiver Mobile avant ! Ne pas désinstaller Mobile avant !).
+Coté iPhone, dans l'app maison, *c'est possible que tous les accessoires se retrouvent dans la pièce par défaut*, il y a eu beaucoup de changements dans cette nouvelle version dont une consolidation du système d'identifiants. 
+(Conseil : Pour ranger plus vite, Application Eve, Onglet Réglages puis Accessoires).
+
+IMPORTANT: Le plugin Mobile va bientôt supprimer son démon Homebridge, vous avez donc tout intérêt à migrer !!
+
+== Nouveautés
+
+    * Le "Info / Générique" supporté en Homebridge. (visible uniquement dans Eve) ca ouvre largement les possibilités visuelles !!! (attention, non utilisable avec Siri, limitation d'Apple)
+
+image:http://www.cefortissimo.be/wp-content/uploads/2017/10/Generic.png[Generic,185,329]
+
+(dans l'exemple, Fertilisant et Firmware sont des génériques)
+
+IMPORTANT: Ne pas modifier ce type dans Jeedom pendant que Homebridge fonctionne (risque de crash Homebridge si vous envoyez une chaîne dans un numérique par exemple)
+
+    * Les types génériques "Info/Choc", "Info/Vent (direction)", "Info/Vent (vitesse)", "Info/Pluie (mm/h)", "Info/Pluie (accumulation)", "Info/Pression", "Info/Son (dB)" sont gérés comme des "Info/Génériques" et affichés dans Eve.
+    * Type Générique officiel Sabotage supporté (binaire)
+    * Lumières : Fonctionnement pour plusieurs plugins :
+        ** IkeaLight : ok après types génériques et actions/valeurs
+        ** PhilipsHue : ok
+        ** XiaomiHome - Yeelight : color : à valider, mono : à valider
+        ** Z-Wave (FGRGBW, FGD) : à valider
+        ** Lifx : à valider
+        ** Tradfri (Tiers) : pas encore
+
+TIP: Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :-)
+
+    * Alarme : les modes sont liables aux modes imposés d'HomeKit : Absent, Nuit, Présent.
+
+image:http://www.cefortissimo.be/wp-content/uploads/2017/10/Alarme.png[Alarme,520,134]
+
+    * Plugin Thermostat : (Fonctionne mieux dans Eve) :
+        ** Température de consigne fonctionne
+        ** Les modes peuvent être liés aux modes imposés d’HomeKit : Chauf., Clim.. (L’asservissement se faisant dans Jeedom, le mode auto ne sert à rien dans Homekit).
+        ** Le statut est dans un champ Info/Générique (visible dans Eve). (cette façon de faire permet de lier les modes et d’avoir une fonctionnalité supplémentaire que de vous montrer que votre chauffage chauffe simplement via les modes).
+        ** Le verrouillage apparaît aussi dans Eve (et modifiable).
+
+IMPORTANT: Le plugin officiel est supporté (peut-être Netatmo mais je n'en ai pas pour tester), si vous désirez utiliser les types génériques dans un virtuel, il vous FAUT un état !!!
+
+image:http://www.cefortissimo.be/wp-content/uploads/2017/10/Thermostat.png[Thermostat,535,123]
+
+    * Fenêtre "DebugInfo" (en niveau de log "info" ou "debug") pour donner des éléments importants de votre configuration (en privé car clé jeedom + pass camera) en cas de demande d’aide sur le forum (à la demande)
+    * Périphériques et commandes invisibles ajoutés à Homebridge quand même, pour autant que "Envoyer dans Homebridge" est coché.
+    * Temporisation des "Slider" des lumières et des volets et volumes, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500ms.
+    * Possibilité de personnaliser les états des Portes de Garage (Ouvert (255), En Ouverture (254), Stoppé (253), En Fermeture (252), Fermé (0)) avec d’autres valeurs.
+
+IMPORTANT: Allez vérifier dans la bonne pièce que ça correspond à vos états et sauvegardez une fois en passant pour être certain !
+
+    * Les types spécifiques à Homebridge (en orange dans la liste): j’ai maintenant la possibilité de créer des types spécifiques pour Homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais complètent ceux-ci. Il faut néanmoins les définir manuellement dans le plugin. (les types génériques restent utilisés principalement, ces types sont un ajout pour les types génériques qui n’existent pas)
+    * Nouveaux types spécifiques à Homebridge :
+        ** Statut Défectueux (binaire : 0:non/ 1:oui → peut être mappé à un binaire représentant par exemple un lien mort chez z-wave)
+        ** Statut Actif (binaire : 0:non/ 1:oui → peut être mappé au statut "online" d’une xiaomi yeelight par exemple)
+        ** Haut-parleurs, il devrait fonctionner automatiquement avec le plugin sonos par exemple (à tester), les types sont :
+            *** Info/Haut-parleur Mute (binaire)
+            *** Info/Haut-parleur Volume (pourcentage)
+            *** Action/Haut-parleur Mute
+            *** Action/Haut-parleur Unmute
+            *** Action/Haut-parleur Toggle Mute (soit Toggle soit Mute/Unmute, les deux choix sont possibles séparément)
+            *** Action/Haut-parleur Volume (typiquement un slider)
+
+IMPORTANT: Info/Haut-parleur Mute est obligatoire, c’est étrange mais c’est une obligation coté HomeKit
+
+    * J'ai réécrit environs 75% du code... donc oui il y aura des différences et des problèmes éventuels, mais c'est pour consolider pour le futur :-)
+
+== Support
+
+Merci de passer par le forum, de créer un sujet par demande et de lire les autres sujets s'ils ressemblent au votre (ceux créés après la sortie de ce plugin, c'est logique :-))
