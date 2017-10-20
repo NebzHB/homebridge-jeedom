@@ -1556,7 +1556,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentTemperature.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == service.cmd_id) || 
-					    cmd.generic_type == 'THERMOSTAT_TEMPERATURE') {
+					    (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
 						returnValue = cmd.currentValue;
 						break;
 					}
