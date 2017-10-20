@@ -348,6 +348,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.maxBright = maxBright;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
@@ -394,6 +395,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 
 					HBservices.push(HBservice);
@@ -435,6 +437,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
@@ -469,6 +472,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.power.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -489,6 +493,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.batteryCharging=cmd.batteryCharging || {id:'NOT'};
 					Serv.cmd_id = cmd.battery.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -512,6 +517,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 
 					Serv.cmd_id = cmd.presence.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -583,6 +589,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id +'-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -602,6 +609,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.uv=cmd.uv;
 					Serv.cmd_id = cmd.uv.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -651,6 +659,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur ces commande');	
 					Serv.cmd_id = cmd.mute.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
@@ -677,6 +686,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.temperature.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -700,6 +710,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.humidity.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -723,6 +734,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.smoke.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -746,6 +758,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.flood.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -769,6 +782,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.opening.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -791,6 +805,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.brightness.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -810,6 +825,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.energy2=cmd.energy2;
 					Serv.cmd_id = cmd.energy2.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -853,6 +869,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
@@ -893,6 +910,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
@@ -916,6 +934,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.state=cmd.state;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -991,6 +1010,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					Serv.cmd_id = cmd.setpoint.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -1063,6 +1083,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					Serv.cmd_id = cmd.enable_state.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
