@@ -244,7 +244,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
-					Serv.cmd_id = cmd.state.id;
 					eqServicesCopy.light.forEach(function(cmd1) {
 						if (cmd1.state_bool) {
 								Serv.infos.state_bool=cmd1.state_bool;
@@ -347,8 +346,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					that.log('info','La lumière est du type :',LightType+','+maxBright);
 					Serv.LightType = LightType;
 					Serv.maxBright = maxBright;
+					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.state.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
 			});
@@ -394,7 +394,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.state.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 
 					HBservices.push(HBservice);
 				}
@@ -435,7 +435,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.state.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
 			});
@@ -466,11 +466,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							}
 						});
 					}
-					var cmd_id_power = cmd.power.id;
 					
-					Serv.cmd_id = cmd_id_power;
+					Serv.cmd_id = cmd.power.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.power.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -490,7 +489,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.batteryCharging=cmd.batteryCharging || {id:'NOT'};
 					Serv.cmd_id = cmd.battery.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.battery.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -513,7 +512,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 
 					Serv.cmd_id = cmd.presence.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.presence.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -584,7 +583,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.state.id +'-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id +'-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -603,7 +602,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.uv=cmd.uv;
 					Serv.cmd_id = cmd.uv.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.uv.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -652,7 +651,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur ces commande');	
 					Serv.cmd_id = cmd.mute.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.mute.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
 			});
@@ -678,7 +677,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.temperature.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.temperature.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -701,7 +700,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.humidity.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.humidity.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -724,7 +723,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.smoke.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.smoke.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -747,7 +746,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.flood.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.flood.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -770,7 +769,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.opening.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.opening.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -792,7 +791,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.brightness.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.brightness.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -811,7 +810,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.energy2=cmd.energy2;
 					Serv.cmd_id = cmd.energy2.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.energy2.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -854,7 +853,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.state.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
 			});
@@ -894,7 +893,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.state.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 				}
 			});
@@ -917,7 +916,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.state=cmd.state;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.state.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -925,7 +924,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.thermostat) {
 			eqLogic.services.thermostat.forEach(function(cmd) {
-				if(cmd.state) {
+				if(cmd.setpoint) {
 					HBservice = {
 						controlService : new Service.Thermostat(eqLogic.name),
 						characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
@@ -933,8 +932,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					let Serv = HBservice.controlService;
 					Serv.actions={};
 					Serv.infos={};
-					if(cmd.state)
-						Serv.infos.state=cmd.state;
+					Serv.infos.setpoint=cmd.setpoint;
 					Serv.thermo={};
 					eqServicesCopy.thermostat.forEach(function(cmd2) {
 						if (cmd2.state_name) {
@@ -949,8 +947,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
 						} else if (cmd2.mode) {
 							Serv.infos.mode=cmd2.mode;
-						} else if (cmd2.setpoint) {
-							Serv.infos.setpoint=cmd2.setpoint;
+						} else if (cmd2.state) {
+							Serv.infos.state=cmd2.state;
 						} else if (cmd2.set_lock) {
 							Serv.actions.set_lock=cmd2.set_lock;
 						} else if (cmd2.set_unlock) {
@@ -959,15 +957,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 					
 					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
-					if(cmd.state && cmd.state.id) {
-						Serv.cmd_id = cmd.state.id;
-					} else if (Serv.infos.setpoint && Serv.infos.setpoint.id) {
-						Serv.cmd_id = Serv.infos.setpoint.id;
-					} else {
-						that.log('warn','Pas de type générique "Info/Thermostat Etat" ou de type générique "Info/Thermostat Consigne"');
-						Serv.cmd_id = undefined;
-					}
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
 
 					if(eqLogic.thermoModes) {
 						if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
@@ -997,7 +987,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(that.myPlugin == "homebridge")
 							that.log('warn','Pas de config des modes du thermostat');
 					}
-
+					Serv.cmd_id = cmd.setpoint.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
@@ -1031,8 +1021,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.enable_state.id;
 
 					var away_mode_id,away_mode_label,present_mode_label,present_mode_id,night_mode_label,night_mode_id;
 					if(eqLogic.alarmModes) {
@@ -1071,8 +1059,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(that.myPlugin == "homebridge")
 							that.log('warn','Pas de config des modes de l\'alarme');
 					}
+					Serv.cmd_id = cmd.enable_state.id;
 					Serv.eqID = eqLogic.id;
-					Serv.subtype = eqLogic.id + '-' + cmd.enable_state.id + '-' + Serv.subtype;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
