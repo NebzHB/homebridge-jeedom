@@ -932,7 +932,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				let Serv = HBservice.controlService;
 				Serv.actions={};
 				Serv.infos={};
-				Serv.infos.state=cmd.state || {};
+				if(cmd.state)
+					Serv.infos.state=cmd.state;
 				Serv.thermo={};
 				eqServicesCopy.thermostat.forEach(function(cmd2) {
 					if (cmd2.state_name) {
