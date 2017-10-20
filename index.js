@@ -947,6 +947,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
 						} else if (cmd2.mode) {
 							Serv.infos.mode=cmd2.mode;
+						} else if (cmd2.temperature) {
+							Serv.infos.temperature=cmd2.temperature;
 						} else if (cmd2.state) {
 							Serv.infos.state=cmd2.state;
 						} else if (cmd2.set_lock) {
