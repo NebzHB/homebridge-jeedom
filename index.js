@@ -925,82 +925,84 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.thermostat) {
 			eqLogic.services.thermostat.forEach(function(cmd) {
-				HBservice = {
-					controlService : new Service.Thermostat(eqLogic.name),
-					characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
-				};
-				let Serv = HBservice.controlService;
-				Serv.actions={};
-				Serv.infos={};
-				if(cmd.state)
-					Serv.infos.state=cmd.state;
-				Serv.thermo={};
-				eqServicesCopy.thermostat.forEach(function(cmd2) {
-					if (cmd2.state_name) {
-						Serv.infos.state_name=cmd2.state_name;
-						HBservice.characteristics.push(Characteristic.GenericSTRING);
-						Serv.addCharacteristic(Characteristic.GenericSTRING);
-						Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd2.state_name.name;
-					} else if (cmd2.lock) {
-						Serv.infos.lock=cmd2.lock;
-						HBservice.characteristics.push(Characteristic.LockPhysicalControls);
-						Serv.addCharacteristic(Characteristic.LockPhysicalControls);
-						Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
-					} else if (cmd2.mode) {
-						Serv.infos.mode=cmd2.mode;
-					} else if (cmd2.setpoint) {
-						Serv.infos.setpoint=cmd2.setpoint;
-					} else if (cmd2.set_lock) {
-						Serv.actions.set_lock=cmd2.set_lock;
-					} else if (cmd2.set_unlock) {
-						Serv.actions.set_unlock=cmd2.set_unlock;
+				if(cmd.state) {
+					HBservice = {
+						controlService : new Service.Thermostat(eqLogic.name),
+						characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
+					};
+					let Serv = HBservice.controlService;
+					Serv.actions={};
+					Serv.infos={};
+					if(cmd.state)
+						Serv.infos.state=cmd.state;
+					Serv.thermo={};
+					eqServicesCopy.thermostat.forEach(function(cmd2) {
+						if (cmd2.state_name) {
+							Serv.infos.state_name=cmd2.state_name;
+							HBservice.characteristics.push(Characteristic.GenericSTRING);
+							Serv.addCharacteristic(Characteristic.GenericSTRING);
+							Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd2.state_name.name;
+						} else if (cmd2.lock) {
+							Serv.infos.lock=cmd2.lock;
+							HBservice.characteristics.push(Characteristic.LockPhysicalControls);
+							Serv.addCharacteristic(Characteristic.LockPhysicalControls);
+							Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
+						} else if (cmd2.mode) {
+							Serv.infos.mode=cmd2.mode;
+						} else if (cmd2.setpoint) {
+							Serv.infos.setpoint=cmd2.setpoint;
+						} else if (cmd2.set_lock) {
+							Serv.actions.set_lock=cmd2.set_lock;
+						} else if (cmd2.set_unlock) {
+							Serv.actions.set_unlock=cmd2.set_unlock;
+						}
+					});
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					if(cmd.state && cmd.state.id) {
+						Serv.cmd_id = cmd.state.id;
+					} else if (Serv.infos.setpoint && Serv.infos.setpoint.id) {
+						Serv.cmd_id = Serv.infos.setpoint.id;
+					} else {
+						that.log('warn','Pas de type générique "Info/Thermostat Etat" ou de type générique "Info/Thermostat Consigne"');
+						Serv.cmd_id = undefined;
 					}
-				});
-				
-				// add Active, Tampered and Defect Characteristics if needed
-				HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
-				if(cmd.state && cmd.state.id) {
-					Serv.cmd_id = cmd.state.id;
-				} else if (Serv.infos.setpoint && Serv.infos.setpoint.id) {
-					Serv.cmd_id = Serv.infos.setpoint.id;
-				} else {
-					that.log('warn','Pas de type générique "Info/Thermostat Etat" ou de type générique "Info/Thermostat Consigne"');
-					Serv.cmd_id = undefined;
-				}
 
-				if(eqLogic.thermoModes) {
-					if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
-						Serv.thermo.chauf = {};
-						let splitted = eqLogic.thermoModes.Chauf.split('|');
-						Serv.thermo.chauf.mode_label = splitted[1];
-						Serv.thermo.chauf.mode_id = splitted[0];
+					if(eqLogic.thermoModes) {
+						if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
+							Serv.thermo.chauf = {};
+							let splitted = eqLogic.thermoModes.Chauf.split('|');
+							Serv.thermo.chauf.mode_label = splitted[1];
+							Serv.thermo.chauf.mode_id = splitted[0];
+						}
+						else
+							that.log('warn','Pas de config du mode Chauffage');
+						if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
+							Serv.thermo.clim = {};
+							let splitted = eqLogic.thermoModes.Clim.split('|');
+							Serv.thermo.clim.mode_label = splitted[1];
+							Serv.thermo.clim.mode_id = splitted[0];
+						}
+						else
+							that.log('warn','Pas de config du mode Climatisation');
+						if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
+							Serv.thermo.off = {};
+							let splitted = eqLogic.thermoModes.Off.split('|');
+							Serv.thermo.off.mode_label = splitted[1];
+							Serv.thermo.off.mode_id = splitted[0];
+						}
 					}
-					else
-						that.log('warn','Pas de config du mode Chauffage');
-					if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
-						Serv.thermo.clim = {};
-						let splitted = eqLogic.thermoModes.Clim.split('|');
-						Serv.thermo.clim.mode_label = splitted[1];
-						Serv.thermo.clim.mode_id = splitted[0];
+					else {
+						if(that.myPlugin == "homebridge")
+							that.log('warn','Pas de config des modes du thermostat');
 					}
-					else
-						that.log('warn','Pas de config du mode Climatisation');
-					if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
-						Serv.thermo.off = {};
-						let splitted = eqLogic.thermoModes.Off.split('|');
-						Serv.thermo.off.mode_label = splitted[1];
-						Serv.thermo.off.mode_id = splitted[0];
-					}
-				}
-				else {
-					if(that.myPlugin == "homebridge")
-						that.log('warn','Pas de config des modes du thermostat');
-				}
 
-				Serv.eqID = eqLogic.id;
-				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-				HBservices.push(HBservice);
-				HBservice = null;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
 			});
 		}
 		if (eqLogic.services.alarm) {
