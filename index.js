@@ -1140,7 +1140,7 @@ JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
 			Serv.statusArr.defect=defect.defect;
 		}
 	}
-	if(services.status_active && services.status_active[0].status_active) {
+	if(services.status_active) {
 		for(let s in services.status_active) { if(services.status_active[s] !== null) {status_active=services.status_active[s]; break;} }
 		if(status_active) {
 			HBservice.characteristics.push(Characteristic.StatusActive);
