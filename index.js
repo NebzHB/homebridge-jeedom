@@ -2236,7 +2236,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							}		
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=true;
+							//needToTemporize=true;
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
@@ -2244,7 +2244,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=true;
+							//needToTemporize=true;
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
@@ -2315,7 +2315,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
-							needToTemporize=true;
+							//needToTemporize=true;
 						}
 					break;
 					case 'LIGHT_SET_COLOR_TEMP' :
@@ -2323,7 +2323,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
-							needToTemporize=true;
+							//needToTemporize=true;
 						}
 					break;
 					case 'ALARM_RELEASED' :
