@@ -3,29 +3,29 @@
 === Homebridge
 
 ==== v1.3
-    * Plugin séparé de mobile.
-    * Récupération de la configuration du plugin mobile s'il est installé.
-    * Meilleure réparation et installation plus poussée pour éviter des problèmes divers
-    * Type "Info/Générique" supporté pour les infos Jeedom de type Numerique, Binaire, Autre dans l'application Eve uniquement (pas encore disponnible dans "Maison")
+    * Plugin séparé du plugin App Mobile.
+    * Récupération de la configuration du plugin App Mobile s'il est installé.
+    * Meilleure réparation et installation plus poussée pour éviter des problèmes divers.
+    * Type "Info/Générique" supporté pour les infos Jeedom de type Numérique, Binaire, Autre dans l'application Eve uniquement (pas encore disponnible dans "Maison").
 [IMPORTANT]
-ne pas modifier ce type dans Jeedom pendant que homebridge fonctionne
-    * Les types génériques "Info/Choc", "Info/Vent (direction)", "Info/Vent (vitesse)", "Info/Pluie (mm/h)", "Info/Pluie (accumulation)", "Info/Pression", "Info/Son (dB)" sont gérés comme des "Info/Génériques" et affichés dans Eve.
+ne pas modifier ce type dans Jeedom pendant que Homebridge fonctionne
+    * Les types génériques "Info/Choc", "Info/Vent (direction)", "Info/Vent (vitesse)", "Info/Pluie (mm/h)", "Info/Pluie (accumulation)", "Info/Pression", "Info/Son (dB)" sont gérés comme des "Info/Générique" et affichés dans Eve.
     * Lumières : Fonctionnement est corrigé pour certains plugins, Phillips Hue fonctionne, Lifx aussi, Z-Wave aussi, Ikea à venir, XiaomiHome (Yeelight) à venir. Support de la température de couleur.
 [TIP]
 Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
-    * Alarme : les modes sont liable aux modes imposés d'HomeKit : Absent, Nuit, Présent, Désactivé. Fonctionne en consultation ET action.
-    * Thermostat : (Fonctionne mieux dans Eve) : Température de consigne fonctionne, les modes peuvent être liés aux modes imposés d'HomeKit : Chauf., Clim.. L'asservissement se faisant dans Jeedom, le mode auto ne sert à rien dans Homekit. Le statut est dans un champ générique (visible dans Eve). (cette façon de faire permet de lier les modes et d'avoir une fonctionnalité supplémentaire que de vous montrer que votre chauffage chauffe simplement). Le verrouillage apparait aussi dans Eve.
-    * Nouveau design du plugin, simplification, plus besoin de choisir les plugins qui seront envoyés à homebridge, le choix est maintenant par equipement.
-    * Fenêtre "DebugInfo" (en niveau de log "info" ou "debug") pour donner des éléments importants de votre configuration en cas de demande d'aide sur le forum (à la demande)
-    * Périphériques invisibles ajoutés à homebridge, tant que "Envoyer dans homebridge" est coché.
-    * Temporisation des Slider des lumières et des volets et volumes, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elle ne le sont que si le slider dans Maison ne bouge plus depuis 500ms
-    * Type Générique officiel Sabotage supporté (binaire)
+    * Alarme : les modes sont liables aux modes imposés d'HomeKit : Absent, Nuit, Présent, Désactivé. Fonctionne en consultation ET action.
+    * Thermostat : (Fonctionne mieux dans Eve) : Température de consigne fonctionne, les modes peuvent être liés aux modes imposés d'HomeKit : Chauf., Clim.. L'asservissement se faisant dans Jeedom, le mode auto ne sert à rien dans HomeKit. Le statut est dans un champ générique (visible dans Eve) (cette façon de faire permet de lier les modes et d'avoir une fonctionnalité supplémentaire au lieu  de simplement vous montrer que votre chauffage chauffe). Le verrouillage apparait aussi dans Eve.
+    * Nouveau design du plugin, simplification, plus besoin de choisir les plugins qui seront envoyés à Homebridge, le choix est maintenant par équipement.
+    * Fenêtre "DebugInfo" (en niveau de log "info" ou "debug") pour donner des éléments importants de votre configuration en cas de demande d'aide sur le forum (à la demande).
+    * Périphériques invisibles ajoutés à Homebridge, tant que "Envoyer dans Homebridge" est coché.
+    * Temporisation des Slider des lumières et des volets et volumes, sinon toutes les valeurs sont envoyées à Jeedom, maintenant elles ne le sont que si le slider dans Maison ne bouge plus depuis 500ms.
+    * Type Générique officiel Sabotage supporté (binaire).
     * Possibilité de personnaliser les états des Portes de Garage (Ouvert (255), En Ouverture (254), Stopé (253), En Fermeture (252), Fermé (0)) avec d'autres valeurs.
-    * Les types spécifiques à Homebridge : j'ai maintenant la possibilité de créer des types spécifiques pour homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais complètent ceux-ci. Il faut néanmoins les définir manuellement dans le plugin. (les types génériques restent utilisés principalement, ces types sont un ajout pour les types génériques qui n'existent pas)
-    * Nouveaux types spécifiques à homebridge : 
-      ** Status Defectueux (binaire : 0:non/ 1:oui -> peut-être mappé à un binaire représentant par exemple un lien mort chez z-wave) 
-      ** Status Actif (binaire : 0:non/ 1:oui -> peut-etre mappé au status "online" d'une xiaomi yeelight par exemple)
-      ** Haut-parleurs, il devrait fonctionner automatiquement avec le plugin sonos par exemple (à tester), les types sont : 
+    * Les types spécifiques à Homebridge : j'ai maintenant la possibilité de créer des types spécifiques pour Homebridge, ceux-ci ne font pas partie du core (comme les types génériques) mais les complètent. Il faut néanmoins les définir manuellement dans le plugin (les types génériques restent utilisés principalement, ces types sont un ajout pour les types génériques qui n'existent pas).
+    * Nouveaux types spécifiques à Homebridge : 
+      ** Status Defectueux (binaire : 0:non/ 1:oui -> peut-être mappé à un binaire représentant par exemple un lien mort chez Z-Wave) .
+      ** Status Actif (binaire : 0:non/ 1:oui -> peut-etre mappé au status "online" d'une Xiaomi Yeelight par exemple).
+      ** Haut-parleurs, il devrait fonctionner automatiquement avec le plugin Sonos par exemple (à tester), les types sont : 
          *** Info/Haut-parleur Mute (binaire)
          *** Info/Haut-parleur Volume (pourcentage)
          *** Action/Haut-parleur Mute
@@ -33,13 +33,13 @@ Si vous aviez un pont Philips Hue v1, vous avez maintenant accès à HomeKit :)
          *** Action/Haut-parleur Toggle Mute (soit Toggle soit Mute/Unmute, les deux choix sont possibles séparément)
          *** Action/Haut-parleur Volume (typiquement un slider)
 [IMPORTANT]
-Info/Haut-parleur Mute est obligatoire, c'est étrange mais c'est une obligation coté Homekit
+Info/Haut-parleur Mute est obligatoire, c'est étrange mais c'est une obligation coté HomeKit.
 
 ==== v1.2.1
     * Bugfix : capteurs Fenêtres
     * Bugfix : volets Somfy
-    * Bugfix : Consommation Electrique qui bug sur composants zwave
-    * Bugfix : En chargement pour perif avec batterie
+    * Bugfix : Consommation Electrique qui bug sur composants Z-Wave
+    * Bugfix : En chargement pour périf avec batterie
 
 ==== v1.2.0
     * Realease Stable
@@ -50,15 +50,15 @@ Info/Haut-parleur Mute est obligatoire, c'est étrange mais c'est une obligation
     * Update Homebridge & HAP-NodeJS
     * Bugfix : Temperature isNaN -> 0
     * pré-support Sabotage
-    * Bugfix : Interdire une valeur Null ou Undefined d'être envoyée à homekit
+    * Bugfix : Interdire une valeur Null ou Undefined d'être envoyée à HomeKit
     
 ==== v1.1.2
 
-    * Support basique Alarme : besoin d'une config coté plugin pour mapper les modes NUIT, ABSENT, PRESENT avec des ALARM_SET_MODE jeedom
+    * Support basique Alarme : besoin d'une config coté plugin pour mapper les modes NUIT, ABSENT, PRESENT avec des ALARM_SET_MODE Jeedom
     
 ==== v1.1.1 
     * Bugfix : Restauration des valeurs en cache au redémarrage
-    * Bugfix : Bornage des valeurs du detecteur de lumière
+    * Bugfix : Bornage des valeurs du détecteur de lumière
     
 ==== v1.1.0 
 
@@ -109,33 +109,33 @@ Info/Haut-parleur Mute est obligatoire, c'est étrange mais c'est une obligation
 
 ==== v1.0.18
 
-    * Combiné les types OPENING et OPENING_WINDOW car c'est un même type dans homebridge.
-    * Ajout du Model (nom du type de l'eqLogic) et du Serial Number (id de l'objet + id logique) dans homebridge.
+    * Combiné les types OPENING et OPENING_WINDOW car c'est un même type dans Homebridge.
+    * Ajout du Model (nom du type de l'eqLogic) et du Serial Number (id de l'objet + id logique) dans Homebridge.
 
 ==== v1.0.17
 
-    * Prise en charge du niveau de debug du plugin mobile (il faut sauver le niveau et relancer le demon pour prise en charge)
+    * Prise en charge du niveau de debug du plugin App Mobile (il faut sauver le niveau et relancer le demon pour prise en charge)
     * Simplification du code (retiré des choses inutiles comme la création d'un serveur http)
 
 ==== v1.0.16
 
     * activation d'un mode debug dans la plateforme, il sera lié au status du plugin.
-    * Françisation des messages du log, plus de verbosité, plus de clareté et de détails pour encore mieux vous aider en cas de problème.
-    * Modification des paramètres de composition des UUID, uniquement l'id jeedom et le nom du périphérique (la pièce jeedom entrait en considération).
+    * Francisation des messages du log, plus de verbosité, plus de clareté et de détails pour encore mieux vous aider en cas de problème.
+    * Modification des paramètres de composition des UUID, uniquement l'id Jeedom et le nom du périphérique (la pièce Jeedom entrait en considération).
 [IMPORTANT]
-Cela signifie que à l'installation de cette version, vos périphériques dans Maison vont disparaitre pour réapparaitre dans la pièce par défaut (et casser vos scènes et automations).
+Cela signifie qu'à l'installation de cette version, vos périphériques dans Maison vont disparaitre pour réapparaitre dans la pièce par défaut (et casser vos scènes et automations).
 
-        ** Point positif : vous pouvez maintenant changer de pièce dans jeedom les périphériques sans les perdre dans Maison. Malheureusement, ils ne changeront pas dans Maison (non-implémenté dans homebridge).
-        ** j'ai gardé le nom du périphérique pour l'instant dans l'identifiant car le renommage d'un périphérique dans jeedom casserait tout dans Maison (pour l'instant) de toute façon.
+        ** Point positif : vous pouvez maintenant changer de pièce dans Jeedom les périphériques sans les perdre dans Maison. Malheureusement, ils ne changeront pas dans Maison (non-implémenté dans Homebridge).
+        ** j'ai gardé le nom du périphérique pour l'instant dans l'identifiant car le renommage d'un périphérique dans Jeedom casserait tout dans Maison (pour l'instant) de toute façon.
     * Modification du délais d'interrogation-longue pour optimiser les systèmes avec moins de changements d'états.
-    * Modification du modèle de fonctionnement. Maintenant on prend un état des périphérique au démarrage du plugin et on le met à jour en temps réèl à chaque changement dans jeedom ou Maison. Moins de requêtes sur l'API jeedom, plus petits temps de réponse dans Maison.
-    * Ajout d'un ramasse miettes à la fin de l'ajout des périphériques présent dans jeedom à homebridge, tout ce qui n'a pas été ajouté/modifié est supprimé d'homebridge (si vous avez rendu invisible un périf ou supprimé dans jeedom par exemple).
-    * Suppression du bouton Regénérer le fichier de configuration : plus besoin, lorsqu'on sauvegarde la configuration, on regénère le fichier automatiquement et on relance le Daemon.
+    * Modification du modèle de fonctionnement. Maintenant on prend un état des périphérique au démarrage du plugin et on le met à jour en temps réel à chaque changement dans Jeedom ou Maison. Moins de requêtes sur l'API Jeedom, plus petits temps de réponse dans Maison.
+    * Ajout d'un ramasse miettes à la fin de l'ajout des périphériques présent dans Jeedom à Homebridge, tout ce qui n'a pas été ajouté/modifié est supprimé d'Homebridge (si vous avez rendu invisible un périf ou supprimé dans Jeedom par exemple).
+    * Suppression du bouton Regénérer le fichier de configuration : plus besoin, lorsqu'on sauvegarde la configuration, on regénère le fichier automatiquement et on relance le daemon.
     * Suppression du bouton Effacer le cache : plus besoin, on gère la suppression individuelle des périphériques. 
 [TIP]
-Si vous avez un problème avec un périphérique malgré tout : décochez "Envoyer à HomeBridge" | relancez le daemon | décochez "Envoyer à HomeBridge" | relancez le daemon : il sera recréé tout proprement (et dans la pièce par défaut de Maison).
+Si vous avez un problème avec un périphérique malgré tout : décochez "Envoyer à Homebridge" | relancez le daemon | décochez "Envoyer à Homebridge" | relancez le daemon : il sera recréé tout proprement (et dans la pièce par défaut de Maison).
 
-    * Ajout d'avertissements et de messages d'attention si on s'approche du nombre fatidique de 100 accessoires envoyés dans homebridge (HomeKit ne supporte pas plus de 100 accessoires).
+    * Ajout d'avertissements et de messages d'attention si on s'approche du nombre fatidique de 100 accessoires envoyés dans Homebridge (HomeKit ne supporte pas plus de 100 accessoires).
     * Au démarrage du daemon, vérification si avahi-daemon et dbus sont bien lancés, sinon, les démarrer.
     * A l'install des dépendances, passer avahi-daemon et dbus à enabled si pas le cas.
     * Corrections diverses, simplifications et optimisations.
