@@ -2155,7 +2155,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			id_OFF = 	service.thermo.off && service.thermo.off.mode_id || undefined;
 		}		
 		// /THERMOSTAT
-		var needToTemporize=false;
+		var needToTemporize=0;
 		var cmdFound;
 		for (const cmd of cmdList) {
 			if(!found) {
@@ -2186,7 +2186,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							value =	Math.round(value * 99/100);							
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=true;
+							needToTemporize=500;
 						}
 					break;					
 					case 'GB_OPEN' :
@@ -2236,7 +2236,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							}		
 							found = true;
 							cmdFound=cmd.generic_type;
-							//needToTemporize=true;
+							//needToTemporize=500;
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
@@ -2244,7 +2244,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							found = true;
 							cmdFound=cmd.generic_type;
-							//needToTemporize=true;
+							//needToTemporize=500;
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
@@ -2315,7 +2315,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
-							//needToTemporize=true;
+							//needToTemporize=500;
 						}
 					break;
 					case 'LIGHT_SET_COLOR_TEMP' :
@@ -2323,7 +2323,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
-							//needToTemporize=true;
+							//needToTemporize=500;
 						}
 					break;
 					case 'ALARM_RELEASED' :
@@ -2389,7 +2389,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			}
 		}
 		
-		if(!needToTemporize) {
+		if(needToTemporize===0) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
 			}).catch(function(err, response) {
@@ -2405,7 +2405,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 					console.error(err.stack);
 				});
-			},500);
+			},needToTemporize);
 		}
 	}
 	catch(e){
