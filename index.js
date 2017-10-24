@@ -2244,7 +2244,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							found = true;
 							cmdFound=cmd.generic_type;
-							//needToTemporize=500;
+							needToTemporize=800;
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
@@ -2323,7 +2323,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
-							//needToTemporize=500;
+							needToTemporize=800;
 						}
 					break;
 					case 'ALARM_RELEASED' :
