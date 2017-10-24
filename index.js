@@ -2236,7 +2236,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							}		
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=300;
+							needToTemporize=800;
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
