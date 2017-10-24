@@ -1533,21 +1533,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				}
 			break;
 			// Generics
-			case Characteristic.Brightness.UUID :
-				returnValue = 0;
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType != 'binary' && cmd.id == service.cmd_id) {
-						let maxJeedom = parseInt(service.maxBright) || 100;
-						returnValue = parseInt(cmd.currentValue);
-						if(maxJeedom) {
-							returnValue = Math.round((returnValue / maxJeedom)*100);
-						}
-						if (DEV_DEBUG) that.log('debug','---------update Bright(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
-						//that.log('debug','------------Brightness jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
-						break;
-					}
-				}
-			break;
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == service.cmd_id) {
@@ -1674,6 +1659,21 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
+			case Characteristic.Brightness.UUID :
+				returnValue = 0;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType != 'binary' && cmd.id == service.cmd_id) {
+						let maxJeedom = parseInt(service.maxBright) || 100;
+						returnValue = parseInt(cmd.currentValue);
+						if(maxJeedom) {
+							returnValue = Math.round((returnValue / maxJeedom)*100);
+						}
+						if (DEV_DEBUG) that.log('debug','---------update Bright(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
+						//that.log('debug','------------Brightness jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
+						break;
+					}
+				}
+			break;			
 			// Alarm
 			case Characteristic.SecuritySystemTargetState.UUID :
 				for (const cmd of cmdList) {
@@ -2236,7 +2236,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							}		
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=50;
+							needToTemporize=300;
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
