@@ -70,6 +70,7 @@ function JeedomPlatform(logger, config, api) {
 		this.pollingUpdateRunning = false;
 		this.pollingID = null;
 		this.temporizator = null;
+		this.settingLight = false;
 		
 		this.pollerPeriod = config.pollerperiod;
 		if ( typeof this.pollerPeriod == 'string')
@@ -2226,6 +2227,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'LIGHT_SLIDER' :
 						if(action == 'setValue' && service.actions.slider && cmd.id == service.actions.slider.id) {
+							that.settingLight=true;
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.on) {
 								this.log('info','???????? should never go here ON');
@@ -2392,6 +2394,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		if(needToTemporize===0) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
+				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
 			}).catch(function(err, response) {
 				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 				console.error(err.stack);
@@ -2401,6 +2404,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			that.temporizator = setTimeout(function(){
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 					that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+					if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
 				}).catch(function(err, response) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 					console.error(err.stack);
@@ -2487,9 +2491,17 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		let infoFound = findMyID(subService.infos,update.option.cmd_id);
 		let statusFound = findMyID(subService.statusArr,update.option.cmd_id);
 		if(	infoFound != -1 || statusFound != -1) {
-				let returnValue = sanitizeValue(that.getAccessoryValue(subCharact, subService),subCharact);
+			let returnValue = sanitizeValue(that.getAccessoryValue(subCharact, subService),subCharact);
+			if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
+				if(!that.settingLight) { // and it's not currently being modified
+					that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+					subCharact.setValue(returnValue, undefined, 'fromJeedom');
+				}
+			}
+			else {
 				that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 				subCharact.setValue(returnValue, undefined, 'fromJeedom');
+			}
 		}
 	}
 };
