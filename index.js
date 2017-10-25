@@ -1464,6 +1464,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				this.syncColorCharacteristics(rgb, service);
 			break;
 			case Characteristic.Brightness.UUID :
+				this.settingLight=true;
 				let maxJeedom = parseInt(service.maxBright) || 100;
 				value = parseInt(value);
 				let oldValue=value;
@@ -2227,7 +2228,6 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'LIGHT_SLIDER' :
 						if(action == 'setValue' && service.actions.slider && cmd.id == service.actions.slider.id) {
-							that.settingLight=true;
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.on) {
 								this.log('info','???????? should never go here ON');
