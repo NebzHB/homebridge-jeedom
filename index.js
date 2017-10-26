@@ -1465,7 +1465,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.Brightness.UUID :
 				this.settingLight=true;
-				clearTimeout(that.temporizator);
+				clearTimeout(this.temporizator);
 				let maxJeedom = parseInt(service.maxBright) || 100;
 				value = parseInt(value);
 				let oldValue=value;
