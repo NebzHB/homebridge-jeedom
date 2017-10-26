@@ -2919,11 +2919,11 @@ function toHex(n) {
 function HSVtoRGB(hue, saturation, value) {
 	var h = hue / 360.0;
 	var s = saturation / 100.0;
-	var v = 1;
+	var v = 1.0;
 	var r, g, b, i, f, p, q, t;
 	if (arguments.length === 1) {
 		s = h.s;
-		v = 1;
+		v = 1.0;
 		h = h.h;
 	}
 	i = Math.floor(h * 6);
