@@ -1465,7 +1465,6 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.Brightness.UUID :
 				this.settingLight=true;
-				clearTimeout(this.temporizator);
 				let maxJeedom = parseInt(service.maxBright) || 100;
 				value = parseInt(value);
 				let oldValue=value;
@@ -2239,7 +2238,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							}		
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=800;
+							needToTemporize=900;
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
@@ -2247,7 +2246,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=800;
+							needToTemporize=900;
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
@@ -2326,7 +2325,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
-							needToTemporize=800;
+							needToTemporize=900;
 						}
 					break;
 					case 'ALARM_RELEASED' :
@@ -2395,7 +2394,6 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		if(needToTemporize===0) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
-				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
 			}).catch(function(err, response) {
 				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 				console.error(err.stack);
@@ -2403,9 +2401,9 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		} else {
 			clearTimeout(that.temporizator);
 			that.temporizator = setTimeout(function(){
+				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
-					that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
-					if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
+					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 				}).catch(function(err, response) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
 					console.error(err.stack);
