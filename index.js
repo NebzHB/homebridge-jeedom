@@ -2489,12 +2489,14 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		// that.log('debug',"update :",update.option.cmd_id,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
 		let infoFound = findMyID(subService.infos,update.option.cmd_id);
 		let statusFound = findMyID(subService.statusArr,update.option.cmd_id);
-		if(	infoFound != -1 || statusFound != -1) {
+		if(infoFound != -1 || statusFound != -1) {
 			let returnValue = sanitizeValue(that.getAccessoryValue(subCharact, subService),subCharact);
 			if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
 				if(!that.settingLight) { // and it's not currently being modified
 					that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 					subCharact.setValue(returnValue, undefined, 'fromJeedom');
+				} else {
+					if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 				}
 			}
 			else {
