@@ -2526,7 +2526,6 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 	service.RGBValue.red = rgb.r;
 	service.RGBValue.green = rgb.g;
 	service.RGBValue.blue = rgb.b;
-	console.log(h,s,v,rgb);
 	return rgb;
 };
 
