@@ -1,6 +1,7 @@
 {
   "name": "homebridge-jeedom",
-  "version": "v1.2.1",
+  "version": "v1.3.0",
+  "cust_serial": "0027",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "scripts": {
@@ -9,7 +10,7 @@
   },
   "engines": {
     "node": ">4.0.0",
-    "homebridge": ">=0.2.0"
+    "homebridge": ">=0.4.18"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,14 @@
   "dependencies": {
     "request": "^2.81.0"
   },
-  "author": "Thomas MARTINEZ",
+  "author": "Benjamin RENARD <nebz@nebz.be>",
+  "contributors": [
+      "Nechry",
+      "bphoque",
+      "claude69",
+      "mamatdv",
+      "rocket13011"
+  ],
   "license": "GPL2",
   "bugs": {
     "url": "https://github.com/jeedom/homebridge-jeedom/issues"
