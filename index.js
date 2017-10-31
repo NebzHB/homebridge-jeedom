@@ -1908,16 +1908,26 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.LockCurrentState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
-						if (DEV_DEBUG) that.log('debug','LockCurrentState : ',cmd.currentValue);
-						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+						if(cmd.eqType == 'nuki') {
+							if (DEV_DEBUG) that.log('debug','LockCurrentState (nuki) : ',cmd.currentValue);
+							returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+						} else {
+							if (DEV_DEBUG) that.log('debug','LockCurrentState : ',cmd.currentValue);
+							returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+						}
 					}
 				}
 			break;
 			case Characteristic.LockTargetState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
-						if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue);
-						returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+						if(cmd.eqType == 'nuki') {
+							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue);
+							returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+						} else {
+							if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue);
+							returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+						}
 					}
 				}
 			break;
