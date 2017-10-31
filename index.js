@@ -512,7 +512,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.presence=cmd.presence;
-					Serv.invertBinary=cmd.presence.display.invertBinary;
+					Serv.invertBinary=cmd.presence.display && cmd.presence.display.invertBinary || undefined;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 
