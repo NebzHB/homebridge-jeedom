@@ -729,7 +729,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.smoke=cmd.smoke;
-					Serv.invertBinary=cmd.smoke.display.invertBinary;
+					Serv.invertBinary=cmd.smoke.display && cmd.smoke.display.invertBinary || undefined;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -753,7 +753,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.flood=cmd.flood;
-					Serv.invertBinary=cmd.flood.display.invertBinary;
+					Serv.invertBinary=cmd.flood.display && cmd.flood.display.invertBinary || undefined;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -777,7 +777,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.opening=cmd.opening;
-					Serv.invertBinary=cmd.opening.display.invertBinary;
+					Serv.invertBinary=cmd.opening.display && cmd.opening.display.invertBinary || undefined;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
