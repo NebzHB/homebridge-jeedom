@@ -325,11 +325,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(Serv.infos.color_temp) {
 						LightType += "_Temp";
 						var props = {};
-						if(Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.minValue && parseInt(Serv.actions.setcolor_temp.configuration.minValue))
+						if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.minValue && parseInt(Serv.actions.setcolor_temp.configuration.minValue))
 							props.minValue = parseInt(Serv.actions.setcolor_temp.configuration.minValue);
 						else
 							props.minValue = 0; // if not set in Jeedom it's 0
-						if(Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.maxValue && parseInt(Serv.actions.setcolor_temp.configuration.maxValue))
+						if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.maxValue && parseInt(Serv.actions.setcolor_temp.configuration.maxValue))
 							props.maxValue = parseInt(Serv.actions.setcolor_temp.configuration.maxValue);
 						else
 							props.maxValue = 100; // if not set in Jeedom it's 100
