@@ -512,7 +512,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.presence=cmd.presence;
-					Serv.invertBinary=cmd.presence.display && cmd.presence.display.invertBinary || undefined;
+					if(cmd.presence.display && cmd.presence.display.invertBinary != undefined)
+						Serv.invertBinary=cmd.presence.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 
@@ -729,7 +730,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.smoke=cmd.smoke;
-					Serv.invertBinary=cmd.smoke.display && cmd.smoke.display.invertBinary || undefined;
+					if(cmd.smoke.display && cmd.smoke.display.invertBinary != undefined)
+						Serv.invertBinary=cmd.smoke.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -753,7 +755,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.flood=cmd.flood;
-					Serv.invertBinary=cmd.flood.display && cmd.flood.display.invertBinary || undefined;
+					if(cmd.flood.display && cmd.flood.display.invertBinary != undefined)
+						Serv.invertBinary=cmd.flood.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -777,7 +780,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.opening=cmd.opening;
-					Serv.invertBinary=cmd.opening.display && cmd.opening.display.invertBinary || undefined;
+					if(cmd.opening.display && cmd.opening.display.invertBinary != undefined)
+						Serv.invertBinary=cmd.opening.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -1689,9 +1693,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
 						
-						mode_PRESENT = 	service.alarm.present && service.alarm.present.mode_label || undefined;
-						mode_AWAY = 	service.alarm.away && service.alarm.away.mode_label || undefined;
-						mode_NIGHT = 	service.alarm.night && service.alarm.night.mode_label || undefined;
+						if(service.alarm.present && service.alarm.present.mode_label != undefined)
+							mode_PRESENT=service.alarm.present.mode_label;
+						if(service.alarm.away && service.alarm.away.mode_label != undefined)
+							mode_AWAY=service.alarm.away.mode_label;
+						if(service.alarm.night && service.alarm.night.mode_label != undefined)
+							mode_NIGHT=service.alarm.night.mode_label;
 						
 						switch (currentValue) {
 							case undefined:
@@ -1735,9 +1742,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
 						
-						mode_PRESENT = 	service.alarm.present && service.alarm.present.mode_label || undefined;
-						mode_AWAY = 	service.alarm.away && service.alarm.away.mode_label || undefined;
-						mode_NIGHT = 	service.alarm.night && service.alarm.night.mode_label || undefined;
+						if(service.alarm.present && service.alarm.present.mode_label != undefined)
+							mode_PRESENT=service.alarm.present.mode_label;
+						if(service.alarm.away && service.alarm.away.mode_label != undefined)
+							mode_AWAY=service.alarm.away.mode_label;
+						if(service.alarm.night && service.alarm.night.mode_label != undefined)
+							mode_NIGHT=service.alarm.night.mode_label;
 						
 						switch (currentValue) {
 							case undefined:
@@ -1769,8 +1779,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
 						
-						mode_CLIM = service.thermo.clim && service.thermo.clim.mode_label || undefined;
-						mode_CHAUF = service.thermo.chauf && service.thermo.chauf.mode_label || undefined;
+						if(service.thermo.clim && service.thermo.clim.mode_label != undefined)
+							mode_CLIM=service.thermo.clim.mode_label;
+						if(service.thermo.chauf && service.thermo.chauf.mode_label != undefined)
+							mode_CHAUF=service.thermo.chauf.mode_label;
 						
 						that.log('debug','CurrentThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
@@ -1794,8 +1806,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
 						
-						mode_CLIM = service.thermo.clim && service.thermo.clim.mode_label || undefined;
-						mode_CHAUF = service.thermo.chauf && service.thermo.chauf.mode_label || undefined;
+						if(service.thermo.clim && service.thermo.clim.mode_label != undefined)
+							mode_CLIM=service.thermo.clim.mode_label;
+						if(service.thermo.chauf && service.thermo.chauf.mode_label != undefined)
+							mode_CHAUF=service.thermo.chauf.mode_label;
 						
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
@@ -2154,17 +2168,23 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		// ALARM
 		var id_PRESENT,id_AWAY,id_NIGHT;
 		if(action == 'SetAlarmMode') {
-			id_PRESENT = 	service.alarm.present && service.alarm.present.mode_id || undefined;
-			id_AWAY = 	service.alarm.away && service.alarm.away.mode_id || undefined;
-			id_NIGHT = 	service.alarm.night && service.alarm.night.mode_id || undefined;
+			if(service.alarm.present && service.alarm.present.mode_id != undefined)
+				id_PRESENT = service.alarm.present.mode_id;
+			if(service.alarm.away && service.alarm.away.mode_id != undefined)
+				id_AWAY = 	 service.alarm.away.mode_id;
+			if(service.alarm.night && service.alarm.night.mode_id != undefined)
+				id_NIGHT = 	 service.alarm.night.mode_id;
 		}
 		// /ALARM	
 		// THERMOSTAT
 		var id_CHAUF,id_CLIM,id_OFF;
 		if(action == 'TargetHeatingCoolingState') {
-			id_CHAUF = 	service.thermo.chauf && service.thermo.chauf.mode_id || undefined;
-			id_CLIM = 	service.thermo.clim && service.thermo.clim.mode_id || undefined;
-			id_OFF = 	service.thermo.off && service.thermo.off.mode_id || undefined;
+			if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined)
+				id_CHAUF = 	service.thermo.chauf.mode_id;
+			if(service.thermo.clim && service.thermo.clim.mode_id != undefined)
+				id_CLIM = 	service.thermo.clim.mode_id;
+			if(service.thermo.off && service.thermo.off.mode_id != undefined)
+				id_OFF = 	service.thermo.off.mode_id;
 		}		
 		// /THERMOSTAT
 		var needToTemporize=0;
