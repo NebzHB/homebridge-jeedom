@@ -69,7 +69,7 @@ function JeedomPlatform(logger, config, api) {
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
 		this.pollingID = null;
-		this.temporizator = null;
+		//this.temporizator = null;
 		this.settingLight = false;
 		
 		this.pollerPeriod = config.pollerperiod;
@@ -2429,8 +2429,8 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				console.error(err.stack);
 			});
 		} else {
-			clearTimeout(that.temporizator);
-			that.temporizator = setTimeout(function(){
+			if(service.temporizator) clearTimeout(service.temporizator);
+			service.temporizator = setTimeout(function(){
 				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
