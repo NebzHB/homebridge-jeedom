@@ -519,6 +519,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.presence=cmd.presence;
+					Serv.invertBinary=0;
 					if(cmd.presence.display && cmd.presence.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.presence.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
@@ -737,6 +738,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.smoke=cmd.smoke;
+					Serv.invertBinary=0;
 					if(cmd.smoke.display && cmd.smoke.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.smoke.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
@@ -762,6 +764,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.flood=cmd.flood;
+					Serv.invertBinary=0;
 					if(cmd.flood.display && cmd.flood.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.flood.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
@@ -787,6 +790,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.opening=cmd.opening;
+					Serv.invertBinary=0;
 					if(cmd.opening.display && cmd.opening.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.opening.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
