@@ -363,6 +363,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.flap) {
 			eqLogic.services.flap.forEach(function(cmd) {
 				if (cmd.state) {
+					let maxValue;
 					HBservice = {
 						controlService : new Service.WindowCovering(eqLogic.name),
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
@@ -390,10 +391,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if (Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down'); 
 					if (!Serv.actions.up && Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
 					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Slider');
-					
+					if(Serv.actions.slider) {
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
+							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
+						else
+							maxValue = 100; // if not set in Jeedom it's 100
+					}
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
+					Serv.maxValue = maxValue;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
@@ -512,6 +519,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.presence=cmd.presence;
+					Serv.invertBinary=0;
 					if(cmd.presence.display && cmd.presence.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.presence.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
@@ -730,6 +738,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.smoke=cmd.smoke;
+					Serv.invertBinary=0;
 					if(cmd.smoke.display && cmd.smoke.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.smoke.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
@@ -755,6 +764,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.flood=cmd.flood;
+					Serv.invertBinary=0;
 					if(cmd.flood.display && cmd.flood.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.flood.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
@@ -780,6 +790,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.opening=cmd.opening;
+					Serv.invertBinary=0;
 					if(cmd.opening.display && cmd.opening.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.opening.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
@@ -1446,6 +1457,13 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					}
 					else if (service.actions.slider) {
 						action = 'setValue';
+						let maxJeedom = parseInt(service.maxValue) || 100;
+						value = parseInt(value);
+						let oldValue = value;
+						if(maxJeedom) {
+							value = Math.round((value / 100)*maxJeedom);
+						}
+						this.log('debug','---------set Blinds Value:',oldValue,'% soit',value,' / ',maxJeedom);
 					}
 
 					this.command(action, value, service);
@@ -1909,8 +1927,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TargetPosition.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						let maxJeedom = parseInt(service.maxValue) || 100;
+						returnValue = parseInt(cmd.currentValue);
+						if(maxJeedom) {
+							returnValue = Math.round((returnValue / maxJeedom)*100);
+						}
 						returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (flaps need yearly tunning)
+						that.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
 						break;
 					}
 				}
