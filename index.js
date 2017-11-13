@@ -853,7 +853,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					HBservice = {
 						controlService : new Service.GarageDoorOpener(eqLogic.name),
-						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]//, Characteristic.ObstructionDetected]
+						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]
 					};
 					let Serv = HBservice.controlService;
 					Serv.actions={};
@@ -874,8 +874,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							}
 						}
 					});
-					if(!Serv.actions.toggle) that.log('warn','Pas de type générique "Action/Portail ou garage bouton toggle" ou reférence à l\'état non définie sur la commande Toggle');
-					
+					if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Portail ou garage bouton d\'ouverture" ou reférence à l\'état non définie sur la commande "Action/Portail ou garage bouton d\'ouverture"');	
+					if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture" ou reférence à l\'état non définie sur la commande "Action/Portail ou garage bouton de fermeture"');	
+					if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture" ou reférence à l\'état non définie sur ces commandes');	
+									
 					if(eqLogic.customValues) {
 						Serv.customValues = eqLogic.customValues;
 					}
@@ -1426,7 +1428,13 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				this.command('TargetHeatingCoolingState', value, service);
 			break;
 			case Characteristic.TargetDoorState.UUID :
-				this.command('GBtoggle', 0, service);
+				if(service.actions.toggle) {
+					this.command('GBtoggle', 0, service);
+				} else if(service.actions.on && parseInt(value) === 0){
+					this.command('GBopen', 0, service);
+				} else if(service.actions.off && parseInt(value) === 1){
+					this.command('GBclose', 0, service);
+				}
 			break;
 			case Characteristic.LockTargetState.UUID :
 				action = value == Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
