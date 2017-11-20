@@ -1021,6 +1021,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.setpoint=cmd.setpoint;
 					Serv.thermo={};
+					
 					eqServicesCopy.thermostat.forEach(function(cmd2) {
 						if (cmd2.state_name) {
 							Serv.infos.state_name=cmd2.state_name;
@@ -1042,8 +1043,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.set_lock=cmd2.set_lock;
 						} else if (cmd2.set_unlock) {
 							Serv.actions.set_unlock=cmd2.set_unlock;
+						} else if (cmd2.set_setpoint) {
+							Serv.actions.set_setpoint=cmd2.set_setpoint;
 						}
 					});
+
+					var props = {};
+					if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.minValue && parseInt(Serv.actions.set_setpoint.configuration.minValue))
+						props.minValue = parseInt(Serv.actions.set_setpoint.configuration.minValue);
+					if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.maxValue && parseInt(Serv.actions.set_setpoint.configuration.maxValue))
+						props.maxValue = parseInt(Serv.actions.set_setpoint.configuration.maxValue);
+					if(props.minValue && props.maxValue)
+						Serv.getCharacteristic(Characteristic.TargetTemperature).setProps(props);	
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
@@ -2540,6 +2551,11 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							} else if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM !== undefined) {
 								cmdId = id_CLIM;
 								that.log('debug',"set CLIM");
+								found = true;
+							} else if(value == Characteristic.TargetHeatingCoolingState.AUTO) {
+								cmdId = service.actions.set_setpoint.id;
+								value = service.infos.setpoint.currentValue;
+								that.log('debug','set AUTO',value);
 								found = true;
 							}
 						}
