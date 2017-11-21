@@ -1177,7 +1177,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		else
 		{
-			that.log('│ Accessoire sans Type Générique');
+			that.log('│ Accessoire sans Type Générique d\'Etat');
 			createdAccessory = that.createAccessory([], eqLogic); // create a cached lookalike object for unregistering it
 			that.delAccessory(createdAccessory);
 		}
