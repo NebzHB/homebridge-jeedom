@@ -618,11 +618,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(unite) props.unit=unite;
 						if(cmd.state.configuration) {
 							if(NumericGenericType=='float'){
-								if(cmd.state.configuration.maxValue !== null && cmd.state.configuration.maxValue !== undefined && cmd.state.configuration.maxValue !== "") props.maxValue = parseFloat(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue !== null && cmd.state.configuration.minValue !== undefined && cmd.state.configuration.minValue !== "") props.minValue = parseFloat(cmd.state.configuration.minValue);
+								if(cmd.state.configuration.maxValue !== null && cmd.state.configuration.maxValue !== undefined && cmd.state.configuration.maxValue != "") props.maxValue = parseFloat(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue !== null && cmd.state.configuration.minValue !== undefined && cmd.state.configuration.minValue != "") props.minValue = parseFloat(cmd.state.configuration.minValue);
 							} else if (NumericGenericType=='int'){
-								if(cmd.state.configuration.maxValue !== null && cmd.state.configuration.maxValue !== undefined && cmd.state.configuration.maxValue !== "") props.maxValue = parseInt(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue !== null && cmd.state.configuration.minValue !== undefined && cmd.state.configuration.minValue !== "") props.minValue = parseInt(cmd.state.configuration.minValue);
+								if(cmd.state.configuration.maxValue !== null && cmd.state.configuration.maxValue !== undefined && cmd.state.configuration.maxValue != "") props.maxValue = parseInt(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue !== null && cmd.state.configuration.minValue !== undefined && cmd.state.configuration.minValue != "") props.minValue = parseInt(cmd.state.configuration.minValue);
 							}
 						}
 						if(Object.keys(props).length !== 0) {
@@ -1468,7 +1468,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.On.UUID :
 			case Characteristic.Mute.UUID :
 			case Characteristic.LockPhysicalControls.UUID :
-				this.command(parseInt(value) == 0 ? 'turnOff' : 'turnOn', null, service);
+				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 			break;
 			case Characteristic.TargetTemperature.UUID :
 				if (Math.abs(value - characteristic.value) >= 0.5) {
