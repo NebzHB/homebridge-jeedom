@@ -1468,7 +1468,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.On.UUID :
 			case Characteristic.Mute.UUID :
 			case Characteristic.LockPhysicalControls.UUID :
-				this.command(parseInt(value) === 0 ? 'turnOff' : 'turnOn', null, service);
+				this.command(parseInt(value) == 0 ? 'turnOff' : 'turnOn', null, service);
 			break;
 			case Characteristic.TargetTemperature.UUID :
 				if (Math.abs(value - characteristic.value) >= 0.5) {
