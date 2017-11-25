@@ -1602,12 +1602,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.On.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
-						if(parseInt(cmd.currentValue) === 0) returnValue=false;
+						if(cmd.currentValue == 0) returnValue=false;
 						else returnValue=true;
 						break;
 					}
 					if (cmd.generic_type == 'LIGHT_STATE_BOOL' && cmd.id == service.infos.state_bool.id) {
-						if(parseInt(cmd.currentValue) === 0) returnValue=false;
+						if(cmd.currentValue == 0) returnValue=false;
 						else returnValue=true;
 						break;
 					}
@@ -1666,7 +1666,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == service.cmd_id) {
-						returnValue = parseInt(service.invertBinary) === 0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = service.invertBinary == 0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						if(returnValue === false) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						break;
@@ -1806,7 +1806,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					let currentValue = cmd.currentValue;
 					
-					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && parseInt(currentValue) === 0) {
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
 						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
@@ -1850,12 +1850,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					let currentValue = cmd.currentValue;
 					
-					if (cmd.generic_type == 'ALARM_STATE' && parseInt(currentValue) === 1) {
+					if (cmd.generic_type == 'ALARM_STATE' && currentValue == 1) {
 						if (DEV_DEBUG) that.log('debug',"Alarm_State=",currentValue);
 						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 						break;
 					}
-					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && parseInt(currentValue) === 0) {
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
 						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
 						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 						break;
@@ -2122,7 +2122,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY_CHARGING' && cmd.id == service.infos.batteryCharging.id) {
 						returnValue = cmd.currentValue;
-						if(parseInt(returnValue) === 0) returnValue = Characteristic.ChargingState.NOT_CHARGING;
+						if(returnValue == 0) returnValue = Characteristic.ChargingState.NOT_CHARGING;
 						else returnValue = Characteristic.ChargingState.CHARGING;
 						hasFound = true;
 						break;
@@ -2145,7 +2145,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE' && findMyID(service.statusArr,cmd.id) != -1) {
 						let eqLogicSabotageInverted=service.sabotageInverted || 0;
-						returnValue = parseInt(eqLogicSabotageInverted) === 0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = eqLogicSabotageInverted == 0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						//returnValue = cmd.currentValue;
 						if(cmd.currentValue!=="" && returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
 						else returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
@@ -2467,7 +2467,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'ENERGY_OFF' :
-						if((parseInt(value) === 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
+						if((value == 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;		
 							cmdFound=cmd.generic_type;
 							found = true;
