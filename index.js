@@ -2626,7 +2626,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		if (updates.result) {
 			updates.result.map(function(update) {
 				if (update.name == 'cmd::update' && 
-				    update.option.value !== undefined && 
+				    update.option.value != undefined && 
 				    update.option.cmd_id) {
 						that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
 						that.updateSubscribers(update);// Update subscribers
