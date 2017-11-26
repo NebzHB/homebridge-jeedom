@@ -2002,8 +2002,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="CLOSED";
 								break;
 								case customValues.STOPPED :
-									returnValue=Characteristic.TargetDoorState.OPEN; // 0
-									HRreturnValue="OPEN";
+									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
 								break;
 						}
 						if (DEV_DEBUG) that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
