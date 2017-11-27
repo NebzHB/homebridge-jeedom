@@ -147,7 +147,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			devices.map(function(device) {
 				if (//device.isVisible == '1' && 
 					device.isEnable == '1' &&
-				    device.object_id !== null && 
+				    device.object_id != null && 
 				    device.sendToHomebridge != '0') {
 
 					that.AccessoireCreateHomebridge(
@@ -164,7 +164,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					var Messg= '│ Accessoire ';
 					Messg   += device.isVisible == '1' ? 'visible' : 'invisible';
 					Messg   += device.isEnable == '1' ? ', activé' : ', désactivé';
-					Messg   += device.object_id !== null ? '' : ', pas dans une pièce';
+					Messg   += device.object_id != null ? '' : ', pas dans une pièce';
 					Messg   += device.sendToHomebridge != '0' ? '' : ', pas coché pour Homebridge';
 					that.log(Messg);
 
@@ -570,7 +570,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.presence=cmd.presence;
 					Serv.invertBinary=0;
-					if(cmd.presence.display && cmd.presence.display.invertBinary !== undefined)
+					if(cmd.presence.display && cmd.presence.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.presence.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -618,11 +618,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(unite) props.unit=unite;
 						if(cmd.state.configuration) {
 							if(NumericGenericType=='float'){
-								if(cmd.state.configuration.maxValue !== null && cmd.state.configuration.maxValue !== undefined && cmd.state.configuration.maxValue != "") props.maxValue = parseFloat(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue !== null && cmd.state.configuration.minValue !== undefined && cmd.state.configuration.minValue != "") props.minValue = parseFloat(cmd.state.configuration.minValue);
+								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined && cmd.state.configuration.maxValue != "") props.maxValue = parseFloat(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined && cmd.state.configuration.minValue != "") props.minValue = parseFloat(cmd.state.configuration.minValue);
 							} else if (NumericGenericType=='int'){
-								if(cmd.state.configuration.maxValue !== null && cmd.state.configuration.maxValue !== undefined && cmd.state.configuration.maxValue != "") props.maxValue = parseInt(cmd.state.configuration.maxValue);
-								if(cmd.state.configuration.minValue !== null && cmd.state.configuration.minValue !== undefined && cmd.state.configuration.minValue != "") props.minValue = parseInt(cmd.state.configuration.minValue);
+								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined && cmd.state.configuration.maxValue != "") props.maxValue = parseInt(cmd.state.configuration.maxValue);
+								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined && cmd.state.configuration.minValue != "") props.minValue = parseInt(cmd.state.configuration.minValue);
 							}
 						}
 						if(Object.keys(props).length !== 0) {
@@ -789,7 +789,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.smoke=cmd.smoke;
 					Serv.invertBinary=0;
-					if(cmd.smoke.display && cmd.smoke.display.invertBinary !== undefined)
+					if(cmd.smoke.display && cmd.smoke.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.smoke.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -815,7 +815,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.flood=cmd.flood;
 					Serv.invertBinary=0;
-					if(cmd.flood.display && cmd.flood.display.invertBinary !== undefined)
+					if(cmd.flood.display && cmd.flood.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.flood.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -841,7 +841,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.opening=cmd.opening;
 					Serv.invertBinary=0;
-					if(cmd.opening.display && cmd.opening.display.invertBinary !== undefined)
+					if(cmd.opening.display && cmd.opening.display.invertBinary != undefined)
 						Serv.invertBinary=cmd.opening.display.invertBinary;
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -1021,7 +1021,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.setpoint=cmd.setpoint;
 					Serv.thermo={};
-					
 					eqServicesCopy.thermostat.forEach(function(cmd2) {
 						if (cmd2.state_name) {
 							Serv.infos.state_name=cmd2.state_name;
@@ -1170,7 +1169,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			});
 		}
 
-		if (HBservices.length !== 0) {
+		if (HBservices.length != 0) {
 			createdAccessory = that.createAccessory(HBservices, eqLogic);
 			that.addAccessory(createdAccessory);
 			HBservices = [];
@@ -1602,12 +1601,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.On.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
-						if(cmd.currentValue == 0) returnValue=false;
+						if(parseInt(cmd.currentValue) == 0) returnValue=false;
 						else returnValue=true;
 						break;
 					}
 					if (cmd.generic_type == 'LIGHT_STATE_BOOL' && cmd.id == service.infos.state_bool.id) {
-						if(cmd.currentValue == 0) returnValue=false;
+						if(parseInt(cmd.currentValue) == 0) returnValue=false;
 						else returnValue=true;
 						break;
 					}
@@ -1666,7 +1665,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == service.cmd_id) {
-						returnValue = service.invertBinary == 0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						if(returnValue === false) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						break;
@@ -1814,11 +1813,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
 						
-						if(service.alarm.present && service.alarm.present.mode_label !== undefined)
+						if(service.alarm.present && service.alarm.present.mode_label != undefined)
 							mode_PRESENT=service.alarm.present.mode_label;
-						if(service.alarm.away && service.alarm.away.mode_label !== undefined)
+						if(service.alarm.away && service.alarm.away.mode_label != undefined)
 							mode_AWAY=service.alarm.away.mode_label;
-						if(service.alarm.night && service.alarm.night.mode_label !== undefined)
+						if(service.alarm.night && service.alarm.night.mode_label != undefined)
 							mode_NIGHT=service.alarm.night.mode_label;
 						
 						switch (currentValue) {
@@ -1863,11 +1862,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
 						
-						if(service.alarm.present && service.alarm.present.mode_label !== undefined)
+						if(service.alarm.present && service.alarm.present.mode_label != undefined)
 							mode_PRESENT=service.alarm.present.mode_label;
-						if(service.alarm.away && service.alarm.away.mode_label !== undefined)
+						if(service.alarm.away && service.alarm.away.mode_label != undefined)
 							mode_AWAY=service.alarm.away.mode_label;
-						if(service.alarm.night && service.alarm.night.mode_label !== undefined)
+						if(service.alarm.night && service.alarm.night.mode_label != undefined)
 							mode_NIGHT=service.alarm.night.mode_label;
 						
 						switch (currentValue) {
@@ -1900,7 +1899,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				var stateNameFound=false;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME') {
-						if(cmd.currentValue !== undefined && cmd.currentValue !== null) {
+						if(cmd.currentValue != undefined && cmd.currentValue != null) {
 							that.log('debug','----Current State Thermo :',cmd.currentValue.toString().toLowerCase());
 							switch(cmd.currentValue.toString().toLowerCase()) {
 								default:
@@ -2069,10 +2068,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						if(cmd.eqType == 'nuki') {
 							if (DEV_DEBUG) that.log('debug','LockCurrentState (nuki) : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 						} else {
 							if (DEV_DEBUG) that.log('debug','LockCurrentState : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) === true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 						}
 					}
 				}
@@ -2082,10 +2081,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						if(cmd.eqType == 'nuki') {
 							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						} else {
 							if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) === true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						}
 					}
 				}
@@ -2145,7 +2144,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE' && findMyID(service.statusArr,cmd.id) != -1) {
 						let eqLogicSabotageInverted=service.sabotageInverted || 0;
-						returnValue = eqLogicSabotageInverted == 0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						//returnValue = cmd.currentValue;
 						if(cmd.currentValue!=="" && returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
 						else returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
@@ -2235,20 +2234,20 @@ function sanitizeValue(currentValue,characteristic) {
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
 				if(!val) val = 0;
-				if(characteristic.props.minValue !== null && characteristic.props.minValue !== undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue !== null && characteristic.props.maxValue !== undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
 			break;
 			case "int" :
 				val = parseInt(currentValue);
 				if(!val) val = 0;
-				if(characteristic.props.minValue !== null && characteristic.props.minValue !== undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue !== null && characteristic.props.maxValue !== undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
 			break;
 			case "float" :
 				val = minStepRound(parseFloat(currentValue),characteristic);
 				if(!val) val = 0.0;
-				if(characteristic.props.minValue !== null && characteristic.props.minValue !== undefined && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
-				if(characteristic.props.maxValue !== null && characteristic.props.maxValue !== undefined && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
 			break;
 			case "bool" :
 				val = toBool(currentValue);
@@ -2270,7 +2269,7 @@ function sanitizeValue(currentValue,characteristic) {
 // -- characteristic : characteristic containing the props
 // -- Return : rounded value
 function minStepRound(val,characteristic) {
-	if(characteristic.props.minStep === null || characteristic.props.minStep === undefined) {
+	if(characteristic.props.minStep == null || characteristic.props.minStep == undefined) {
 		characteristic.props.minStep = 1;
 	}
 	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
@@ -2313,22 +2312,22 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		// ALARM
 		var id_PRESENT,id_AWAY,id_NIGHT;
 		if(action == 'SetAlarmMode') {
-			if(service.alarm.present && service.alarm.present.mode_id !== undefined)
+			if(service.alarm.present && service.alarm.present.mode_id != undefined)
 				id_PRESENT = service.alarm.present.mode_id;
-			if(service.alarm.away && service.alarm.away.mode_id !== undefined)
+			if(service.alarm.away && service.alarm.away.mode_id != undefined)
 				id_AWAY = 	 service.alarm.away.mode_id;
-			if(service.alarm.night && service.alarm.night.mode_id !== undefined)
+			if(service.alarm.night && service.alarm.night.mode_id != undefined)
 				id_NIGHT = 	 service.alarm.night.mode_id;
 		}
 		// /ALARM	
 		// THERMOSTAT
 		var id_CHAUF,id_CLIM,id_OFF;
 		if(action == 'TargetHeatingCoolingState') {
-			if(service.thermo.chauf && service.thermo.chauf.mode_id !== undefined)
+			if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined)
 				id_CHAUF = 	service.thermo.chauf.mode_id;
-			if(service.thermo.clim && service.thermo.clim.mode_id !== undefined)
+			if(service.thermo.clim && service.thermo.clim.mode_id != undefined)
 				id_CLIM = 	service.thermo.clim.mode_id;
-			if(service.thermo.off && service.thermo.off.mode_id !== undefined)
+			if(service.thermo.off && service.thermo.off.mode_id != undefined)
 				id_OFF = 	service.thermo.off.mode_id;
 		}		
 		// /THERMOSTAT
@@ -2514,15 +2513,15 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					case 'ALARM_SET_MODE' :
 						if(action == 'SetAlarmMode') {
 							that.log('debug',"ALARM_SET_MODE","SetAlarmMode=",action,value);
-							if(value == Characteristic.SecuritySystemTargetState.NIGHT_ARM && id_NIGHT !== undefined) {
+							if(value == Characteristic.SecuritySystemTargetState.NIGHT_ARM && id_NIGHT != undefined) {
 								cmdId = id_NIGHT;
 								that.log('debug',"set nuit");
 								found = true;
-							} else if(value == Characteristic.SecuritySystemTargetState.AWAY_ARM && id_AWAY !== undefined) {
+							} else if(value == Characteristic.SecuritySystemTargetState.AWAY_ARM && id_AWAY != undefined) {
 								cmdId = id_AWAY;
 								that.log('debug',"set absent");
 								found = true;
-							} else if(value == Characteristic.SecuritySystemTargetState.STAY_ARM && id_PRESENT !== undefined) {
+							} else if(value == Characteristic.SecuritySystemTargetState.STAY_ARM && id_PRESENT != undefined) {
 								cmdId = id_PRESENT;
 								that.log('debug',"set present");
 								found = true;
@@ -2540,15 +2539,15 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_SET_MODE' :
 						if(action == 'TargetHeatingCoolingState') {
-							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF !== undefined) {
+							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF != undefined) {
 								cmdId = id_OFF;
 								that.log('debug',"set OFF");
 								found = true;
-							} else if(value == Characteristic.TargetHeatingCoolingState.HEAT && id_CHAUF !== undefined) {
+							} else if(value == Characteristic.TargetHeatingCoolingState.HEAT && id_CHAUF != undefined) {
 								cmdId = id_CHAUF;
 								that.log('debug',"set CHAUF");
 								found = true;
-							} else if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM !== undefined) {
+							} else if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM != undefined) {
 								cmdId = id_CLIM;
 								that.log('debug',"set CLIM");
 								found = true;
@@ -2689,11 +2688,11 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 // -- service : service containing the color
 // -- Return : rgb object
 JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
-	if (h !== null)
+	if (h != null)
 		service.HSBValue.hue = h;
-	if (s !== null)
+	if (s != null)
 		service.HSBValue.saturation = s;
-	if (v !== null)
+	if (v != null)
 		service.HSBValue.brightness = v;
 	var rgb = HSVtoRGB(service.HSBValue.hue, service.HSBValue.saturation, service.HSBValue.brightness);
 	service.RGBValue.red = rgb.r;
@@ -2975,7 +2974,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
 					
 					cachedValue = cachedValues[service.controlService.subtype+characteristic.displayName];
-					if(cachedValue !== undefined && cachedValue !== null){
+					if(cachedValue != undefined && cachedValue != null){
 						characteristic.setValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
 					}
 					
