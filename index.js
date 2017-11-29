@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
-/*jshint esversion: 6,node: true */
+/*jshint esversion: 6,node: true,-W041: false */
 'use strict';
 
 var Accessory, Service, Characteristic, UUIDGen;
@@ -508,6 +508,56 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.AirQuality) {
+			eqLogic.services.AirQuality.forEach(function(cmd) {
+				if (cmd.Index) {
+					HBservice = {
+						controlService : new Service.AirQualitySensor(eqLogic.name),
+						characteristics : [Characteristic.AirQuality]
+					};
+					let Serv = HBservice.controlService;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.Index=cmd.Index;
+					eqServicesCopy.AirQuality.forEach(function(cmd2) {
+						if (cmd2.PM25) {
+							Serv.infos.PM25= cmd2.PM25;
+						}
+					});	
+					// if there is a PM2.5 density, display it
+					if(Serv.infos.PM25) {
+						HBservice.characteristics.push(Characteristic.PM2_5Density);
+						Serv.addCharacteristic(Characteristic.PM2_5Density);
+					}
+					// AQI Generic
+					HBservice.characteristics.push(Characteristic.AQI);
+					Serv.addCharacteristic(Characteristic.AQI);
+					Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
+					
+					if(cmd.Index.subType=='numeric') {
+						Serv.levelNum=[];		
+						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
+						Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
+						Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
+						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
+						Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
+					} else {
+						Serv.levelTxt=[];		
+						Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
+						Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
+						Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
+						Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
+						Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
+					}
+					Serv.cmd_id = cmd.Index.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}		
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach(function(cmd) {
 				if (cmd.presence) {
@@ -974,9 +1024,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					eqServicesCopy.thermostat.forEach(function(cmd2) {
 						if (cmd2.state_name) {
 							Serv.infos.state_name=cmd2.state_name;
-							HBservice.characteristics.push(Characteristic.GenericSTRING);
+							/*HBservice.characteristics.push(Characteristic.GenericSTRING);
 							Serv.addCharacteristic(Characteristic.GenericSTRING);
-							Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd2.state_name.name;
+							Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd2.state_name.name;*/
 						} else if (cmd2.lock) {
 							Serv.infos.lock=cmd2.lock;
 							HBservice.characteristics.push(Characteristic.LockPhysicalControls);
@@ -992,8 +1042,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.set_lock=cmd2.set_lock;
 						} else if (cmd2.set_unlock) {
 							Serv.actions.set_unlock=cmd2.set_unlock;
+						} else if (cmd2.set_setpoint) {
+							Serv.actions.set_setpoint=cmd2.set_setpoint;
 						}
 					});
+
+					var props = {};
+					if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.minValue && parseInt(Serv.actions.set_setpoint.configuration.minValue))
+						props.minValue = parseInt(Serv.actions.set_setpoint.configuration.minValue);
+					if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.maxValue && parseInt(Serv.actions.set_setpoint.configuration.maxValue))
+						props.maxValue = parseInt(Serv.actions.set_setpoint.configuration.maxValue);
+					if(props.minValue && props.maxValue)
+						Serv.getCharacteristic(Characteristic.TargetTemperature).setProps(props);	
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
@@ -1116,7 +1176,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		else
 		{
-			that.log('│ Accessoire sans Type Générique');
+			that.log('│ Accessoire sans Type Générique d\'Etat');
 			createdAccessory = that.createAccessory([], eqLogic); // create a cached lookalike object for unregistering it
 			that.delAccessory(createdAccessory);
 		}
@@ -1449,15 +1509,15 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				if (service.UUID == Service.WindowCovering.UUID) {
 					if(service.actions.down && service.actions.up) {
 						if (service.actions.slider) {
-							if (value == 0)
+							if (parseInt(value) === 0)
 								action = 'flapDown';
-							else if (value == 99 || value == 100)
+							else if (parseInt(value) === 99 || parseInt(value) === 100)
 								action = 'flapUp';
 							else
 								action = 'setValue';
 						}
 						else {
-							if (value < 50)
+							if (parseInt(value) < 50)
 								action = 'flapDown';
 							else
 								action = 'flapUp';
@@ -1565,6 +1625,43 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				}
 			break;
 			// Generics
+			case Characteristic.AirQuality.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
+							returnValue = Characteristic.AirQuality.EXCELLENT;
+						} else if(returnValue > service.levelNum[Characteristic.AirQuality.EXCELLENT] && returnValue <= service.levelNum[Characteristic.AirQuality.GOOD]) {
+							returnValue = Characteristic.AirQuality.GOOD;
+						} else if(returnValue > service.levelNum[Characteristic.AirQuality.GOOD] && returnValue <= service.levelNum[Characteristic.AirQuality.FAIR]) {
+							returnValue = Characteristic.AirQuality.FAIR;
+						} else if(returnValue > service.levelNum[Characteristic.AirQuality.FAIR] && returnValue <= service.levelNum[Characteristic.AirQuality.INFERIOR]) {
+							returnValue = Characteristic.AirQuality.INFERIOR;
+						} else if(returnValue > service.levelNum[Characteristic.AirQuality.INFERIOR] && returnValue <= service.levelNum[Characteristic.AirQuality.POOR]) {
+							returnValue = Characteristic.AirQuality.POOR;
+						} else {
+							returnValue = Characteristic.AirQuality.UNKNOWN;
+						}
+						break;
+					}
+				}
+			break;
+			case Characteristic.AQI.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;					
+			case Characteristic.PM2_5Density.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'AIRQUALITY_PM25' && cmd.id == service.cmd_id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;			
 			case Characteristic.ContactSensorState.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == service.cmd_id) {
@@ -1653,10 +1750,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.GenericSTRING.UUID :
 				let maxSize = 64;
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME' && cmd.id == service.infos.state_name.id) {
-						returnValue = cmd.currentValue.toString().substring(0,maxSize);
-						break;
-					} else if (GenericAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.cmd_id) {
+					if (GenericAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue.toString().substring(0,maxSize);
 						break;
 					}
@@ -1802,45 +1896,61 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			// Thermostats
 			case Characteristic.CurrentHeatingCoolingState.UUID :
+				var stateNameFound=false;
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'THERMOSTAT_MODE') {
-						
-						if(service.thermo.clim && service.thermo.clim.mode_label != undefined)
-							mode_CLIM=service.thermo.clim.mode_label;
-						if(service.thermo.chauf && service.thermo.chauf.mode_label != undefined)
-							mode_CHAUF=service.thermo.chauf.mode_label;
-						
-						that.log('debug','CurrentThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
-						switch(cmd.currentValue) {
-							case 'Off':
-							case 'Aucun':
-							case undefined:
-								returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
+					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME') {
+						if(cmd.currentValue != undefined && cmd.currentValue != null) {
+							that.log('debug','----Current State Thermo :',cmd.currentValue.toString().toLowerCase());
+							switch(cmd.currentValue.toString().toLowerCase()) {
+								default:
+								case 'off' :
+								case 'arrêté' :
+									returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
+								break;
+								case 'heat':
+								case 'chauffage' :
+									returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
+								break;
+								case "cool":
+								case 'climatisation' :
+									returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
+								break;
+							}
 							break;
-							case mode_CLIM:
-								returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
-							break;
-							case mode_CHAUF:
-								returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
-							break;
+							
 						}
-						break;
+						else
+							returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
+						
+						stateNameFound=true;
 					}
 				}
+				// idea for managing only setpoint + temperature generic types, display Heat if the setpoint > temperature+1 and display cool if setpoint < temperature-1 : to test
+				/*if(!stateNameFound) {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
+							if(cmd.currentValue > service.infos.temperature.currentValue+1)
+								returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
+							else if (cmd.currentValue < service.infos.temperature.currentValue-1)
+								returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
+							else
+								returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
+						}
+					}
+				}*/
 			break;
 			case Characteristic.TargetHeatingCoolingState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
 						
-						if(service.thermo.clim && service.thermo.clim.mode_label != undefined)
+						if(service.thermo.clim && service.thermo.clim.mode_label !== undefined)
 							mode_CLIM=service.thermo.clim.mode_label;
-						if(service.thermo.chauf && service.thermo.chauf.mode_label != undefined)
+						if(service.thermo.chauf && service.thermo.chauf.mode_label !== undefined)
 							mode_CHAUF=service.thermo.chauf.mode_label;
 						
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
 							case 'Off':
-							case 'Aucun':
 							case undefined:
 								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
 							break;							
@@ -1849,6 +1959,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							break;
 							case mode_CHAUF:
 								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
+							break;
+							case "Aucun":
+								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 							break;
 						}
 						break;
@@ -1888,8 +2001,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="CLOSED";
 								break;
 								case customValues.STOPPED :
-									returnValue=Characteristic.TargetDoorState.OPEN; // 0
-									HRreturnValue="OPEN";
+									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
+									HRreturnValue="CLOSED";
 								break;
 						}
 						if (DEV_DEBUG) that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
@@ -2398,22 +2511,22 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'ALARM_SET_MODE' :
-						that.log('debug',"ALARM_SET_MODE","SetAlarmMode=",action,value);
-						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.NIGHT_ARM && id_NIGHT) {
-							cmdId = id_NIGHT;
-							that.log('debug',"set nuit");
-							found = true;
+						if(action == 'SetAlarmMode') {
+							that.log('debug',"ALARM_SET_MODE","SetAlarmMode=",action,value);
+							if(value == Characteristic.SecuritySystemTargetState.NIGHT_ARM && id_NIGHT != undefined) {
+								cmdId = id_NIGHT;
+								that.log('debug',"set nuit");
+								found = true;
+							} else if(value == Characteristic.SecuritySystemTargetState.AWAY_ARM && id_AWAY != undefined) {
+								cmdId = id_AWAY;
+								that.log('debug',"set absent");
+								found = true;
+							} else if(value == Characteristic.SecuritySystemTargetState.STAY_ARM && id_PRESENT != undefined) {
+								cmdId = id_PRESENT;
+								that.log('debug',"set present");
+								found = true;
+							}
 						}
-						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.AWAY_ARM && id_AWAY) {
-							cmdId = id_AWAY;
-							that.log('debug',"set absent");
-							found = true;
-						}
-						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.STAY_ARM && id_PRESENT) {
-							cmdId = id_PRESENT;
-							that.log('debug',"set present");
-							found = true;
- 						}
  					break;					
 					case 'THERMOSTAT_SET_SETPOINT' :
 						if(action == 'setTargetLevel') {
@@ -2426,26 +2539,24 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_SET_MODE' :
 						if(action == 'TargetHeatingCoolingState') {
-							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF) {
+							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF != undefined) {
 								cmdId = id_OFF;
 								that.log('debug',"set OFF");
 								found = true;
-							}
-							if(value == Characteristic.TargetHeatingCoolingState.HEAT && id_CHAUF) {
+							} else if(value == Characteristic.TargetHeatingCoolingState.HEAT && id_CHAUF != undefined) {
 								cmdId = id_CHAUF;
 								that.log('debug',"set CHAUF");
 								found = true;
-							}
-							if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM) {
+							} else if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM != undefined) {
 								cmdId = id_CLIM;
 								that.log('debug',"set CLIM");
 								found = true;
-							}
-							/*
-							if(cmd.name == 'Off') {
-								cmdId = cmd.id;
+							} else if(value == Characteristic.TargetHeatingCoolingState.AUTO) {
+								cmdId = service.actions.set_setpoint.id;
+								value = service.infos.setpoint.currentValue;
+								that.log('debug','set AUTO',value);
 								found = true;
-							}*/
+							}
 						}
 					break;
 				}
@@ -2773,6 +2884,19 @@ function RegisterCustomCharacteristics() {
 	};
 	Characteristic.GenericSTRING.UUID = 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1';
 	inherits(Characteristic.GenericSTRING, Characteristic);		
+	
+	Characteristic.AQI = function() {
+		Characteristic.call(this, 'Index', '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263');
+		this.setProps({
+		  format:   Characteristic.Formats.INT,
+		  unit: '',
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
+	inherits(Characteristic.AQI, Characteristic);	
 
 	/**
 	 * Custom Service 'Power Monitor'
