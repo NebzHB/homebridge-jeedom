@@ -34,7 +34,7 @@
       "mamatdv",
       "rocket13011"
   ],
-  "license": "GPL2",
+  "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/NebzHB/homebridge-jeedom/issues"
   },
