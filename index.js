@@ -59,7 +59,10 @@ function JeedomPlatform(logger, config, api) {
 			config.url == 'https://:80') {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
-		}else{
+		}else if(config.url.indexOf('https') !== -1) {
+			this.log('error',"Adresse Jeedom utilise https en interne, non supporté :"+config.url);	
+			process.exit(1);
+		}else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
 		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this,config.myPlugin);
@@ -245,51 +248,32 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
-					eqServicesCopy.light.forEach(function(cmd1) {
-						if (cmd1.state_bool) {
-								Serv.infos.state_bool=cmd1.state_bool;
-								//break;
-						}
-					});
+
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
-							if (cmd2.on.value == cmd.state.id || (Serv.infos.state_bool && cmd2.on.value == Serv.infos.state_bool.id)) {
-								Serv.actions.on=cmd2.on;
-							}
+							Serv.actions.on=cmd2.on;
 						} else if (cmd2.off) {
-							if (cmd2.off.value == cmd.state.id || (Serv.infos.state_bool && cmd2.off.value == Serv.infos.state_bool.id)) {
-								Serv.actions.off=cmd2.off;
-							}
+							Serv.actions.off=cmd2.off;
 						} else if (cmd2.slider) {
-							if (cmd2.slider.value == cmd.state.id) {
-								Serv.actions.slider=cmd2.slider;
-							}
+							Serv.actions.slider=cmd2.slider;
 						} else if (cmd2.setcolor) {
-							eqServicesCopy.light.forEach(function(cmd3) {
-								if (cmd3.color) {
-									Serv.infos.color=cmd3.color;
-								}
-							});
-							if (Serv.infos.color && cmd2.setcolor.value == Serv.infos.color.id) {
-								Serv.actions.setcolor=cmd2.setcolor;
-							}
+							Serv.actions.setcolor=cmd2.setcolor;
 						} else if (cmd2.setcolor_temp) {
-							eqServicesCopy.light.forEach(function(cmd3) {
-								if (cmd3.color_temp) {
-									Serv.infos.color_temp=cmd3.color_temp;
-								}
-							});
-							if (Serv.infos.color_temp.id && cmd2.setcolor_temp.value == Serv.infos.color_temp.id) {
-								Serv.actions.setcolor_temp=cmd2.setcolor_temp;
-							}
+							Serv.actions.setcolor_temp=cmd2.setcolor_temp;
+						} else if (cmd2.color) {
+							Serv.infos.color=cmd2.color;
+						} else if (cmd2.color_temp) {
+							Serv.infos.color_temp=cmd2.color_temp;
+						} else if (cmd2.state_bool) {
+							Serv.infos.state_bool=cmd2.state_bool;
 						}
 					});
-					if (Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande OFF'); 
-					if (!Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON" ou reférence à l\'état non définie sur la commande ON');
-					if (!Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF" ou reférence à l\'état non définie sur la commande ON et OFF');
-					if (Serv.infos.color && !Serv.actions.setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
+					if (Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière OFF"'); 
+					if (!Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON"');
+					if (!Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');
+					if (Serv.infos.color && !Serv.actions.setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur"');
 					if (!Serv.infos.color && Serv.actions.setcolor) that.log('warn','Pas de type générique "Info/Lumière Couleur"');
-					if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) that.log('warn','Pas de type générique "Action/Lumière Température Couleur" ou la référence à l\'état de l\'info non définie sur l\'action');
+					if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) that.log('warn','Pas de type générique "Action/Lumière Température Couleur"');
 					if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) that.log('warn','Pas de type générique "Info/Lumière Température Couleur"');
 					
 					if(Serv.actions.slider) {
@@ -375,22 +359,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 
 					eqServicesCopy.flap.forEach(function(cmd2) {
 						if (cmd2.up) {
-							if (cmd2.up.value == cmd.state.id) {
-								Serv.actions.up = cmd2.up;
-							}
+							Serv.actions.up = cmd2.up;
 						} else if (cmd2.down) {
-							if (cmd2.down.value == cmd.state.id) {
-								Serv.actions.down = cmd2.down;
-							}
+							Serv.actions.down = cmd2.down;
 						} else if (cmd2.slider) {
-							if (cmd2.slider.value == cmd.state.id) {
-								Serv.actions.slider = cmd2.slider;
-							}
+							Serv.actions.slider = cmd2.slider;
 						}
 					});
-					if (Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Down'); 
-					if (!Serv.actions.up && Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou reférence à l\'état non définie sur la commande Up');
-					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" ou "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre" ou reférence à l\'état non définie sur la commande Slider');
+					if(Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre"'); 
+					if(!Serv.actions.up && Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Monter"');
+					if(!Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');
+					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
 							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
@@ -428,17 +407,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.state=cmd.state;
 					eqServicesCopy.energy.forEach(function(cmd2) {
 						if (cmd2.on) {
-							if (cmd2.on.value == cmd.state.id) {
-								Serv.actions.on = cmd2.on;
-							}
+							Serv.actions.on = cmd2.on;
 						} else if (cmd2.off) {
-							if (cmd2.off.value == cmd.state.id) {
-								Serv.actions.off = cmd2.off;
-							}
+							Serv.actions.off = cmd2.off;
 						}
 					});
-					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Prise Bouton On" ou reférence à l\'état non définie sur la commande On');
-					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Prise Bouton Off" ou reférence à l\'état non définie sur la commande Off');
+					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Prise Bouton On"');
+					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Prise Bouton Off"');
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -689,34 +664,23 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.mute=cmd.mute;
 					eqServicesCopy.speaker.forEach(function(cmd2) {
 						if (cmd2.mute_toggle) {
-							if (cmd2.mute_toggle.value == cmd.mute.id) {
-								Serv.actions.mute_toggle = cmd2.mute_toggle;
-							}
+							Serv.actions.mute_toggle = cmd2.mute_toggle;
 						} else if (cmd2.mute_on) {
-							if (cmd2.mute_on.value == cmd.mute.id) {
-								Serv.actions.mute_on = cmd2.mute_on;
-							}
+							Serv.actions.mute_on = cmd2.mute_on;
 						} else if (cmd2.mute_off) {
-							if (cmd2.mute_off.value == cmd.mute.id) {
-								Serv.actions.mute_off = cmd2.mute_off;
-							}
+							Serv.actions.mute_off = cmd2.mute_off;
 						} else if (cmd2.set_volume) {
-							eqServicesCopy.speaker.forEach(function(cmd3) {
-								if (cmd3.volume) {
-									Serv.infos.volume=cmd3.volume;
-								}
-							});
-							if (Serv.infos.volume && cmd2.set_volume.value == Serv.infos.volume.id) {
-								HBservice.characteristics.push(Characteristic.Volume);
-								Serv.addCharacteristic(Characteristic.Volume);
-								Serv.actions.set_volume = cmd2.set_volume;
-							}
+							HBservice.characteristics.push(Characteristic.Volume);
+							Serv.addCharacteristic(Characteristic.Volume);
+							Serv.actions.set_volume = cmd2.set_volume;
+						} else if (cmd2.volume) {
+							Serv.infos.volume=cmd2.volume;
 						}
 					});
-					if(!Serv.actions.set_volume) that.log('warn','Pas de type générique "Action/Haut-Parleur Volume" ou reférence à l\'état "Info/Haut-Parleur Volume" non définie sur la commande "Action/Haut-Parleur Volume" ou pas de type génériqe "Info/Haut-Parleur Volume"');
-					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Mute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur Mute"');	
-					if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur la commande "Action/Haut-Parleur UnMute"');	
-					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute" ou reférence à l\'état "Info/Haut-Parleur Mute" non définie sur ces commande');	
+					if(!Serv.actions.set_volume) that.log('warn','Pas de type générique "Action/Haut-Parleur Volume"');
+					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Mute"');	
+					if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur UnMute"');	
+					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');	
 					Serv.cmd_id = cmd.mute.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
@@ -911,22 +875,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.state=cmd.state;
 					eqServicesCopy.GarageDoor.forEach(function(cmd2) {
 						if (cmd2.on) {
-							if (cmd2.on.value == cmd.state.id) {
-								Serv.actions.on = cmd2.on;
-							}
+							Serv.actions.on = cmd2.on;
 						} else if (cmd2.off) {
-							if (cmd2.off.value == cmd.state.id) {
-								Serv.actions.off = cmd2.off;
-							}
+							Serv.actions.off = cmd2.off;
 						} else if (cmd2.toggle) {
-							if (cmd2.toggle.value == cmd.state.id) {
-								Serv.actions.toggle = cmd2.toggle;
-							}
+							Serv.actions.toggle = cmd2.toggle;
 						}
 					});
-					if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Portail ou garage bouton d\'ouverture" ou reférence à l\'état non définie sur la commande "Action/Portail ou garage bouton d\'ouverture"');	
-					if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture" ou reférence à l\'état non définie sur la commande "Action/Portail ou garage bouton de fermeture"');	
-					if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture" ou reférence à l\'état non définie sur ces commandes');	
+					if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Portail ou garage bouton d\'ouverture"');	
+					if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture"');	
+					if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');	
 									
 					if(eqLogic.customValues) {
 						Serv.customValues = eqLogic.customValues;
@@ -961,17 +919,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.state=cmd.state;
 					eqServicesCopy.lock.forEach(function(cmd2) {
 						if (cmd2.on) {
-							if (cmd2.on.value == cmd.state.id) {
-								Serv.actions.on = cmd2.on;
-							}
+							Serv.actions.on = cmd2.on;
 						} else if (cmd2.off) {
-							if (cmd2.off.value == cmd.state.id) {
-								Serv.actions.off = cmd2.off;
-							}
+							Serv.actions.off = cmd2.off;
 						}
 					});
-					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir" ou reférence à l\'état non définie sur la commande Ouvrir');
-					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer" ou reférence à l\'état non définie sur la commande Fermer');
+					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir"');
+					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer"');
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -1024,9 +978,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					eqServicesCopy.thermostat.forEach(function(cmd2) {
 						if (cmd2.state_name) {
 							Serv.infos.state_name=cmd2.state_name;
-							/*HBservice.characteristics.push(Characteristic.GenericSTRING);
-							Serv.addCharacteristic(Characteristic.GenericSTRING);
-							Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd2.state_name.name;*/
 						} else if (cmd2.lock) {
 							Serv.infos.lock=cmd2.lock;
 							HBservice.characteristics.push(Characteristic.LockPhysicalControls);
@@ -1109,13 +1060,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.alarm={};
 					eqServicesCopy.alarm.forEach(function(cmd2) {
 						if (cmd2.state) {
-							if (cmd2.state.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
-								Serv.infos.state=cmd2.state;
-							}
+							Serv.infos.state=cmd2.state;
 						} else if (cmd2.mode) {
-							if (cmd2.mode.eqLogic_id == eqLogic.id) { // no value link, so using eqLogic id as there is only one alarm per eqlogic
-								Serv.infos.mode=cmd2.mode;
-							}
+							Serv.infos.mode=cmd2.mode;
 						}
 					});
 					

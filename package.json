@@ -1,7 +1,7 @@
 {
   "name": "homebridge-jeedom",
   "version": "v1.3.4",
-  "cust_serial": "0000",
+  "cust_serial": "0001",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "scripts": {
@@ -34,7 +34,7 @@
       "mamatdv",
       "rocket13011"
   ],
-  "license": "GPL2",
+  "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/NebzHB/homebridge-jeedom/issues"
   },
