@@ -2482,6 +2482,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								cmdFound=cmd.generic_type;
 								found = true;
 							}
+							needToTemporize=900;
 						}
 					break;
 					case 'THERMOSTAT_SET_MODE' :
