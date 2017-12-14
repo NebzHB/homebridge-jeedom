@@ -559,6 +559,32 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.occupancy) {
+			eqLogic.services.occupancy.forEach(function(cmd) {
+				if (cmd.occupancy) {
+					HBservice = {
+						controlService : new Service.OccupancySensor(eqLogic.name),
+						characteristics : [Characteristic.OccupancyDetected]
+					};
+					let Serv = HBservice.controlService;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.occupancy=cmd.occupancy;
+					Serv.invertBinary=0;
+					if(cmd.occupancy.display && cmd.occupancy.display.invertBinary != undefined)
+						Serv.invertBinary=cmd.occupancy.display.invertBinary;
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+
+					Serv.cmd_id = cmd.occupancy.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}		
 		if (eqLogic.services.generic) {
 			eqLogic.services.generic.forEach(function(cmd) {
 				if (cmd.state) {
@@ -1663,7 +1689,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
-			break;			
+			break;		
+			case Characteristic.OccupancyDetected.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'OCCUPANCY' && cmd.id == service.cmd_id) {
+						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert ?
+						returnValue = toBool(cmd.currentValue);
+						if(returnValue === false) returnValue = Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
+						else returnValue = Characteristic.OccupancyDetected.OCCUPANCY_DETECTED;
+						break;
+					}
+				}
+			break;				
 			case Characteristic.SmokeDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SMOKE' && cmd.id == service.cmd_id) {
