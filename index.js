@@ -679,15 +679,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}			
 		if (eqLogic.services.speaker) {
 			eqLogic.services.speaker.forEach(function(cmd) {
-				if (cmd.mute) {
+				if (cmd.volume) {
 					HBservice = {
 						controlService : new Service.Speaker(eqLogic.name),
-						characteristics : [Characteristic.Mute]
+						characteristics : [Characteristic.Mute,Characteristic.Volume]
 					};
 					let Serv = HBservice.controlService;
 					Serv.actions={};
 					Serv.infos={};
-					Serv.infos.mute=cmd.mute;
+					Serv.infos.volume=cmd.volume;
 					eqServicesCopy.speaker.forEach(function(cmd2) {
 						if (cmd2.mute_toggle) {
 							Serv.actions.mute_toggle = cmd2.mute_toggle;
@@ -696,18 +696,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						} else if (cmd2.mute_off) {
 							Serv.actions.mute_off = cmd2.mute_off;
 						} else if (cmd2.set_volume) {
-							HBservice.characteristics.push(Characteristic.Volume);
-							Serv.addCharacteristic(Characteristic.Volume);
 							Serv.actions.set_volume = cmd2.set_volume;
-						} else if (cmd2.volume) {
-							Serv.infos.volume=cmd2.volume;
+						} else if (cmd2.mute) {
+							Serv.infos.mute=cmd2.mute;
 						}
 					});
 					if(!Serv.actions.set_volume) that.log('warn','Pas de type générique "Action/Haut-Parleur Volume"');
 					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Mute"');	
 					if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur UnMute"');	
 					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) that.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');	
-					Serv.cmd_id = cmd.mute.id;
+					Serv.cmd_id = cmd.volume.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
@@ -715,7 +713,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 			if(!HBservice) {
-				that.log('warn','Pas de type générique "Info/Haut-Parleur Mute"');
+				that.log('warn','Pas de type générique "Info/Haut-Parleur Volume"');
 			} else {
 				HBservice = null;
 			}
@@ -1438,9 +1436,11 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 		var action,rgb;
 		switch (characteristic.UUID) {
 			case Characteristic.On.UUID :
-			case Characteristic.Mute.UUID :
 			case Characteristic.LockPhysicalControls.UUID :
 				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+			break;
+			case Characteristic.Mute.UUID :
+				this.command(value == 0 ? 'Unmute' : 'Mute', null, service);
 			break;
 			case Characteristic.TargetTemperature.UUID :
 				if (Math.abs(value - characteristic.value) >= 0.5) {
@@ -2081,6 +2081,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
+				// no mute status, just verify the volume, if 0 its muted
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == service.infos.volume.id) {
+						if(cmd.currentValue == 0) {
+							returnValue = true;
+						} else {
+							returnValue = false;
+						}
+						break;
+					}
+				}
 			break;
 			case Characteristic.Volume.UUID :
 				for (const cmd of cmdList) {
@@ -2408,24 +2419,45 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
-						if((action == 'turnOn' || action == 'turnOff') && service.actions.mute_toggle && cmd.id == service.actions.mute_toggle.id) {
-							cmdId = cmd.id;
-							cmdFound=cmd.generic_type;
-							found = true;
+						if((action == 'Mute' || action == 'Unmute')) {
+							if(service.actions.mute_toggle && cmd.id == service.actions.mute_toggle.id) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								found = true;
+							} else if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								value = action == 'Mute' ? 0 : 20;
+								found = true;
+							}
 						}
 					break;
 					case 'SPEAKER_MUTE_ON' :
-						if(action == 'turnOn' && service.actions.mute_on && cmd.id == service.actions.mute_on.id) {
-							cmdId = cmd.id;
-							cmdFound=cmd.generic_type;
-							found = true;
+						if(action == 'Mute') {
+							if(service.actions.mute_on && cmd.id == service.actions.mute_on.id) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								found = true;
+							} else if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								value = 0;
+								found = true;
+							}
 						}
 					break;
 					case 'SPEAKER_MUTE_OFF' :
-						if(action == 'turnOff' && service.actions.mute_off && cmd.id == service.actions.mute_off.id) {
-							cmdId = cmd.id;
-							cmdFound=cmd.generic_type;
-							found = true;
+						if(action == 'Unmute') {
+							if(service.actions.mute_off && cmd.id == service.actions.mute_off.id) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								found = true;
+							} else if(service.actions.set_volume && cmd.id == service.actions.set_volume.id && service.infos.volume.currentValue == 0) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								value = 20;
+								found = true;
+							}
 						}
 					break;
 					case 'LIGHT_ON' :
