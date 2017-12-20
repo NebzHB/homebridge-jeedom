@@ -2411,11 +2411,20 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
-						if(action == 'setValue' && service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
-							cmdId = cmd.id;
-							found = true;
-							cmdFound=cmd.generic_type;
-							needToTemporize=900;
+						if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
+							if(action == 'setValue') {
+								cmdId = cmd.id;
+								found = true;
+								cmdFound=cmd.generic_type;
+								needToTemporize=900;
+							} else if(action == 'Mute' || action == 'Unmute') {
+								if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
+									cmdId = cmd.id;
+									cmdFound=cmd.generic_type;
+									value = action == 'Mute' ? 0 : 10;
+									found = true;
+								}
+							}
 						}
 					break;
 					case 'SPEAKER_MUTE_TOGGLE' :
@@ -2424,40 +2433,21 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								cmdId = cmd.id;
 								cmdFound=cmd.generic_type;
 								found = true;
-							} else if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
-								cmdId = cmd.id;
-								cmdFound=cmd.generic_type;
-								value = action == 'Mute' ? 0 : 20;
-								found = true;
 							}
 						}
 					break;
 					case 'SPEAKER_MUTE_ON' :
-						if(action == 'Mute') {
-							if(service.actions.mute_on && cmd.id == service.actions.mute_on.id) {
-								cmdId = cmd.id;
-								cmdFound=cmd.generic_type;
-								found = true;
-							} else if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
-								cmdId = cmd.id;
-								cmdFound=cmd.generic_type;
-								value = 0;
-								found = true;
-							}
+						if(action == 'Mute' && service.actions.mute_on && cmd.id == service.actions.mute_on.id) {
+							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
+							found = true;
 						}
 					break;
 					case 'SPEAKER_MUTE_OFF' :
-						if(action == 'Unmute') {
-							if(service.actions.mute_off && cmd.id == service.actions.mute_off.id) {
-								cmdId = cmd.id;
-								cmdFound=cmd.generic_type;
-								found = true;
-							} else if(service.actions.set_volume && cmd.id == service.actions.set_volume.id && service.infos.volume.currentValue == 0) {
-								cmdId = cmd.id;
-								cmdFound=cmd.generic_type;
-								value = 20;
-								found = true;
-							}
+						if(action == 'Unmute' && service.actions.mute_off && cmd.id == service.actions.mute_off.id) {
+							cmdId = cmd.id;
+							cmdFound=cmd.generic_type;
+							found = true;
 						}
 					break;
 					case 'LIGHT_ON' :
