@@ -26,7 +26,7 @@ debug.WARN = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
 var hasError = false;
-const DEV_DEBUG=false;
+var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','UV','PRESSURE','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
 
 module.exports = function(homebridge) {
@@ -49,6 +49,10 @@ function JeedomPlatform(logger, config, api) {
 	try{
 		this.config = config || {};
 		this.accessories = [];
+		if(config.debugLevel == 0) {
+			config.debugLevel = 100;
+			DEV_DEBUG = true;
+		}
 		this.debugLevel = config.debugLevel || debug.ERROR;
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
@@ -65,14 +69,14 @@ function JeedomPlatform(logger, config, api) {
 		}else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
-		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this,config.myPlugin);
+		this.DEV_DEBUG = DEV_DEBUG; // for passing by
+		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this, config.myPlugin);
 		this.rooms = {};
 		this.updateSubscriptions = [];
 		
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
 		this.pollingID = null;
-		//this.temporizator = null;
 		this.settingLight = false;
 		
 		this.pollerPeriod = config.pollerperiod;
