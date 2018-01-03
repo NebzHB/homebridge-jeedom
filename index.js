@@ -160,7 +160,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					that.AccessoireCreateHomebridge(
 						that.jeedomClient.ParseGenericType(
 							device, 
-							that.jeedomClient.getDeviceCmd(device.id)
+							that.jeedomClient.getDeviceCmdFromCache(device.id)
 						)
 					);
 				}
@@ -1571,7 +1571,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		}
 		var returnValue = 0;
 		var HRreturnValue;
-		var cmdList = that.jeedomClient.getDeviceCmd(service.eqID);
+		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
 		var hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
 		switch (characteristic.UUID) {
 			// Switch or Light
@@ -2310,7 +2310,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 	try{
 		var that = this;
 
-		var cmdList = that.jeedomClient.getDeviceCmd(service.eqID); 
+		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID); 
 		
 		var cmdId = service.cmd_id;
 		let found=false;
@@ -2644,11 +2644,38 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 				if (update.name == 'cmd::update' && 
 				    update.option.value != undefined && 
 				    update.option.cmd_id) {
+					
 						that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
 						that.updateSubscribers(update);// Update subscribers
-				}
-				else {
-					if(DEV_DEBUG) that.log('debug','[Reçu Type non géré]',update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
+
+				} else if(update.name == 'scenario::update' &&
+					   update.option.scenario_id) {
+						   
+					var scenario = that.jeedomClient.getScenarioPropertiesFromCache(update.option.scenario_id);
+					that.jeedomClient.updateModelScenario(update.option.scenario_id,update.option.state);
+					
+					switch(update.option.state) {
+						case 'stop':
+							that.log('debug',"Scenario",scenario.name,'stoppé');
+						break;
+						case 'in progress':
+							that.log('debug',"Scenario",scenario.name,'en cours');
+						break;
+					}
+					
+				} else if(DEV_DEBUG && update.name == 'eqLogic::update' &&
+				   update.option.eqLogic_id) {
+				
+					var cacheState = that.jeedomClient.getDevicePropertiesFromCache(update.option.eqLogic_id);
+					that.jeedomClient.getDeviceProperties(update.option.eqLogic_id).then(function(eqLogic){
+						if(cacheState.isEnable != eqLogic.isEnable) {
+							that.log('debug',"Changing Enable in",update.option.eqLogic_id,'from',cacheState.isEnable,'to',eqLogic.isEnable);
+							that.jeedomClient.updateModelEq(update.option.eqLogic_id,eqLogic);
+						}
+					});
+					that.log('debug','[Reçu Type non géré]',update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
+				} else if(DEV_DEBUG) {
+					that.log('debug','[Reçu Type non géré]',update.name+' ou contenu invalide: '+JSON.stringify(update).replace("\n",""));
 				}
 			});
 		}
