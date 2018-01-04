@@ -1010,6 +1010,26 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.StatelessSwitch) {
+			eqLogic.services.StatelessSwitch.forEach(function(cmd) {
+				if(cmd.eventType) {
+					HBservice = {
+						controlService : new Service.StatelessProgrammableSwitch(eqLogic.name),
+						characteristics : [Characteristic.ProgrammableSwitchEvent]
+					};
+					let Serv = HBservice.controlService;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.eventType=cmd.eventType;
+					Serv.cmd_id = cmd.eventType.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}		
 		if (eqLogic.services.thermostat) {
 			eqLogic.services.thermostat.forEach(function(cmd) {
 				if(cmd.setpoint) {
@@ -2511,6 +2531,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							found = true;
 						}
 					break;
+					case 'SWITCH_ON' :
+						if((value == 255 || action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
+							cmdId = cmd.id;			
+							cmdFound=cmd.generic_type;							
+							found = true;
+						}
+					break;					
 					case 'LIGHT_OFF' :
 						if((action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;					
@@ -2525,6 +2552,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							found = true;
 						}
 					break;
+					case 'SWITCH_OFF' :
+						if((value == 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
+							cmdId = cmd.id;		
+							cmdFound=cmd.generic_type;
+							found = true;
+						}
+					break;					
 					case 'THERMOSTAT_SET_LOCK' :
 						if((action == 'turnOn') && service.actions.set_lock && cmd.id == service.actions.set_lock.id) {
 							cmdId = cmd.id;				
