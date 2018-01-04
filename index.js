@@ -1015,9 +1015,41 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if(cmd.eventType) {
 					HBservice = {
 						controlService : new Service.StatelessProgrammableSwitch(eqLogic.name),
-						characteristics : [Characteristic.ProgrammableSwitchEvent]
+						characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
 					};
+					// change validValues of ProgrammableSwitchEvent in function of what type of status (single click, double click, long click) is supported
+					// set a new Index for each button
+					/*
+					HueSensor.prototype.createButton = function(buttonIndex, buttonName, values) {
+					  const service = new Service.StatelessProgrammableSwitch(
+						this.name + ' ' + buttonName, buttonName
+					  );
+					  this.serviceList.push(service);
+					  this.buttonMap['' + buttonIndex] = service;
+					  service.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+						.setProps({validValues: values});
+					  service.getCharacteristic(Characteristic.ServiceLabelIndex)
+						// .on('get', (callback) => {return callback(this.error, buttonIndex);})
+						.setValue(buttonIndex);
+					};
+					
+					this.buttonMap[buttonIndex]
+						.updateCharacteristic(Characteristic.ProgrammableSwitchEvent, action);
+					// action = SINGLE or DOUBLE or LONG numeric value
+					*/
 					let Serv = HBservice.controlService;
+					let getRndInt = function(min, max) {
+						min = Math.ceil(min);
+						max = Math.floor(max);
+						return Math.floor(Math.random() * (max - min +1)) + min;
+					};
+					let index = getRndInt(1,255);
+					
+					if(cmd.eventType.customValues) {
+						Serv.customValues = cmd.eventType.customValues;
+					}
+					
+					Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(index);
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.eventType=cmd.eventType;
@@ -1453,9 +1485,12 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 			}.bind(this));
 		}
 		characteristic.on('get', function(callback) {
-			let returnValue = sanitizeValue(this.getAccessoryValue(characteristic, service),characteristic);
-			this.log('info','[Demande d\'Homekit]','Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'('+returnValue+')','\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
-			callback(undefined, returnValue);
+			let returnValue = this.getAccessoryValue(characteristic, service);
+			if(returnValue !== undefined) {
+				returnValue = sanitizeValue(returnValue,characteristic);
+				this.log('info','[Demande d\'Homekit]','Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'('+returnValue+')','\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
+				callback(undefined, returnValue);
+			}
 		}.bind(this));
 	}
 	catch(e){
@@ -1602,12 +1637,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 	try{
 		var that = this;
 		
-		var customValues=[];
+		var customValues={};
 		if(service.customValues) {
 			customValues=service.customValues;
-		} else {
-			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0};
-		}
+		} 
+		
 		var returnValue = 0;
 		var HRreturnValue;
 		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
@@ -1627,6 +1661,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 					if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+					if (cmd.generic_type == "SWITCH_STATE" && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -2011,6 +2049,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
+								case undefined:
+									returnValue=undefined;
+									HRreturnValue="undef";
+								break;
 								case customValues.OPEN :
 									returnValue=Characteristic.TargetDoorState.OPEN; //0
 									HRreturnValue="OPEN";	
@@ -2031,6 +2073,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
+								default:
+									returnValue=undefined;
+									HRreturnValue="AutreValeur";
+								break;
 						}
 						if (DEV_DEBUG) that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						break;
@@ -2044,6 +2090,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
+								case undefined:
+									returnValue=undefined;
+									HRreturnValue="undef";
+								break;
 								case customValues.OPEN :
 									returnValue=Characteristic.CurrentDoorState.OPEN; //0
 									HRreturnValue="OPEN";
@@ -2063,6 +2113,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								case customValues.STOPPED :
 									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 									HRreturnValue="STOPPED";
+								break;
+								default:
+									returnValue=undefined;
+									HRreturnValue="AutreValeur";
 								break;
 						}
 						if (DEV_DEBUG) that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
@@ -2240,8 +2294,29 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				if (returnValue < 0) returnValue = 0;
 			break;
 			case Characteristic.ProgrammableSwitchEvent.UUID :
-				returnValue = cmdList.currentValue;
-				if (DEV_DEBUG) that.log('debug','GetState ProgrammableSwitchEvent: '+returnValue);
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'SWITCH_STATELESS_ALLINONE' && cmd.id == service.infos.eventType.id) {
+						switch(cmd.currentValue) {
+							case undefined:
+								returnValue = undefined;
+							break;
+							case customValues.SINGLE :
+								returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
+							break;
+							case customValues.DOUBLE :
+								returnValue = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS; // 1
+							break;
+							case customValues.LONG :
+								returnValue = Characteristic.ProgrammableSwitchEvent.LONG_PRESS; // 2
+							break;
+							default :
+								returnValue = undefined;
+							break;
+						}
+						break;
+					}
+				}
+				if (DEV_DEBUG) that.log('debug','**********GetState ProgrammableSwitchEvent: '+returnValue);
 			break;
 			case Characteristic.OutletInUse.UUID :
 				for (const cmd of cmdList) {
@@ -2317,7 +2392,8 @@ function sanitizeValue(currentValue,characteristic) {
 			break;
 			case "string" :
 			case "tlv8" :
-				val = currentValue.toString();
+				if(currentValue !== undefined)
+					val = currentValue.toString();
 				if(!val) val = '';
 			break;
 	}
@@ -2777,18 +2853,21 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		let infoFound = findMyID(subService.infos,update.option.cmd_id);
 		let statusFound = findMyID(subService.statusArr,update.option.cmd_id);
 		if(infoFound != -1 || statusFound != -1) {
-			let returnValue = sanitizeValue(that.getAccessoryValue(subCharact, subService),subCharact);
-			if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
-				if(!that.settingLight) { // and it's not currently being modified
+			let returnValue = that.getAccessoryValue(subCharact, subService);
+			if(returnValue !== undefined) {
+				returnValue = sanitizeValue(returnValue,subCharact);
+				if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
+					if(!that.settingLight) { // and it's not currently being modified
+						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+						subCharact.setValue(returnValue, undefined, 'fromJeedom');
+					} else {
+						if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+					}
+				}
+				else {
 					that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 					subCharact.setValue(returnValue, undefined, 'fromJeedom');
-				} else {
-					if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 				}
-			}
-			else {
-				that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
-				subCharact.setValue(returnValue, undefined, 'fromJeedom');
 			}
 		}
 	}
