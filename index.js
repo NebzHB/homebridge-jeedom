@@ -402,8 +402,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.energy.forEach(function(cmd) {
 				if (cmd.state) {
 					HBservice = {
-						controlService : new Service.Switch(eqLogic.name),
-						characteristics : [Characteristic.On]
+						controlService : new Service.Outlet(eqLogic.name),
+						characteristics : [Characteristic.On, Characteristic.OutletInUse]
 					};
 					let Serv = HBservice.controlService;
 					Serv.actions={};
@@ -414,6 +414,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.on = cmd2.on;
 						} else if (cmd2.off) {
 							Serv.actions.off = cmd2.off;
+						} else if (cmd2.inuse) {
+							Serv.infos.inuse = cmd2.inuse;
 						}
 					});
 					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Prise Bouton On"');
@@ -435,6 +437,43 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}
+		if (eqLogic.services.Switch) {
+			eqLogic.services.Switch.forEach(function(cmd) {
+				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.Switch(eqLogic.name),
+						characteristics : [Characteristic.On]
+					};
+					let Serv = HBservice.controlService;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.state=cmd.state;
+					eqServicesCopy.Switch.forEach(function(cmd2) {
+						if (cmd2.on) {
+							Serv.actions.on = cmd2.on;
+						} else if (cmd2.off) {
+							Serv.actions.off = cmd2.off;
+						}
+					});
+					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Interrupteur Bouton On"');
+					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Interrupteur Bouton Off"');
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					Serv.cmd_id = cmd.state.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Interrupteur Etat"');
+			} else {
+				HBservice = null;
+			}
+		}		
 		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
 			eqLogic.services.power.forEach(function(cmd) {
 				if (cmd.power) {
@@ -862,26 +901,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					Serv.cmd_id = cmd.brightness.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
-				}
-			});
-		}
-		if (eqLogic.services.energy2) { // not used
-			eqLogic.services.energy2.forEach(function(cmd) {
-				if (cmd.energy2) {
-					HBservice = {
-						controlService : new Service.Outlet(eqLogic.name),
-						characteristics : [Characteristic.On, Characteristic.OutletInUse]
-					};
-					let Serv = HBservice.controlService;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.energy2=cmd.energy2;
-					Serv.cmd_id = cmd.energy2.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
@@ -2091,15 +2110,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
-				// no mute status, just verify the volume, if 0 its muted
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == service.infos.volume.id) {
-						if(cmd.currentValue == 0) {
-							returnValue = true;
-						} else {
-							returnValue = false;
+				if(returnValue === 0) {
+					// no mute status, just verify the volume, if 0 its muted
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == service.infos.volume.id) {
+							if(cmd.currentValue == 0) {
+								returnValue = true;
+							} else {
+								returnValue = false;
+							}
+							break;
 						}
-						break;
 					}
 				}
 			break;
@@ -2203,7 +2224,23 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				if (DEV_DEBUG) that.log('debug','GetState ProgrammableSwitchEvent: '+returnValue);
 			break;
 			case Characteristic.OutletInUse.UUID :
-				returnValue = parseFloat(cmdList.power) > 1.0 ? true : false;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'ENERGY_INUSE' && cmd.id == service.infos.inuse.id) {
+						returnValue = toBool(cmd.currentValue);
+						break;
+					}
+				}
+				if(returnValue === 0) {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'POWER') {
+							returnValue = parseFloat(cmd.currentValue) > 1.0 ? true : false;
+							break;
+						}
+					}
+				}
+				if(returnValue === 0) {
+					returnValue = false;
+				}
 			break;
 		}
 		return returnValue;
