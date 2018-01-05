@@ -1640,7 +1640,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		var customValues={};
 		if(service.customValues) {
 			customValues=service.customValues;
-		} 
+		} else {
+			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0,'SINGLE':0,'DOUBLE':1,'LONG':2};
+		}
 		
 		var returnValue = 0;
 		var HRreturnValue;
@@ -2049,10 +2051,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
-								case undefined:
-									returnValue=undefined;
-									HRreturnValue="undef";
-								break;
 								case customValues.OPEN :
 									returnValue=Characteristic.TargetDoorState.OPEN; //0
 									HRreturnValue="OPEN";	
@@ -2073,10 +2071,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								default:
-									returnValue=undefined;
-									HRreturnValue="AutreValeur";
-								break;
 						}
 						if (DEV_DEBUG) that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						break;
@@ -2090,10 +2084,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 					    cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
-								case undefined:
-									returnValue=undefined;
-									HRreturnValue="undef";
-								break;
 								case customValues.OPEN :
 									returnValue=Characteristic.CurrentDoorState.OPEN; //0
 									HRreturnValue="OPEN";
@@ -2113,10 +2103,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								case customValues.STOPPED :
 									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 									HRreturnValue="STOPPED";
-								break;
-								default:
-									returnValue=undefined;
-									HRreturnValue="AutreValeur";
 								break;
 						}
 						if (DEV_DEBUG) that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
@@ -2316,7 +2302,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
-				if (DEV_DEBUG) that.log('debug','**********GetState ProgrammableSwitchEvent: '+returnValue);
+				that.log('debug','**********GetState ProgrammableSwitchEvent: '+returnValue);
 			break;
 			case Characteristic.OutletInUse.UUID :
 				for (const cmd of cmdList) {
