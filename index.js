@@ -2282,7 +2282,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.ProgrammableSwitchEvent.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SWITCH_STATELESS_ALLINONE' && cmd.id == service.infos.eventType.id) {
-						switch(cmd.currentValue) {
+						switch(cmd.currentValue.toString()) {
 							case undefined:
 								returnValue = undefined;
 							break;
