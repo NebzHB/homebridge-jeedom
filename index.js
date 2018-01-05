@@ -1052,6 +1052,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					let Serv = HBservice.controlService;
 					
 					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
+					Serv.ServiceLabelIndex = eqLogic.indexStateless;
 					
 					if(cmd.eventType.customValues) {
 						Serv.customValues = cmd.eventType.customValues;
@@ -1074,14 +1075,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(!eqLogic.LabelExists) {
 						let tmpHBservice = {
-							controlService : new Service.ServiceLabel(eqLogic.name, Serv.subtype+'_label'),
+							controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
 							characteristics : [Characteristic.ServiceLabelNamespace]
 						}
 						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
 						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
-						tmpHBservice.controlService.cmd_id = eqLogic.cmd_id+'_label';
-						eqLogic.LabelExists = true;
+						tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
+						eqLogic.LabelExists = tmpHBservice.controlService;
 						HBservices.push(tmpHBservice);
 					}
 					
@@ -1090,6 +1091,60 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}		
+		if (eqLogic.services.StatelessSwitchMono) {
+			eqLogic.services.StatelessSwitchMono.forEach(function(cmd) {
+				if(cmd.Single || cmd.Double || cmd.Long) {
+					let Label = "";
+					if(cmd.Single) Label = "Simple";
+					if(cmd.Double) Label = "Double";
+					if(cmd.Long) Label = "Long";
+					
+					let cmdType = cmd.Single || cmd.Double || cmd.Long;
+					
+					HBservice = {
+						controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+cmdType.name+' '+Label),
+						characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
+					};
+					let Serv = HBservice.controlService;
+					
+					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
+					Serv.ServiceLabelIndex = eqLogic.indexStateless;
+					
+					let values = [];
+					if(cmd.Single) values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+					if(cmd.Double) values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+					if(cmd.Long) values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+					that.log('debug','ValidValues Mono',values);
+					Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
+
+					
+					Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(eqLogic.indexStateless);
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.type=cmdType;
+					Serv.cmd_id = Serv.infos.type.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(!eqLogic.LabelService) {
+						let tmpHBservice = {
+							controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
+							characteristics : [Characteristic.ServiceLabelNamespace]
+						}
+						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
+						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
+						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+						tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
+						eqLogic.LabelService = tmpHBservice.controlService;
+						HBservices.push(tmpHBservice);
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}			
 		if (eqLogic.services.thermostat) {
 			eqLogic.services.thermostat.forEach(function(cmd) {
 				if(cmd.setpoint) {
@@ -1715,6 +1770,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				}
 			break;
 			// Generics
+			case Characteristic.ServiceLabelIndex.UUID :
+				returnValue = service.ServiceLabelIndex || 1;
+			break;
+			case Characteristic.ServiceLabelNamespace.UUID :
+				returnValue = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
+			break;
 			case Characteristic.AirQuality.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
