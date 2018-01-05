@@ -790,6 +790,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.displayName = eqLogic.name;
 						eqLogic.loggingService = new FakeGatoHistoryService("weather", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
@@ -825,6 +826,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.displayName = eqLogic.name;
 						eqLogic.loggingService = new FakeGatoHistoryService("weather", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
