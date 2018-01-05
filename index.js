@@ -1411,7 +1411,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			
 			if(this.fakegato && HBAccessory.context.eqLogic.hasLogging && HBAccessory.context.eqLogic.loggingService) {
 				HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
-				this.log('info',' Ajout service :'+HBAccessory.context.eqLogic.loggingService.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+				this.log('info',' Ajout service History :'+HBAccessory.context.eqLogic.loggingService.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
 			}	
 			
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
