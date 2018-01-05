@@ -1053,6 +1053,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
 					Serv.ServiceLabelIndex = eqLogic.indexStateless;
+					Serv.type='Multi';
 					
 					if(cmd.eventType.customValues) {
 						Serv.customValues = cmd.eventType.customValues;
@@ -1077,7 +1078,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						let tmpHBservice = {
 							controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
 							characteristics : [Characteristic.ServiceLabelNamespace]
-						}
+						};
 						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
 						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
@@ -1109,6 +1110,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
 					Serv.ServiceLabelIndex = eqLogic.indexStateless;
+					Serv.type = 'Mono';
 					
 					let values = [];
 					if(cmd.Single) values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
@@ -1131,7 +1133,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						let tmpHBservice = {
 							controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
 							characteristics : [Characteristic.ServiceLabelNamespace]
-						}
+						};
 						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
 						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
@@ -2387,26 +2389,41 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				if (returnValue < 0) returnValue = 0;
 			break;
 			case Characteristic.ProgrammableSwitchEvent.UUID :
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'SWITCH_STATELESS_ALLINONE' && cmd.id == service.infos.eventType.id) {
-						switch(cmd.currentValue.toString()) {
-							case undefined:
-								returnValue = undefined;
-							break;
-							case customValues.SINGLE :
-								returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
-							break;
-							case customValues.DOUBLE :
-								returnValue = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS; // 1
-							break;
-							case customValues.LONG :
-								returnValue = Characteristic.ProgrammableSwitchEvent.LONG_PRESS; // 2
-							break;
-							default :
-								returnValue = undefined;
+				if(service.type == 'Multi') {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'SWITCH_STATELESS_ALLINONE' && cmd.id == service.infos.eventType.id) {
+							switch(cmd.currentValue.toString()) {
+								case undefined:
+									returnValue = undefined;
+								break;
+								case customValues.SINGLE :
+									returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
+								break;
+								case customValues.DOUBLE :
+									returnValue = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS; // 1
+								break;
+								case customValues.LONG :
+									returnValue = Characteristic.ProgrammableSwitchEvent.LONG_PRESS; // 2
+								break;
+								default :
+									returnValue = undefined;
+								break;
+							}
 							break;
 						}
-						break;
+					}
+				} else if (service.type == 'Mono') {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'SWITCH_STATELESS_SINGLE' && cmd.id == service.infos.type.id) {
+							returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
+							break;
+						} else if (cmd.generic_type == 'SWITCH_STATELESS_DOUBLE' && cmd.id == service.infos.type.id) {
+							returnValue = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS; // 1
+							break;
+						} else if (cmd.generic_type == 'SWITCH_STATELESS_LONG' && cmd.id == service.infos.type.id) {
+							returnValue = Characteristic.ProgrammableSwitchEvent.LONG_PRESS; // 2
+							break;
+						}
 					}
 				}
 				that.log('debug','**********GetState ProgrammableSwitchEvent: '+returnValue);
