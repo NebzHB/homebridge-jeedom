@@ -1049,39 +1049,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						controlService : new Service.StatelessProgrammableSwitch(eqLogic.name),
 						characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
 					};
-					// change validValues of ProgrammableSwitchEvent in function of what type of status (single click, double click, long click) is supported
-					// set a new Index for each button
-					/*
-					HueSensor.prototype.createButton = function(buttonIndex, buttonName, values) {
-					  const service = new Service.StatelessProgrammableSwitch(
-						this.name + ' ' + buttonName, buttonName
-					  );
-					  this.serviceList.push(service);
-					  this.buttonMap['' + buttonIndex] = service;
-					  service.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
-						.setProps({validValues: values});
-					  service.getCharacteristic(Characteristic.ServiceLabelIndex)
-						// .on('get', (callback) => {return callback(this.error, buttonIndex);})
-						.setValue(buttonIndex);
-					};
-					
-					this.buttonMap[buttonIndex]
-						.updateCharacteristic(Characteristic.ProgrammableSwitchEvent, action);
-					// action = SINGLE or DOUBLE or LONG numeric value
-					*/
 					let Serv = HBservice.controlService;
-					let getRndInt = function(min, max) {
-						min = Math.ceil(min);
-						max = Math.floor(max);
-						return Math.floor(Math.random() * (max - min +1)) + min;
-					};
-					let index = getRndInt(1,255);
+					
+					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
 					
 					if(cmd.eventType.customValues) {
 						Serv.customValues = cmd.eventType.customValues;
+						let values = [];
+						if(Serv.customValues.SINGLE) values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+						if(Serv.customValues.DOUBLE) values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+						if(Serv.customValues.LONG) values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+						that.log('debug','ValidValues',values);
+						Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 					}
 					
-					Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(index);
+					Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(eqLogic.indexStateless);
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.eventType=cmd.eventType;
@@ -1089,6 +1071,20 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(!eqLogic.LabelExists) {
+						let tmpHBservice = {
+							controlService : new Service.ServiceLabel(eqLogic.name, Serv.subtype+'_label'),
+							characteristics : [Characteristic.ServiceLabelNamespace]
+						}
+						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
+						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
+						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+						tmpHBservice.controlService.cmd_id = eqLogic.cmd_id+'_label';
+						eqLogic.LabelExists = true;
+						HBservices.push(tmpHBservice);
+					}
+					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
