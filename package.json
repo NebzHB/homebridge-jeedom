@@ -24,7 +24,9 @@
     "Siri"
   ],
   "dependencies": {
-    "request": "^2.81.0"
+    "request": "^2.81.0",
+    "moment": "",
+    "fakegato-history": ">=0.3.3"
   },
   "author": "Benjamin RENARD <nebz@nebz.be>",
   "contributors": [
