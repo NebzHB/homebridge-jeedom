@@ -19,6 +19,7 @@
 var Accessory, Service, Characteristic, UUIDGen;
 var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
+var moment = require('moment');
 var debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
@@ -26,6 +27,7 @@ debug.WARN = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
 var hasError = false;
+var FakeGatoHistoryService;
 var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','UV','PRESSURE','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
 
@@ -34,6 +36,7 @@ module.exports = function(homebridge) {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 	UUIDGen = homebridge.hap.uuid;
+	FakeGatoHistoryService = require('fakegato-history')(homebridge);
 	RegisterCustomCharacteristics();
 	homebridge.registerPlatform('homebridge-jeedom', 'Jeedom', JeedomPlatform, true);
 };
@@ -57,6 +60,11 @@ function JeedomPlatform(logger, config, api) {
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
+		
+		this.fakegato=false;
+		if(config.fakegato==true) {
+			this.fakegato=true;
+		}
 		
 		if (!config.url || 
 		    config.url == "http://:80" ||
@@ -769,6 +777,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentTemperature]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.temperature=cmd.temperature;
@@ -779,6 +788,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService = new FakeGatoHistoryService("weather", eqLogic);
+						eqLogic.loggingService.subtype = Serv.eqID+'-history';
+						eqLogic.loggingService.cmd_id = Serv.eqID;
+						eqLogic.loggingService.log = that.log;
+						eqLogic.loggingService.log.debug = that.log;
+						eqLogic.hasLogging=true;
+					}
+					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -793,6 +812,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentRelativeHumidity]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.humidity=cmd.humidity;
@@ -803,6 +823,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService = new FakeGatoHistoryService("weather", eqLogic);
+						eqLogic.loggingService.subtype = Serv.eqID+'-history';
+						eqLogic.loggingService.cmd_id = Serv.eqID;
+						eqLogic.loggingService.log = that.log;
+						eqLogic.loggingService.log.debug = that.log;
+						eqLogic.hasLogging=true;
+					}
+					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -1376,6 +1406,12 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}else{
 			let cachedValues=jeedomAccessory.delServices(HBAccessory);
 			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
+			
+			if(this.fakegato && HBAccessory.context.eqLogic.hasLogging && HBAccessory.context.eqLogic.loggingService) {
+				HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
+				this.log('info',' Ajout service :'+HBAccessory.context.eqLogic.loggingService.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+			}	
+			
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
@@ -1739,6 +1775,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentRelativeHumidity.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'HUMIDITY' && cmd.id == service.cmd_id) {
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  humidity: cmd.currentValue
+							});
+						}
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -1748,6 +1790,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == service.cmd_id) || 
 					    (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  temp: cmd.currentValue
+							});
+						}
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -3159,10 +3207,10 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 					}
 					
 					characteristic.props.needsBinding = true;
-					if (characteristic.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
+					if (characteristic.UUID && characteristic.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
 						characteristic.props.minValue = 0;
 					}
-					if (characteristic.UUID == Characteristic.CurrentTemperature.UUID) {
+					if (characteristic.UUID && characteristic.UUID == Characteristic.CurrentTemperature.UUID) {
 						characteristic.props.minValue = -50;
 						characteristic.props.minStep = 0.01;
 					}
