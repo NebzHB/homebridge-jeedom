@@ -26,7 +26,7 @@
   "dependencies": {
     "request": ">=2.81.0",
     "moment": "*",
-    "fakegato-history": ">=0.3.3"
+    "fakegato-history": "simont77:fakegato-history.git#fix_R_registers_format_and_add_support_for_Door_Motion_Thermo"
   },
   "author": "Benjamin RENARD <nebz@nebz.be>",
   "contributors": [
