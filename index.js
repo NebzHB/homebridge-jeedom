@@ -29,7 +29,7 @@ debug.NO = 1000;
 var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
-const GenericAssociated = ['GENERIC_INFO','SHOCK','UV','PRESSURE','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
+const GenericAssociated = ['GENERIC_INFO','SHOCK','UV','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -727,6 +727,26 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice = null;
 				}
 			});
+		}		
+		if (eqLogic.services.pressure) {
+			eqLogic.services.pressure.forEach(function(cmd) {
+				if (cmd.pressure) {
+					HBservice = {
+						controlService : new Service.PressureSensor(eqLogic.name),
+						characteristics : [Characteristic.AirPressure]
+					};
+					let Serv = HBservice.controlService;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.pressure=cmd.pressure;
+					Serv.cmd_id = cmd.pressure.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
 		}			
 		if (eqLogic.services.speaker) {
 			eqLogic.services.speaker.forEach(function(cmd) {
@@ -916,6 +936,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
+						HBservice.characteristics.push(Characteristic.ContactHelper1,Characteristic.ContactHelper2,Characteristic.ContactHelper3,Characteristic.ContactHelper4,Characteristic.ContactHelper5);
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
 						eqLogic.log.debug = that.log;
@@ -1934,6 +1955,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;				
+			case Characteristic.AirPressure.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'PRESSURE' && cmd.id == service.cmd_id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
 			//Generic_info
 			case Characteristic.GenericFLOAT.UUID :
 			case Characteristic.GenericINT.UUID :
@@ -3165,6 +3194,64 @@ function RegisterCustomCharacteristics() {
 	inherits(Characteristic.AirPressure, Characteristic);	
 	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
 
+	// contacts helpers, need to identify
+	Characteristic.ContactHelper1 = function() {
+		Characteristic.call(this, 'ContactHelper1', 'E863F129-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT32,
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.ContactHelper1.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.ContactHelper1, Characteristic);
+	Characteristic.ContactHelper2 = function() {
+		Characteristic.call(this, 'ContactHelper2', 'E863F118-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT16,
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.ContactHelper2.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.ContactHelper2, Characteristic);
+	Characteristic.ContactHelper3 = function() {
+		Characteristic.call(this, 'ContactHelper3', 'E863F119-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT16,
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.ContactHelper3.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.ContactHelper3, Characteristic);
+	Characteristic.ContactHelper4 = function() {
+		Characteristic.call(this, 'ContactHelper4', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT32,
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.ContactHelper4.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.ContactHelper4, Characteristic);	
+	Characteristic.ContactHelper5 = function() {
+		Characteristic.call(this, 'ContactHelper5', 'E863F112-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT32,
+		  minStep: 1,
+		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.ContactHelper5.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.ContactHelper5, Characteristic);	
+	
+	
 	Characteristic.GenericINT = function() {
 		Characteristic.call(this, 'ValueINT', '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263');
 		this.setProps({
@@ -3240,7 +3327,23 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Service.PowerMonitor, Service);
 	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+	
+	/**
+	 * Custom Service 'Pressure Sensor'
+	 */
 
+	Service.PressureSensor = function(displayName, subtype) {
+		Service.call(this, displayName, 'E863F00A-079E-48FF-8F27-9C2605A29F52', subtype);
+
+		// Required Characteristics
+		this.addCharacteristic(Characteristic.AirPressure);
+
+		// Optional Characteristics
+
+	};
+	inherits(Service.PressureSensor, Service);
+	Service.PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+	
 	/**
 	 * Custom Service 'Custom Service'
 	 */
