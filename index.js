@@ -900,6 +900,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.ContactSensorState]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.opening=cmd.opening;
@@ -913,6 +914,19 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.displayName = eqLogic.name;
+						eqLogic.log = {};
+						eqLogic.log.debug = that.log;
+						eqLogic.loggingService = new FakeGatoHistoryService("door", eqLogic);
+						eqLogic.loggingService.subtype = Serv.eqID+'-history';
+						eqLogic.loggingService.cmd_id = Serv.eqID;
+						//eqLogic.loggingService.log = that.log;
+						//eqLogic.loggingService.log.debug = that.log;
+						eqLogic.hasLogging=true;
+					}
+					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -1821,6 +1835,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 						if(returnValue === false) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
+						
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  status: returnValue
+							});
+						}
+						
 						break;
 					}
 				}
