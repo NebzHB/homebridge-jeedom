@@ -936,7 +936,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						HBservice.characteristics.push(Characteristic.ContactHelper1,Characteristic.ContactHelper2,Characteristic.ContactHelper3,Characteristic.ContactHelper4,Characteristic.ContactHelper5);
+						HBservice.characteristics.push(Characteristic.ContactHelper1,Characteristic.ContactHelper2,Characteristic.ContactHelper4);//,Characteristic.ContactHelper2,Characteristic.ContactHelper3,Characteristic.ContactHelper4,Characteristic.ContactHelper5);
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
 						eqLogic.log.debug = that.log;
@@ -1858,6 +1858,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							if(returnValue == 1) {
+								let val=service.getCharacteristic(Characteristic.ContactHelper1).getValue();
+								that.log('info','******NumOpen : ',val);
+								if(val === undefined) val = 0;
+								that.log('info','******NumOpen : ',val);
+								val = val++;
+								that.log('info','******NumOpen : ',val);
+								service.getCharacteristic(Characteristic.ContactHelper1).setValue(val);
+							}
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
 							  status: returnValue
@@ -3195,7 +3204,7 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
 
 	// contacts helpers, need to identify
-	Characteristic.ContactHelper1 = function() {
+	Characteristic.ContactHelper1 = function() { // NUMBER OF OPEN
 		Characteristic.call(this, 'ContactHelper1', 'E863F129-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 		  format:   Characteristic.Formats.UINT32,
@@ -3206,7 +3215,7 @@ function RegisterCustomCharacteristics() {
 	};
 	Characteristic.ContactHelper1.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
 	inherits(Characteristic.ContactHelper1, Characteristic);
-	Characteristic.ContactHelper2 = function() {
+	Characteristic.ContactHelper2 = function() {// Mandatory for data update
 		Characteristic.call(this, 'ContactHelper2', 'E863F118-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 		  format:   Characteristic.Formats.UINT16,
@@ -3228,7 +3237,7 @@ function RegisterCustomCharacteristics() {
 	};
 	Characteristic.ContactHelper3.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
 	inherits(Characteristic.ContactHelper3, Characteristic);
-	Characteristic.ContactHelper4 = function() {
+	Characteristic.ContactHelper4 = function() { // RESET BUTTON
 		Characteristic.call(this, 'ContactHelper4', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 		  format:   Characteristic.Formats.UINT32,
