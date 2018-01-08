@@ -257,6 +257,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.On]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -365,6 +366,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -414,6 +416,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.On, Characteristic.OutletInUse]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -453,6 +456,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.On]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -490,6 +494,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.power=cmd.power;
@@ -521,6 +526,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.battery=cmd.battery;
@@ -542,6 +548,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.AirQuality]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.Index=cmd.Index;
@@ -592,6 +599,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.MotionDetected]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.presence=cmd.presence;
@@ -605,6 +613,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+						eqLogic.displayName = eqLogic.name;
+						eqLogic.log = {};
+						eqLogic.log.debug = that.log;
+						eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic);
+						eqLogic.loggingService.subtype = Serv.eqID+'-history';
+						eqLogic.loggingService.cmd_id = Serv.eqID;
+						eqLogic.hasLogging=true;
+					}
+					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -618,6 +638,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.OccupancyDetected]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.occupancy=cmd.occupancy;
@@ -644,6 +665,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : []
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -716,6 +738,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.UVIndex]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.uv=cmd.uv;
@@ -736,6 +759,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.AirPressure]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.pressure=cmd.pressure;
@@ -756,6 +780,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.Mute,Characteristic.Volume]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.volume=cmd.volume;
@@ -811,11 +836,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
 						eqLogic.displayName = eqLogic.name;
-						eqLogic.loggingService = new FakeGatoHistoryService("weather", eqLogic);
+						eqLogic.log = {};
+						eqLogic.log.debug = that.log;
+						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
-						eqLogic.loggingService.log = that.log;
-						eqLogic.loggingService.log.debug = that.log;
 						eqLogic.hasLogging=true;
 					}
 					
@@ -847,11 +872,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
 						eqLogic.displayName = eqLogic.name;
-						eqLogic.loggingService = new FakeGatoHistoryService("weather", eqLogic);
+						eqLogic.log = {};
+						eqLogic.log.debug = that.log;
+						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
-						eqLogic.loggingService.log = that.log;
-						eqLogic.loggingService.log.debug = that.log;
 						eqLogic.hasLogging=true;
 					}
 					
@@ -868,6 +893,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.SmokeDetected]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.smoke=cmd.smoke;
@@ -894,6 +920,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.LeakDetected]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.flood=cmd.flood;
@@ -936,15 +963,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						HBservice.characteristics.push(Characteristic.ContactHelper1,Characteristic.ContactHelper2,Characteristic.ContactHelper4);//,Characteristic.ContactHelper2,Characteristic.ContactHelper3,Characteristic.ContactHelper4,Characteristic.ContactHelper5);
+						HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
 						eqLogic.log.debug = that.log;
-						eqLogic.loggingService = new FakeGatoHistoryService("door", eqLogic);
+						eqLogic.loggingService = new Service.FakeGatoHistoryService("door", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
-						//eqLogic.loggingService.log = that.log;
-						//eqLogic.loggingService.log.debug = that.log;
 						eqLogic.hasLogging=true;
 					}
 					
@@ -961,6 +986,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentAmbientLightLevel]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.brightness=cmd.brightness;
@@ -984,6 +1010,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -1028,6 +1055,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -1065,6 +1093,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.ProgrammableSwitchEvent]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
@@ -1085,7 +1114,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
 					};
 					let Serv = HBservice.controlService;
-					
+					Serv.eqLogic=eqLogic;
 					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
 					Serv.ServiceLabelIndex = eqLogic.indexStateless;
 					Serv.type='Multi';
@@ -1117,6 +1146,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
 						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+						tmpHBservice.controlService.eqLogic=eqLogic;
 						tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
 						eqLogic.LabelExists = tmpHBservice.controlService;
 						HBservices.push(tmpHBservice);
@@ -1142,7 +1172,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
 					};
 					let Serv = HBservice.controlService;
-					
+					Serv.eqLogic=eqLogic;
 					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
 					Serv.ServiceLabelIndex = eqLogic.indexStateless;
 					Serv.type = 'Mono';
@@ -1172,6 +1202,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
 						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+						tmpHBservice.controlService.eqLogic=eqLogic;
 						tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
 						eqLogic.LabelService = tmpHBservice.controlService;
 						HBservices.push(tmpHBservice);
@@ -1190,6 +1221,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.setpoint=cmd.setpoint;
@@ -1273,6 +1305,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
 					};
 					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.enable_state=cmd.enable_state;
@@ -1639,6 +1672,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 		
 		var action,rgb;
 		switch (characteristic.UUID) {
+			case Characteristic.ResetTotal.UUID :
+				service.numberOpened = 0;
+			break;
 			case Characteristic.On.UUID :
 			case Characteristic.LockPhysicalControls.UUID :
 				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
@@ -1807,6 +1843,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				}
 			break;
 			// Generics
+			case Characteristic.TimesOpened.UUID :
+				returnValue = service.numberOpened;
+			break;
 			case Characteristic.ServiceLabelIndex.UUID :
 				returnValue = service.ServiceLabelIndex || 1;
 			break;
@@ -1858,14 +1897,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							if(returnValue == 1) {
-								let val=service.getCharacteristic(Characteristic.ContactHelper1).getValue();
-								that.log('info','******NumOpen : ',val);
-								if(val === undefined) val = 0;
-								that.log('info','******NumOpen : ',val);
-								val = val++;
-								that.log('info','******NumOpen : ',val);
-								service.getCharacteristic(Characteristic.ContactHelper1).setValue(val);
+							if(returnValue === Characteristic.ContactSensorState.CONTACT_DETECTED) {
+								service.numberOpened++;
 							}
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
@@ -1930,6 +1963,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
 						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert ?
 						returnValue = toBool(cmd.currentValue);
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  status: returnValue
+							});
+						}
 						break;
 					}
 				}
@@ -3148,8 +3187,8 @@ function RegisterCustomCharacteristics() {
 		Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 			format : Characteristic.Formats.UINT16,
-			unit : 'watts',
-			maxValue : 1000000000,
+			unit : 'Watts',
+			maxValue : 100000,
 			minValue : 0,
 			minStep : 1,
 			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
@@ -3163,8 +3202,8 @@ function RegisterCustomCharacteristics() {
 		Characteristic.call(this, 'Total Consumption', 'E863F10C-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 			format : Characteristic.Formats.FLOAT, // Deviation from Eve Energy observed type
-			unit : 'kilowatthours',
-			maxValue : 1000000000,
+			unit : 'kWh',
+			maxValue : 100000000000,
 			minValue : 0,
 			minStep : 0.001,
 			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
@@ -3204,61 +3243,92 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
 
 	// contacts helpers, need to identify
-	Characteristic.ContactHelper1 = function() { // NUMBER OF OPEN
-		Characteristic.call(this, 'ContactHelper1', 'E863F129-079E-48FF-8F27-9C2605A29F52');
+	Characteristic.TimesOpened = function() {
+		Characteristic.call(this, 'TimesOpened', 'E863F129-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 		  format:   Characteristic.Formats.UINT32,
-		  minStep: 1,
 		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
 		});
 		this.value = this.getDefaultValue();
 	};
-	Characteristic.ContactHelper1.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.ContactHelper1, Characteristic);
-	Characteristic.ContactHelper2 = function() {// Mandatory for data update
-		Characteristic.call(this, 'ContactHelper2', 'E863F118-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-		  format:   Characteristic.Formats.UINT16,
-		  minStep: 1,
-		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.ContactHelper2.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.ContactHelper2, Characteristic);
-	Characteristic.ContactHelper3 = function() {
-		Characteristic.call(this, 'ContactHelper3', 'E863F119-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-		  format:   Characteristic.Formats.UINT16,
-		  minStep: 1,
-		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.ContactHelper3.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.ContactHelper3, Characteristic);
-	Characteristic.ContactHelper4 = function() { // RESET BUTTON
-		Characteristic.call(this, 'ContactHelper4', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
+	Characteristic.TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.TimesOpened, Characteristic);
+	
+	Characteristic.Char118 = function() {
+		Characteristic.call(this, 'Char118', 'E863F118-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 		  format:   Characteristic.Formats.UINT32,
-		  minStep: 1,
 		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
 		});
 		this.value = this.getDefaultValue();
 	};
-	Characteristic.ContactHelper4.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.ContactHelper4, Characteristic);	
-	Characteristic.ContactHelper5 = function() {
-		Characteristic.call(this, 'ContactHelper5', 'E863F112-079E-48FF-8F27-9C2605A29F52');
+	Characteristic.Char118.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.Char118, Characteristic);
+	
+	Characteristic.Char119 = function() {
+		Characteristic.call(this, 'Char119', 'E863F119-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 		  format:   Characteristic.Formats.UINT32,
-		  minStep: 1,
 		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
 		});
 		this.value = this.getDefaultValue();
 	};
-	Characteristic.ContactHelper5.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.ContactHelper5, Characteristic);	
+	Characteristic.Char119.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.Char119, Characteristic);
+	
+	Characteristic.LastActivation = function() {
+		Characteristic.call(this, 'LastActivation', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT32,
+		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.LastActivation.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.LastActivation, Characteristic);	
+	
+	Characteristic.ResetTotal = function() {
+		Characteristic.call(this, 'ResetTotal', 'E863F112-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+		  format:   Characteristic.Formats.UINT32,
+		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.ResetTotal.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.ResetTotal, Characteristic);	
+	// / contacts helpers
+	
+	// Motion Helpers
+	Characteristic.Sensitivity = function() {
+		Characteristic.call(this, 'Sensitivity', 'E863F120-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.UINT16,
+			maxValue: 7,
+			minValue: 0,
+			minStep: 1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.Sensitivity.UUID = 'E863F120-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.Sensitivity, Characteristic);
+
+	Characteristic.Duration = function() {
+		Characteristic.call(this, 'Duration', 'E863F12D-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.UINT16,
+			maxValue: 3600,
+			minValue: 0,
+			minStep: 1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.Duration.UUID = 'E863F12D-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.Duration, Characteristic);
+	// /Motion Helpers
+	
 	
 	
 	Characteristic.GenericINT = function() {
@@ -3320,6 +3390,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
 	inherits(Characteristic.AQI, Characteristic);	
 
+	/**
+	 * FakeGato History Service
+	 */
+	Service.FakeGatoHistoryService=FakeGatoHistoryService;
+	inherits(Service.FakeGatoHistoryService, Service);
+	
 	/**
 	 * Custom Service 'Power Monitor'
 	 */
