@@ -228,7 +228,6 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		
 		that.log('debug','==START POLLING==');
 		
-		that.grapherInterval();
 		that.GrapherIntervalID = setInterval(that.grapherInterval.bind(this),10 * 60 * 1000); // every 10min
 		
 		that.startPollingUpdate();
