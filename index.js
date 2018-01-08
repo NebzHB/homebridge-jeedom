@@ -652,6 +652,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+						eqLogic.displayName = eqLogic.name;
+						eqLogic.log = {};
+						eqLogic.log.debug = that.log;
+						eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic);
+						eqLogic.loggingService.subtype = Serv.eqID+'-history';
+						eqLogic.loggingService.cmd_id = Serv.eqID;
+						eqLogic.hasLogging=true;
+					}
+					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -834,7 +846,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
-					if(that.fakegato && !eqLogic.hasLogging) {
+					if(disabledNow && that.fakegato && !eqLogic.hasLogging) {
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
 						eqLogic.log.debug = that.log;
@@ -870,7 +882,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
-					if(that.fakegato && !eqLogic.hasLogging) {
+					if(disabledNow && that.fakegato && !eqLogic.hasLogging) {
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
 						eqLogic.log.debug = that.log;
@@ -1922,7 +1934,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentRelativeHumidity.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'HUMIDITY' && cmd.id == service.cmd_id) {
-						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(disabledNow && that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
 							  humidity: cmd.currentValue
@@ -1937,7 +1949,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == service.cmd_id) || 
 					    (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
-						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(disabledNow && that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
 							  temp: cmd.currentValue
@@ -1967,7 +1979,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
-							  status: returnValue
+							  status: returnValue?1:0
 							});
 						}
 						break;
