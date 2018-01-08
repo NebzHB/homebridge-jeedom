@@ -1146,7 +1146,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
 						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
-						tmpHBservice.controlService.eqLogic=eqLogic;
 						tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
 						eqLogic.LabelExists = tmpHBservice.controlService;
 						HBservices.push(tmpHBservice);
@@ -1202,7 +1201,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
 						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
-						tmpHBservice.controlService.eqLogic=eqLogic;
 						tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
 						eqLogic.LabelService = tmpHBservice.controlService;
 						HBservices.push(tmpHBservice);
