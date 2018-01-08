@@ -963,6 +963,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
+						Serv.numberOpened = 0;
 						HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
@@ -1671,6 +1672,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 		var action,rgb;
 		switch (characteristic.UUID) {
 			case Characteristic.ResetTotal.UUID :
+				this.log('info','--Reset Graphiques Porte Reçu');
 				service.numberOpened = 0;
 			break;
 			case Characteristic.On.UUID :
@@ -1842,6 +1844,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			// Generics
 			case Characteristic.TimesOpened.UUID :
+				that.log('info','Demande du nombre d\'ouverture de la porte',service.numberOpened);
 				returnValue = service.numberOpened;
 			break;
 			case Characteristic.ServiceLabelIndex.UUID :
@@ -1895,7 +1898,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							if(returnValue === Characteristic.ContactSensorState.CONTACT_DETECTED) {
+							if(returnValue === Characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
 								service.numberOpened++;
 							}
 							service.eqLogic.loggingService.addEntry({
