@@ -627,7 +627,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
-						eqLogic.log.debug = function(val){that.log('debug',val);}
+						eqLogic.log.debug = that.log;
 						eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
@@ -666,7 +666,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
-						eqLogic.log.debug = function(val){that.log('debug',val);}
+						eqLogic.log.debug = that.log;
 						eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
@@ -837,7 +837,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(that.fakegato && !eqLogic.hasLogging) {
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
-						eqLogic.log.debug = function(val){that.log('debug',val);}
+						eqLogic.log.debug = that.log;
 						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
@@ -878,7 +878,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(that.fakegato && !eqLogic.hasLogging) {
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
-						eqLogic.log.debug = function(val){that.log('debug',val);}
+						eqLogic.log.debug = that.log;
 						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
@@ -915,7 +915,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(that.fakegato && !eqLogic.hasLogging) {
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
-						eqLogic.log.debug = function(val){that.log('debug',val);}
+						eqLogic.log.debug = that.log;
 						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
@@ -1014,7 +1014,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
 						eqLogic.displayName = eqLogic.name;
 						eqLogic.log = {};
-						eqLogic.log.debug = function(val){that.log('debug',val);}
+						eqLogic.log.debug = that.log;
 						eqLogic.loggingService = new Service.FakeGatoHistoryService("door", eqLogic);
 						eqLogic.loggingService.subtype = Serv.eqID+'-history';
 						eqLogic.loggingService.cmd_id = Serv.eqID;
