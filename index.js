@@ -1691,10 +1691,12 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		}
 		characteristic.on('get', function(callback) {
 			let returnValue = this.getAccessoryValue(characteristic, service);
-			if(returnValue !== undefined) {
+			if(returnValue !== undefined && returnValue !== 'no_response') {
 				returnValue = sanitizeValue(returnValue,characteristic);
 				this.log('info','[Demande d\'Homekit]','Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'('+returnValue+')','\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 				callback(undefined, returnValue);
+			} else if(returnValue === 'no_response') {
+				callback('no_response');
 			}
 		}.bind(this));
 	}
@@ -1974,6 +1976,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && cmd.generic_type == 'TEMPERATURE') {
 							that.addGrapherEntry(service,characteristic,returnValue);
+							
 						}
 						break;
 					}
@@ -1986,6 +1989,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							that.addGrapherEntry(service,characteristic,returnValue);
+							
 						}
 						break;
 					}
@@ -1998,6 +2002,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							that.addGrapherEntry(service,characteristic,returnValue);
+							
 						}
 						break;
 					}
@@ -2595,6 +2600,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				}
 			break;
 		}
+		// IF Online is 0 -> send no_response
+		for (const cmd of cmdList) {
+			if (cmd.generic_type == 'ONLINE') {
+				if(parseInt(cmd.currentValue) === 0) returnValue='no_response';
+				break;
+			}
+		}
 		return returnValue;
 	}
 	catch(e){
@@ -2638,7 +2650,7 @@ JeedomPlatform.prototype.grapherInterval = function() {
 					}
 					if(!groupping[eqId]) groupping[eqId]={};
 					groupping[eqId][type] = average;
-					groupping[eqId]['time']  = moment().unix();
+					groupping[eqId].time  = moment().unix();
 					if(!servList[eqId]) servList[eqId] = {};
 					servList[eqId] = subeqLogic;
 					
@@ -2649,7 +2661,7 @@ JeedomPlatform.prototype.grapherInterval = function() {
 		
 		for (let eq in groupping) {
 			if (groupping.hasOwnProperty(eq)) {
-				this.log('debug','Ajouté les données pour',servList[eq].displayName,'au logs',groupping[eq])
+				this.log('debug','Ajouté les données pour',servList[eq].displayName,'au logs',groupping[eq]);
 				servList[eq].loggingService.addEntry(groupping[eq]);
 			}
 		}
@@ -2666,7 +2678,7 @@ JeedomPlatform.prototype.grapherInterval = function() {
 JeedomPlatform.prototype.subscribeGrapher = function(eqLogic,service, characteristic) {
 	var that = this;
 	try {
-		that.log('debug',"SubscribeToGrapher",service.displayName,characteristic.displayName)
+		that.log('debug',"SubscribeToGrapher",service.displayName,characteristic.displayName);
 		that.updateGrapherSubscriptions.push({
 			'eqLogic' : eqLogic,
 			'service' : service,
@@ -2688,7 +2700,7 @@ JeedomPlatform.prototype.addGrapherEntry = function(service, characteristic, val
 	try {
 		
 		if(service.last10minLogs) {
-			let now = moment().unix();
+			let justNow = moment().unix();
 			switch(characteristic.UUID) {
 				case Characteristic.AirPressure.UUID :
 					service.last10minLogs.pressure.push(value);
@@ -3217,7 +3229,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		let statusFound = findMyID(subService.statusArr,update.option.cmd_id);
 		if(infoFound != -1 || statusFound != -1) {
 			let returnValue = that.getAccessoryValue(subCharact, subService);
-			if(returnValue !== undefined) {
+			if(returnValue !== undefined && returnValue !== 'no_response') {
 				returnValue = sanitizeValue(returnValue,subCharact);
 				if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
 					if(!that.settingLight) { // and it's not currently being modified
