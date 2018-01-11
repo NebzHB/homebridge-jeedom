@@ -21,6 +21,7 @@ var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
 var moment = require('moment');
 var debug = {};
+var oldway = true;
 debug.DEBUG = 100;
 debug.INFO = 200;
 debug.WARN = 300;
@@ -228,7 +229,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		
 		that.log('debug','==START POLLING==');
 		
-		if(that.fakegato) 
+		if(oldway && that.fakegato) 
 		{
 			setTimeout(that.grapherInterval.bind(this),30 * 1000);
 			that.GrapherIntervalID = setInterval(that.grapherInterval.bind(this),10 * 60 * 1000); // every 10min
@@ -1975,8 +1976,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && cmd.generic_type == 'TEMPERATURE') {
-							that.addGrapherEntry(service,characteristic,returnValue);
-							
+							if(oldway) that.addGrapherEntry(service,characteristic,returnValue);
+							else {
+								service.eqLogic.loggingService.addEntry({
+								  time: moment().unix(),
+								  temp: returnValue
+								});
+							}
 						}
 						break;
 					}
@@ -1988,8 +1994,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							that.addGrapherEntry(service,characteristic,returnValue);
-							
+							if(oldway) that.addGrapherEntry(service,characteristic,returnValue);
+							else {
+								service.eqLogic.loggingService.addEntry({
+								  time: moment().unix(),
+								  humidity: returnValue
+								});
+							}
 						}
 						break;
 					}
@@ -2001,8 +2012,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							that.addGrapherEntry(service,characteristic,returnValue);
-							
+							if(oldway) that.addGrapherEntry(service,characteristic,returnValue);
+							else {
+								service.eqLogic.loggingService.addEntry({
+								  time: moment().unix(),
+								  pressure: returnValue
+								});
+							}
 						}
 						break;
 					}
