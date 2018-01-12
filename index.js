@@ -662,18 +662,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(that.fakegato && !eqLogic.hasLogging) {
-						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
-						eqLogic.displayName = eqLogic.name;
-						eqLogic.log = {};
-						eqLogic.log.debug = that.log;
-						eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic);
-						eqLogic.loggingService.subtype = Serv.eqID+'-history';
-						eqLogic.loggingService.cmd_id = Serv.eqID;
-						eqLogic.hasLogging=true;
-					}
-					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
