@@ -129,9 +129,9 @@ JeedomPlatform.prototype.addAccessories = function() {
 				that.log('Enumération des périphériques Jeedom...');
 				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
-			}).catch(function(err, response) {
-				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err , ' (' + response + ')');
-				console.error(err.stack);
+			}).catch(function(err) {
+				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err.code , ' (' + err.message + ')');
+				console.error(err.message);
 			});
 	}
 	catch(e){
@@ -3109,9 +3109,9 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		if(needToTemporize===0) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
-			}).catch(function(err, response) {
-				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
-				console.error(err.stack);
+			}).catch(function(err) {
+				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err.code , err.message);
+				console.error(err.message);
 			});
 		} else {
 			if(service.temporizator) clearTimeout(service.temporizator);
@@ -3119,9 +3119,9 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
-				}).catch(function(err, response) {
-					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err , response);
-					console.error(err.stack);
+				}).catch(function(err) {
+					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err.code , err.message);
+					console.error(err.message);
 				});
 			},needToTemporize);
 		}
@@ -3208,9 +3208,9 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 	}).then(function(){
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','==RESTART POLLING==');that.startPollingUpdate(); }, that.pollerPeriod * 1000);
-	}).catch(function(err, response) {
-		that.log('error','Erreur de récupération des évènements de mise à jour: ', err, response);
-		console.error(err.stack);
+	}).catch(function(err) {
+		that.log('error','Erreur de récupération des évènements de mise à jour: ', err.code, err.message);
+		console.error(err.message);
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','!!RESTART POLLING AFTER ERROR!!');that.startPollingUpdate(); }, that.pollerPeriod * 2 * 1000);
 	});
