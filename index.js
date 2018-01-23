@@ -619,8 +619,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(that.fakegato && !eqLogic.hasLogging) {
 						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 
-						eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',path:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						//eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic, {storage:'fs',path:that.pathHomebridgeConf});
+						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',path:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.loggingService = {type:"motion", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 
 						eqLogic.hasLogging=true;
 					}
