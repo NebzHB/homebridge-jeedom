@@ -1526,7 +1526,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 				
 				HBAccessory.log = {};
 				HBAccessory.log.debug = this.log;
-				HBAccessory.context.eqLogic.loggingService = new Service.FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
+				HBAccessory.context.eqLogic.loggingService = new FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
 				HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
 				HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
 				HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
@@ -3412,8 +3412,8 @@ function RegisterCustomCharacteristics() {
 	/**
 	 * FakeGato History Service
 	 */
-	Service.FakeGatoHistoryService=FakeGatoHistoryService;
-	inherits(Service.FakeGatoHistoryService, Service);
+	//Service.FakeGatoHistoryService=FakeGatoHistoryService;
+	//inherits(Service.FakeGatoHistoryService, Service);
 	
 	/**
 	 * Custom Service 'Power Monitor'
