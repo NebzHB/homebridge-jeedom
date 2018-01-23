@@ -21,7 +21,6 @@ var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
 var moment = require('moment');
 var debug = {};
-var oldway = true;
 debug.DEBUG = 100;
 debug.INFO = 200;
 debug.WARN = 300;
@@ -62,6 +61,8 @@ function JeedomPlatform(logger, config, api) {
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
 		
+		this.pathHomebridgeConf = '/var/www/html/plugins/homebridge/resources/homebridge/';
+		
 		this.fakegato=false;
 		if(config.fakegato==true) {
 			this.fakegato=true;
@@ -82,13 +83,11 @@ function JeedomPlatform(logger, config, api) {
 		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this, config.myPlugin);
 		this.rooms = {};
 		this.updateSubscriptions = [];
-		this.updateGrapherSubscriptions = [];
 		
 		this.lastPoll = 0;
 		this.pollingUpdateRunning = false;
 		this.pollingID = null;
 		this.settingLight = false;
-		this.GrapherIntervalID = null;
 		
 		this.pollerPeriod = config.pollerperiod;
 		if ( typeof this.pollerPeriod == 'string')
@@ -130,8 +129,8 @@ JeedomPlatform.prototype.addAccessories = function() {
 				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 			}).catch(function(err) {
-				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err.code , ' (' + err.message + ')');
-				console.error(err.message);
+				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
+				console.error(err.stack);
 			});
 	}
 	catch(e){
@@ -227,14 +226,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		if(countA >= 100) that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
 		else if(countA >= 90) that.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 100 max au total !!');
 		
-		that.log('debug','==START POLLING==');
-		
-		if(oldway && that.fakegato) 
-		{
-			setTimeout(that.grapherInterval.bind(this),30 * 1000);
-			that.GrapherIntervalID = setInterval(that.grapherInterval.bind(this),10 * 60 * 1000); // every 10min
-		}
-		
+		that.log('debug','==START POLLING==');		
 		that.startPollingUpdate();
 	}
 	catch(e){
@@ -626,12 +618,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
 						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
-						eqLogic.displayName = eqLogic.name;
-						eqLogic.log = {};
-						eqLogic.log.debug = that.log;
-						eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic);
-						eqLogic.loggingService.subtype = Serv.eqID+'-history';
-						eqLogic.loggingService.cmd_id = Serv.eqID;
+
+						eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',path:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						//eqLogic.loggingService = new Service.FakeGatoHistoryService("motion", eqLogic, {storage:'fs',path:that.pathHomebridgeConf});
+
 						eqLogic.hasLogging=true;
 					}
 					
@@ -824,18 +814,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						eqLogic.displayName = eqLogic.name;
-						eqLogic.log = {};
-						eqLogic.log.debug = that.log;
-						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
-						eqLogic.loggingService.subtype = Serv.eqID+'-history';
-						eqLogic.loggingService.cmd_id = Serv.eqID;
+						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.hasLogging=true;
-					}
-					if(that.fakegato) {
-						Serv.last10minLogs = {};
-						Serv.last10minLogs.temp = [];
-						that.subscribeGrapher(eqLogic,Serv, HBservice.controlService.getCharacteristic(Characteristic.CurrentTemperature));
 					}
 					
 					HBservices.push(HBservice);
@@ -865,18 +845,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						eqLogic.displayName = eqLogic.name;
-						eqLogic.log = {};
-						eqLogic.log.debug = that.log;
-						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
-						eqLogic.loggingService.subtype = Serv.eqID+'-history';
-						eqLogic.loggingService.cmd_id = Serv.eqID;
+						eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.hasLogging=true;
-					}
-					if(that.fakegato) {
-						Serv.last10minLogs = {};
-						Serv.last10minLogs.humidity = [];
-						that.subscribeGrapher(eqLogic,Serv, HBservice.controlService.getCharacteristic(Characteristic.CurrentRelativeHumidity));	
 					}
 					
 					HBservices.push(HBservice);
@@ -902,18 +872,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						eqLogic.displayName = eqLogic.name;
-						eqLogic.log = {};
-						eqLogic.log.debug = that.log;
-						eqLogic.loggingService = new Service.FakeGatoHistoryService("weather", eqLogic);
-						eqLogic.loggingService.subtype = Serv.eqID+'-history';
-						eqLogic.loggingService.cmd_id = Serv.eqID;
+						eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.hasLogging=true;
-					}
-					if(that.fakegato) {
-						Serv.last10minLogs = {};
-						Serv.last10minLogs.pressure = [];
-						that.subscribeGrapher(eqLogic,Serv, HBservice.controlService.getCharacteristic(Characteristic.AirPressure));
 					}
 					
 					HBservices.push(HBservice);
@@ -1001,12 +961,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(that.fakegato && !eqLogic.hasLogging) {
 						Serv.numberOpened = 0;
 						HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
-						eqLogic.displayName = eqLogic.name;
-						eqLogic.log = {};
-						eqLogic.log.debug = that.log;
-						eqLogic.loggingService = new Service.FakeGatoHistoryService("door", eqLogic);
-						eqLogic.loggingService.subtype = Serv.eqID+'-history';
-						eqLogic.loggingService.cmd_id = Serv.eqID;
+
+						eqLogic.loggingService = {type:"door", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.hasLogging=true;
 					}
 					
@@ -1566,8 +1522,15 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
 			
 			if(this.fakegato && HBAccessory.context.eqLogic.hasLogging && HBAccessory.context.eqLogic.loggingService) {
+				let loggingServiceParams = HBAccessory.context.eqLogic.loggingService;
+				
+				HBAccessory.log = {};
+				HBAccessory.log.debug = this.log;
+				HBAccessory.context.eqLogic.loggingService = new Service.FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
+				HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
+				HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
 				HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
-				this.log('info',' Ajout service History :'+HBAccessory.context.eqLogic.loggingService.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+				this.log('info',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
 			}	
 			
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
@@ -1964,13 +1927,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && cmd.generic_type == 'TEMPERATURE') {
-							if(oldway) that.addGrapherEntry(service,characteristic,returnValue);
-							else {
-								service.eqLogic.loggingService.addEntry({
-								  time: moment().unix(),
-								  temp: returnValue
-								});
-							}
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  temp: returnValue
+							});
 						}
 						break;
 					}
@@ -1982,13 +1942,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							if(oldway) that.addGrapherEntry(service,characteristic,returnValue);
-							else {
-								service.eqLogic.loggingService.addEntry({
-								  time: moment().unix(),
-								  humidity: returnValue
-								});
-							}
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  humidity: returnValue
+							});
 						}
 						break;
 					}
@@ -2000,13 +1957,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							if(oldway) that.addGrapherEntry(service,characteristic,returnValue);
-							else {
-								service.eqLogic.loggingService.addEntry({
-								  time: moment().unix(),
-								  pressure: returnValue
-								});
-							}
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  pressure: returnValue
+							});
 						}
 						break;
 					}
@@ -2619,111 +2573,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 	}
 };
 
-// -- grapherInterval
-// -- Desc : launch every 10 min for Fakegato graphs
-// -- Params --
-// -- Return : Nothing
-JeedomPlatform.prototype.grapherInterval = function() {
-
-	try {
-		var subCharact,subService,subeqLogic,val,numLog,average,total,groupping,servList;
-		groupping = {};
-		servList = {};
-		for (let i = 0; i < this.updateGrapherSubscriptions.length; i++) {
-			
-			subeqLogic = this.updateGrapherSubscriptions[i].eqLogic;
-			subCharact = this.updateGrapherSubscriptions[i].characteristic;
-			subService = this.updateGrapherSubscriptions[i].service;
-			let eqId = subeqLogic.id;
-			
-			for (let type in subService.last10minLogs) {
-				if (subService.last10minLogs.hasOwnProperty(type)) {
-					
-					val = subService.last10minLogs[type];
-
-					numLog = val.length;
-					average = total = 0;
-
-					if(numLog !== 0) {
-						for(let l = 0; l < numLog; l++) {
-							total += val[l];
-						}
-						average = total/numLog;
-					} else {
-						average = subCharact.value;
-					}
-					if(!groupping[eqId]) groupping[eqId]={};
-					groupping[eqId][type] = average;
-					groupping[eqId].time  = moment().unix();
-					if(!servList[eqId]) servList[eqId] = {};
-					servList[eqId] = subeqLogic;
-					
-					subService.last10minLogs[type] = [];
-				}
-			}
-		}
-		
-		for (let eq in groupping) {
-			if (groupping.hasOwnProperty(eq)) {
-				this.log('debug','Ajouté les données pour',servList[eq].displayName,'au logs',groupping[eq]);
-				servList[eq].loggingService.addEntry(groupping[eq]);
-			}
-		}
-		
-		subCharact = subService = subeqLogic = val = numLog = average = total = groupping = servList = undefined;
-	}
-	catch(e){
-		this.log('error','Erreur de la fonction grapherInterval :',e);	
-		console.error(e.stack);
-	}
-	
-};
-
-JeedomPlatform.prototype.subscribeGrapher = function(eqLogic,service, characteristic) {
-	var that = this;
-	try {
-		that.log('debug',"SubscribeToGrapher",service.displayName,characteristic.displayName);
-		that.updateGrapherSubscriptions.push({
-			'eqLogic' : eqLogic,
-			'service' : service,
-			'characteristic' : characteristic
-		});
-	}
-	catch(e){
-		that.log('error','Erreur de la fonction subscribeGrapher :',e);	
-		console.error(e.stack);
-	}
-};
-
-// -- addGrapherEntry
-// -- Desc : add a Grapher Entry
-// -- Params --
-// -- Return : Nothing
-JeedomPlatform.prototype.addGrapherEntry = function(service, characteristic, value) {
-	var that = this;
-	try {
-		
-		if(service.last10minLogs) {
-			let justNow = moment().unix();
-			switch(characteristic.UUID) {
-				case Characteristic.AirPressure.UUID :
-					service.last10minLogs.pressure.push(value);
-				break;
-				case Characteristic.CurrentTemperature.UUID :
-					service.last10minLogs.temp.push(value);
-				break;
-				case Characteristic.CurrentRelativeHumidity.UUID :
-					service.last10minLogs.humidity.push(value);
-				break;
-			}
-		}
-	}
-	catch(e){
-		that.log('error','Erreur de la fonction addGrapherEntry :',e);	
-		console.error(e.stack);
-	}
-};
-
 
 // -- sanitizeValue
 // -- Desc : limit the value to the min and max characteristic + round the float to the same precision than the minStep
@@ -3110,8 +2959,8 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
 			}).catch(function(err) {
-				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err.code , err.message);
-				console.error(err.message);
+				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
+				console.error(err.stack);
 			});
 		} else {
 			if(service.temporizator) clearTimeout(service.temporizator);
@@ -3120,8 +2969,8 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 				}).catch(function(err) {
-					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err.code , err.message);
-					console.error(err.message);
+					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
+					console.error(err.stack);
 				});
 			},needToTemporize);
 		}
@@ -3209,8 +3058,8 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','==RESTART POLLING==');that.startPollingUpdate(); }, that.pollerPeriod * 1000);
 	}).catch(function(err) {
-		that.log('error','Erreur de récupération des évènements de mise à jour: ', err.code, err.message);
-		console.error(err.message);
+		that.log('error','Erreur de récupération des évènements de mise à jour: ', err);
+		console.error(err.stack);
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','!!RESTART POLLING AFTER ERROR!!');that.startPollingUpdate(); }, that.pollerPeriod * 2 * 1000);
 	});
