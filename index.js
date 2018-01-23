@@ -1529,7 +1529,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 				HBAccessory.context.eqLogic.loggingService = new FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
 				HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
 				HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
-				HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
+				//HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
 				this.log('info',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
 			}	
 			
