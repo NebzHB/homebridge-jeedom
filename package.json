@@ -26,7 +26,7 @@
   "dependencies": {
     "request": ">=2.81.0",
     "moment": "*",
-    "fakegato-history": "0.3.8"
+    "fakegato-history": "NebzHB/fakegato-history#fakegato-storage"
   },
   "author": "Benjamin RENARD <nebz@nebz.be>",
   "contributors": [
