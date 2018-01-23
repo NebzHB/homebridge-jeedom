@@ -1,7 +1,7 @@
 {
   "name": "homebridge-jeedom",
   "version": "v1.3.5",
-  "cust_serial": "0022",
+  "cust_serial": "0023",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   "dependencies": {
     "request": ">=2.81.0",
     "moment": "*",
-    "fakegato-history": "0.3.4"
+    "fakegato-history": "0.3.8"
   },
   "author": "Benjamin RENARD <nebz@nebz.be>",
   "contributors": [
