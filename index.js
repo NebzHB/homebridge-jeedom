@@ -61,7 +61,7 @@ function JeedomPlatform(logger, config, api) {
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
 		
-		this.pathHomebridgeConf = '/var/www/html/plugins/homebridge/resources/homebridge/';
+		this.pathHomebridgeConf = api.user.storagePath()+'/';
 		
 		this.fakegato=false;
 		if(config.fakegato==true) {
@@ -94,7 +94,7 @@ function JeedomPlatform(logger, config, api) {
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		else if (!this.pollerPeriod)
 			this.pollerPeriod = 0.05; // 0.05 is Nice between 2 calls
-		
+
 		if (api) {
 			this.api = api;
 			this.api.on('didFinishLaunching',function(){
@@ -959,7 +959,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						Serv.numberOpened = 0;
+						//Serv.eqLogic.numberOpened = 0;
 						HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
 
 						eqLogic.loggingService = {type:"door", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
@@ -1493,7 +1493,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 // -- jeedomAccessory : JeedomBridgedAccessory to add
 // -- Return : nothing
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
-	var HBAccessory;
+	var HBAccessory,offset,numberOpened,lastAct;
 	try{
 		if (!jeedomAccessory) {
 			return;
@@ -1509,30 +1509,46 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			jeedomAccessory.initAccessory(HBAccessory);
 			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
+		if(this.fakegato) {
+			offset = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.offset || moment().unix();
+			numberOpened = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.numberOpened || 0;
+			lastAct = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.lastAct || undefined;
+		}
 		HBAccessory.context = jeedomAccessory.context;
+		if(this.fakegato) {
+			HBAccessory.context.eqLogic.offset=offset;
+			HBAccessory.context.eqLogic.numberOpened=numberOpened;
+			HBAccessory.context.eqLogic.lastAct=lastAct;
+		}
+
 		//No more supported by HAP-NodeJS
 		//HBAccessory.reachable = true;
 		//HBAccessory.updateReachability(true);
+		
+		if(!isNewAccessory) {
+			let cachedValues=jeedomAccessory.delServices(HBAccessory);
+			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
+		}
+
+		if(this.fakegato && HBAccessory.context.eqLogic.hasLogging && HBAccessory.context.eqLogic.loggingService) {
+			let loggingServiceParams = HBAccessory.context.eqLogic.loggingService;
+			HBAccessory.log = {};
+			HBAccessory.log.debug = function ()	{
+													var args = [].slice.call(arguments, 0);
+													args.unshift('debug');
+													return this.log.apply(this,args);
+												}.bind(this);
+			HBAccessory.context.eqLogic.loggingService = new FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
+			HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
+			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
+			//HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
+			this.log('info',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+		}			
 		
 		if (isNewAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			let cachedValues=jeedomAccessory.delServices(HBAccessory);
-			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
-			
-			if(this.fakegato && HBAccessory.context.eqLogic.hasLogging && HBAccessory.context.eqLogic.loggingService) {
-				let loggingServiceParams = HBAccessory.context.eqLogic.loggingService;
-				
-				HBAccessory.log = {};
-				HBAccessory.log.debug = this.log;
-				HBAccessory.context.eqLogic.loggingService = new FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
-				HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
-				HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
-				//HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
-				this.log('info',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
-			}	
-			
 			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
@@ -1651,6 +1667,12 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 				callback('no_response');
 			}
 		}.bind(this));
+		
+		if (this.fakegato) {
+			characteristic.on('change', function(callback) {
+				this.changeAccessoryValue(characteristic, service);
+			}.bind(this));
+		}
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction bindCharacteristicEvents :',e);
@@ -1674,7 +1696,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 		switch (characteristic.UUID) {
 			case Characteristic.ResetTotal.UUID :
 				this.log('info','--Reset Graphiques Porte Reçu');
-				service.numberOpened = 0;
+				service.eqLogic.numberOpened = 0;
 			break;
 			case Characteristic.On.UUID :
 			case Characteristic.LockPhysicalControls.UUID :
@@ -1790,6 +1812,40 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 	}
 };
 
+JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service) {
+		var that = this;
+		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
+
+		switch (characteristic.UUID) {
+			case Characteristic.ContactSensorState.UUID :
+				for (const cmd of cmdList) {
+					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == service.cmd_id) {
+						
+						if(that.fakegato) {
+							let realValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+							if(realValue === false) {
+								service.eqLogic.numberOpened++;
+							}
+
+							service.eqLogic.lastAct=moment().unix()-service.eqLogic.offset;
+						}
+						break;
+					}
+				}
+			break;	
+			case Characteristic.MotionDetected.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
+						if(that.fakegato) {
+							service.eqLogic.lastAct=moment().unix()-service.eqLogic.offset;
+						}
+						break;
+					}
+				}
+			break;				
+		}
+};
+
 // -- getAccessoryValue
 // -- Desc : Get the value of an accessory in the jeedom local cache
 // -- Params --
@@ -1845,8 +1901,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			// Generics
 			case Characteristic.TimesOpened.UUID :
-				that.log('info','Demande du nombre d\'ouverture de la porte',service.numberOpened);
-				returnValue = service.numberOpened;
+				that.log('info','Demande du nombre d\'ouverture de la porte',service.eqLogic.numberOpened);
+				returnValue = service.eqLogic.numberOpened;
+			break;
+			case Characteristic.LastActivation.UUID :
+				that.log('info','Demande de la dernière activation',service.eqLogic.lastAct);
+				returnValue = service.eqLogic.lastAct;
 			break;
 			case Characteristic.ServiceLabelIndex.UUID :
 				returnValue = service.ServiceLabelIndex || 1;
@@ -1899,9 +1959,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							if(returnValue === Characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
-								service.numberOpened++;
-							}
+							/*if(returnValue === Characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
+								service.eqLogic.numberOpened++;
+							}*/
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
 							  status: returnValue
