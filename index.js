@@ -1512,13 +1512,19 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		if(this.fakegato) {
 			offset = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.offset || moment().unix();
 			numberOpened = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.numberOpened || 0;
-			lastAct = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.lastAct || undefined;
+			lastAct = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.lastAct || 0;
 		}
 		HBAccessory.context = jeedomAccessory.context;
 		if(this.fakegato) {
 			HBAccessory.context.eqLogic.offset=offset;
 			HBAccessory.context.eqLogic.numberOpened=numberOpened;
 			HBAccessory.context.eqLogic.lastAct=lastAct;
+		} else {
+			HBAccessory.context.eqLogic.offset=undefined;
+			HBAccessory.context.eqLogic.numberOpened=undefined;
+			HBAccessory.context.eqLogic.lastAct=undefined;
+			let exec = require('child_process').exec;
+			exec('sudo rm -f '+this.pathHomebridgeConf+'*_persist.json');
 		}
 
 		//No more supported by HAP-NodeJS
@@ -1543,7 +1549,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
 			//HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
 			this.log('info',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
-		}			
+		}
 		
 		if (isNewAccessory) {
 			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
@@ -1826,7 +1832,6 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 							if(realValue === false) {
 								service.eqLogic.numberOpened++;
 							}
-
 							service.eqLogic.lastAct=moment().unix()-service.eqLogic.offset;
 						}
 						break;
