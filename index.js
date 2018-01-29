@@ -619,7 +619,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(that.fakegato && !eqLogic.hasLogging) {
 						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 
-						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',path:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.loggingService = {type:"motion", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 
 						eqLogic.hasLogging=true;
@@ -1493,7 +1493,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 // -- jeedomAccessory : JeedomBridgedAccessory to add
 // -- Return : nothing
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
-	var HBAccessory,offset,numberOpened,lastAct;
+	var HBAccessory,numberOpened,lastAct;
 	try{
 		if (!jeedomAccessory) {
 			return;
@@ -1510,17 +1510,14 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
 		if(this.fakegato) {
-			offset = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.offset || moment().unix();
 			numberOpened = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.numberOpened || 0;
 			lastAct = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.lastAct || 0;
 		}
 		HBAccessory.context = jeedomAccessory.context;
 		if(this.fakegato) {
-			HBAccessory.context.eqLogic.offset=offset;
 			HBAccessory.context.eqLogic.numberOpened=numberOpened;
 			HBAccessory.context.eqLogic.lastAct=lastAct;
 		} else {
-			HBAccessory.context.eqLogic.offset=undefined;
 			HBAccessory.context.eqLogic.numberOpened=undefined;
 			HBAccessory.context.eqLogic.lastAct=undefined;
 			let exec = require('child_process').exec;
@@ -1832,7 +1829,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 							if(realValue === false) {
 								service.eqLogic.numberOpened++;
 							}
-							service.eqLogic.lastAct=moment().unix()-service.eqLogic.offset;
+							service.eqLogic.lastAct=moment().unix()-service.eqLogic.loggingService.getInitialTime();
 						}
 						break;
 					}
@@ -1842,7 +1839,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
 						if(that.fakegato) {
-							service.eqLogic.lastAct=moment().unix()-service.eqLogic.offset;
+							service.eqLogic.lastAct=moment().unix()-service.eqLogic.loggingService.getInitialTime();
 						}
 						break;
 					}
