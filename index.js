@@ -1122,7 +1122,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 					}
 					
-					Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(eqLogic.indexStateless);
+					Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(Serv.ServiceLabelIndex);
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.eventType=cmd.eventType;
@@ -1150,6 +1150,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			});
 		}		
 		if (eqLogic.services.StatelessSwitchMono) {
+			var buttonList=[];
 			eqLogic.services.StatelessSwitchMono.forEach(function(cmd) {
 				if(cmd.Single || cmd.Double || cmd.Long) {
 					let Label = "";
@@ -1158,51 +1159,139 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(cmd.Long) Label = "Long";
 					
 					let cmdType = cmd.Single || cmd.Double || cmd.Long;
-					
-					HBservice = {
-						controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+cmdType.name+' '+Label),
-						characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
-					};
-					let Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
-					Serv.ServiceLabelIndex = eqLogic.indexStateless;
-					Serv.type = 'Mono';
-					
-					let values = [];
-					if(cmd.Single) values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
-					if(cmd.Double) values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
-					if(cmd.Long) values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
-					that.log('debug','ValidValues Mono',values);
-					Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
+					if(buttonList[cmdType.customValues.BUTTON] === undefined) buttonList[cmdType.customValues.BUTTON] = [];
+					buttonList[cmdType.customValues.BUTTON][Label] = cmdType;
+				}		
+			});	
+			
+			if(buttonList.length) {
+				for(let b in buttonList) {
+					if (buttonList.hasOwnProperty(b)) {
+						let cmdType = buttonList[b];
+						
+						if(b !== 0) { // groupped buttons
+							HBservice = {
+								controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+' '+b),
+								characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
+							};
+							let Serv = HBservice.controlService;
+							Serv.eqLogic=eqLogic;
+							eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
+							Serv.ServiceLabelIndex = b;
+							Serv.type = 'Mono';
+							Serv.actions={};
+							Serv.infos={};
+							Serv.cmd_id ='';
+							
+							let values = [];
+							if(cmdType.Simple !== undefined) {
+								values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+								Serv.infos.Single=cmdType.Simple;
+								Serv.cmd_id += Serv.infos.Single.id;
+							}
+							if(cmdType.Double !== undefined) {
+								values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+								Serv.infos.Double=cmdType.Double;
+								Serv.cmd_id += Serv.infos.Double.id;
+							}
+							if(cmdType.Long !== undefined) {
+								values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+								Serv.infos.Long=cmdType.Long;
+								Serv.cmd_id += Serv.infos.Long.id;
+							}
+							that.log('debug','ValidValues Mono',values);
+							Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 
-					
-					Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(eqLogic.indexStateless);
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.type=cmdType;
-					Serv.cmd_id = Serv.infos.type.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(!eqLogic.LabelService) {
-						let tmpHBservice = {
-							controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
-							characteristics : [Characteristic.ServiceLabelNamespace]
-						};
-						let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
-						//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
-						tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
-						tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
-						eqLogic.LabelService = tmpHBservice.controlService;
-						HBservices.push(tmpHBservice);
+							
+							Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(Serv.ServiceLabelIndex);
+
+							Serv.eqID = eqLogic.id;
+							Serv.subtype = Serv.subtype || '';
+							Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+							
+							if(!eqLogic.LabelService) {
+								let tmpHBservice = {
+									controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
+									characteristics : [Characteristic.ServiceLabelNamespace]
+								};
+								let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
+								//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
+								tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+								tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
+								eqLogic.LabelService = tmpHBservice.controlService;
+								HBservices.push(tmpHBservice);
+							}
+							
+							HBservices.push(HBservice);
+							HBservice = null;
+							
+						} else { // one button by event
+						
+							for(let e in cmdType) {
+								if (cmdType.hasOwnProperty(e)) {
+									HBservice = {
+										controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+cmdType[e].name+' '+e+' Click'),
+										characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
+									};
+									let Serv = HBservice.controlService;
+									Serv.eqLogic=eqLogic;
+									eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
+									Serv.ServiceLabelIndex = 20+eqLogic.indexStateless;
+									Serv.type = 'Mono';
+									Serv.actions={};
+									Serv.infos={};
+									Serv.cmd_id ='';
+									
+									let values = [];
+									switch(e) {
+										case 'Single':
+											values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+											Serv.infos.Single=cmdType[e];
+											Serv.cmd_id += Serv.infos.Single.id;
+										break;
+										case 'Double':
+											values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+											Serv.infos.Double=cmdType[e];
+											Serv.cmd_id += Serv.infos.Double.id;
+										break;
+										case 'Long':
+											values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+											Serv.infos.Long=cmdType[e];
+											Serv.cmd_id += Serv.infos.Long.id;
+										break;
+									}
+									that.log('debug','ValidValues Mono',values);
+									Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
+
+									
+									Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(Serv.ServiceLabelIndex);
+
+									Serv.eqID = eqLogic.id;
+									Serv.subtype = Serv.subtype || '';
+									Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+									
+									if(!eqLogic.LabelService) {
+										let tmpHBservice = {
+											controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
+											characteristics : [Characteristic.ServiceLabelNamespace]
+										};
+										let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
+										//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
+										tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+										tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
+										eqLogic.LabelService = tmpHBservice.controlService;
+										HBservices.push(tmpHBservice);
+									}
+									
+									HBservices.push(HBservice);
+									HBservice = null;
+								}
+							}
+						}
 					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
 				}
-			});
+			}	
+			
 		}			
 		if (eqLogic.services.thermostat) {
 			eqLogic.services.thermostat.forEach(function(cmd) {
@@ -2586,13 +2675,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				} else if (service.type == 'Mono') {
 					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'SWITCH_STATELESS_SINGLE' && cmd.id == service.infos.type.id) {
+						if (cmd.generic_type == 'SWITCH_STATELESS_SINGLE' && cmd.id == service.infos.Single.id) {
 							returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
 							break;
-						} else if (cmd.generic_type == 'SWITCH_STATELESS_DOUBLE' && cmd.id == service.infos.type.id) {
+						} else if (cmd.generic_type == 'SWITCH_STATELESS_DOUBLE' && cmd.id == service.infos.Double.id) {
 							returnValue = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS; // 1
 							break;
-						} else if (cmd.generic_type == 'SWITCH_STATELESS_LONG' && cmd.id == service.infos.type.id) {
+						} else if (cmd.generic_type == 'SWITCH_STATELESS_LONG' && cmd.id == service.infos.Long.id) {
 							returnValue = Characteristic.ProgrammableSwitchEvent.LONG_PRESS; // 2
 							break;
 						}
