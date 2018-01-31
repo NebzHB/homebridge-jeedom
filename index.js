@@ -1163,7 +1163,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					buttonList[cmdType.customValues.BUTTON][Label] = cmdType;
 				}		
 			});	
-			that.log('debug','buttonList',buttonList);
+
 			if(buttonList.length) {
 				for(let b in buttonList) {
 					if (buttonList.hasOwnProperty(b)) {
