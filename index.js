@@ -29,7 +29,7 @@ debug.NO = 1000;
 var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
-const GenericAssociated = ['GENERIC_INFO','SHOCK','UV','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
+const GenericAssociated = ['GENERIC_INFO','SHOCK','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -739,7 +739,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.uv.forEach(function(cmd) {
 				if (cmd.uv) {
 					HBservice = {
-						controlService : new Service.TemperatureSensor(eqLogic.name),
+						controlService : new Service.WeatherService(eqLogic.name),
 						characteristics : [Characteristic.UVIndex]
 					};
 					let Serv = HBservice.controlService;
@@ -3605,6 +3605,21 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Service.PressureSensor, Service);
 	Service.PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+
+	/**
+	 * Custom Service 'Weather Service'
+	 */
+
+	Service.WeatherService = function(displayName, subtype) {
+		Service.call(this, displayName, 'E863F001-079E-48FF-8F27-9C2605A29F52', subtype);
+
+		// Required Characteristics
+
+		// Optional Characteristics
+		this.addOptionalCharacteristic(Characteristic.Name);
+	};
+	inherits(Service.WeatherService, Service);
+	Service.WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';	
 	
 	/**
 	 * Custom Service 'Custom Service'
