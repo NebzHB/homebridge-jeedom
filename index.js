@@ -1163,15 +1163,75 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					buttonList[cmdType.customValues.BUTTON][Label] = cmdType;
 				}		
 			});	
-			
+			that.log('debug','buttonList',buttonList);
 			if(buttonList.length) {
 				for(let b in buttonList) {
 					if (buttonList.hasOwnProperty(b)) {
 						let cmdType = buttonList[b];
-						
-						if(b !== 0) { // groupped buttons
+						if(parseInt(b) === 0) { // one button by event
+							for(let e in cmdType) {
+								if (cmdType.hasOwnProperty(e)) {
+									HBservice = {
+										controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+cmdType[e].name+' '+e+' Click'),
+										characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
+									};
+									let Serv = HBservice.controlService;
+									Serv.eqLogic=eqLogic;
+									eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
+									Serv.ServiceLabelIndex = 20+eqLogic.indexStateless;
+									Serv.type = 'Mono';
+									Serv.actions={};
+									Serv.infos={};
+									Serv.cmd_id ='';
+									
+									let values = [];
+									switch(e) {
+										case 'Simple':
+											values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+											Serv.infos.Single=cmdType[e];
+											Serv.cmd_id += Serv.infos.Single.id;
+										break;
+										case 'Double':
+											values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+											Serv.infos.Double=cmdType[e];
+											Serv.cmd_id += Serv.infos.Double.id;
+										break;
+										case 'Long':
+											values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+											Serv.infos.Long=cmdType[e];
+											Serv.cmd_id += Serv.infos.Long.id;
+										break;
+									}
+									that.log('debug','ValidValues 0 Mono',values);
+									Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
+
+									
+									Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(Serv.ServiceLabelIndex);
+
+									Serv.eqID = eqLogic.id;
+									Serv.subtype = Serv.subtype || '';
+									Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+									
+									if(!eqLogic.LabelService) {
+										let tmpHBservice = {
+											controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
+											characteristics : [Characteristic.ServiceLabelNamespace]
+										};
+										let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
+										//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
+										tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+										tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
+										eqLogic.LabelService = tmpHBservice.controlService;
+										HBservices.push(tmpHBservice);
+									}
+									
+									HBservices.push(HBservice);
+									HBservice = null;
+								}
+							}
+						} else { // groupped buttons
 							HBservice = {
-								controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+' '+b),
+								controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+b),
 								characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
 							};
 							let Serv = HBservice.controlService;
@@ -1199,7 +1259,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 								Serv.infos.Long=cmdType.Long;
 								Serv.cmd_id += Serv.infos.Long.id;
 							}
-							that.log('debug','ValidValues Mono',values);
+							that.log('debug','ValidValues '+b+' Mono',values);
 							Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 
 							
@@ -1225,68 +1285,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							HBservices.push(HBservice);
 							HBservice = null;
 							
-						} else { // one button by event
-						
-							for(let e in cmdType) {
-								if (cmdType.hasOwnProperty(e)) {
-									HBservice = {
-										controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+cmdType[e].name+' '+e+' Click'),
-										characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex]
-									};
-									let Serv = HBservice.controlService;
-									Serv.eqLogic=eqLogic;
-									eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
-									Serv.ServiceLabelIndex = 20+eqLogic.indexStateless;
-									Serv.type = 'Mono';
-									Serv.actions={};
-									Serv.infos={};
-									Serv.cmd_id ='';
-									
-									let values = [];
-									switch(e) {
-										case 'Single':
-											values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
-											Serv.infos.Single=cmdType[e];
-											Serv.cmd_id += Serv.infos.Single.id;
-										break;
-										case 'Double':
-											values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
-											Serv.infos.Double=cmdType[e];
-											Serv.cmd_id += Serv.infos.Double.id;
-										break;
-										case 'Long':
-											values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
-											Serv.infos.Long=cmdType[e];
-											Serv.cmd_id += Serv.infos.Long.id;
-										break;
-									}
-									that.log('debug','ValidValues Mono',values);
-									Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
-
-									
-									Serv.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(Serv.ServiceLabelIndex);
-
-									Serv.eqID = eqLogic.id;
-									Serv.subtype = Serv.subtype || '';
-									Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-									
-									if(!eqLogic.LabelService) {
-										let tmpHBservice = {
-											controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
-											characteristics : [Characteristic.ServiceLabelNamespace]
-										};
-										let Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
-										//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
-										tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
-										tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
-										eqLogic.LabelService = tmpHBservice.controlService;
-										HBservices.push(tmpHBservice);
-									}
-									
-									HBservices.push(HBservice);
-									HBservice = null;
-								}
-							}
+							
+							
 						}
 					}
 				}
