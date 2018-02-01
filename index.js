@@ -1086,13 +1086,28 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.StatelessSwitch) {
 			eqLogic.services.StatelessSwitch.forEach(function(cmd) {
 				if(cmd.eventType) {
-					var buttonSingle = cmd.eventType.customValues.SINGLE.split(';');
-					var buttonDouble = cmd.eventType.customValues.DOUBLE.split(';');
-					var buttonLong = cmd.eventType.customValues.LONG.split(';');
+					var buttonSingle,buttonDouble,buttonLong;
+					
+					if(cmd.eventType.customValues.SINGLE)
+						buttonSingle = cmd.eventType.customValues.SINGLE.split(';');
+					else
+						buttonSingle = [""];
+					
+					if(cmd.eventType.customValues.DOUBLE)
+						buttonDouble = cmd.eventType.customValues.DOUBLE.split(';');
+					else
+						buttonDouble = [""];
+					
+					if(cmd.eventType.customValues.LONG)
+						buttonLong = cmd.eventType.customValues.LONG.split(';');
+					else
+						buttonLong = [""];
+					
+					var maxValues = Math.max(buttonSingle.length,buttonDouble.length,buttonLong.length);
 					
 					if(buttonSingle.length === buttonDouble.length && buttonDouble.length === buttonLong.length) {
 					
-						for(let b = 0;b<buttonSingle.length;b++) {
+						for(let b = 0;b<maxValues;b++) {
 							let numButton = b+1;
 							HBservice = {
 								controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+numButton),
