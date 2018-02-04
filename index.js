@@ -2671,9 +2671,22 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							let numButton = service.ServiceLabelIndex;
 							let indexButton = numButton-1;
 							
-							let buttonSingle = customValues.SINGLE.split(';');
-							let buttonDouble = customValues.DOUBLE.split(';');
-							let buttonLong = customValues.LONG.split(';');
+							let buttonSingle,buttonDouble,buttonLong;
+					
+							if(customValues.SINGLE)
+								buttonSingle = customValues.SINGLE.split(';');
+							else
+								buttonSingle = [""];
+							
+							if(customValues.DOUBLE)
+								buttonDouble = customValues.DOUBLE.split(';');
+							else
+								buttonDouble = [""];
+							
+							if(customValues.LONG)
+								buttonLong = customValues.LONG.split(';');
+							else
+								buttonLong = [""];
 							
 							switch(cmd.currentValue.toString()) {
 								case undefined:
