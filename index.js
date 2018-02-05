@@ -127,6 +127,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 			
 				that.log('Enumération des périphériques Jeedom...');
 				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
+				that.JeedomScenarios2HomeKitAccessories(model.scenarios);
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
@@ -135,6 +136,86 @@ JeedomPlatform.prototype.addAccessories = function() {
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction addAccessories :',e);
+		console.error(e.stack);
+	}
+};
+
+JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios) {
+	try{
+		var that = this;
+		if (scenarios) {
+			scenarios.sort(function compare(a, b) {
+				// reorder by room name asc and name asc
+				var aC = that.rooms[a.object_id]+a.name;
+				var bC = that.rooms[b.object_id]+b.name;
+				if (aC > bC) {
+					return 1;
+				}
+				if (aC < bC) {
+					return -1;
+				}
+				return 0;
+			});
+
+			scenarios.map(function(scenario) {
+				if (scenario.isActive == '1' &&
+				    scenario.object_id != null && 
+				    scenario.sendToHomebridge == '1') {
+
+					that.log('debug','Scenario > '+JSON.stringify(scenario).replace("\n",''));
+					that.log('┌──── ' + that.rooms[scenario.object_id] + ' > ' +scenario.name+' ('+scenario.id+')');
+					
+
+					let HBservice = {
+						controlService : new Service.Switch(scenario.name),
+						characteristics : [Characteristic.On]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=scenario;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.scenario=scenario;
+
+							
+					Serv.cmd_id = scenario.id;
+					Serv.eqID = scenario.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = scenario.id + '-' + Serv.subtype;
+
+					scenario.eqType_name = "Scenario";
+					scenario.logicalId = "";
+					
+					let createdAccessory = that.createAccessory([HBservice], scenario);
+					that.addAccessory(createdAccessory);
+					that.log('└─────────');
+					
+				}
+				else
+				{
+					that.log('debug','Scenario > '+JSON.stringify(scenario).replace("\n",''));
+					that.log('┌──── ' + that.rooms[scenario.object_id] + ' > ' +scenario.name+' ('+scenario.id+')');
+					var Messg= '│ Scenario ';
+					Messg   += scenario.isVisible == '1' ? 'visible' : 'invisible';
+					Messg   += scenario.isActive == '1' ? ', activé' : ', désactivé';
+					Messg   += scenario.object_id != null ? '' : ', pas dans une pièce';
+					Messg   += scenario.sendToHomebridge != '0' ? '' : ', pas coché pour Homebridge';
+					that.log(Messg);
+
+					scenario.eqType_name = "Scenario";
+					scenario.logicalId = "";
+					
+					that.delAccessory(
+						that.createAccessory([], scenario) // create a cached lookalike object for unregistering it
+					);
+					that.log('└─────────');
+				}
+				
+			});
+			
+		}
+	} 
+	catch(e) {
+		this.log('error','Erreur de la fonction JeedomScenarios2HomeKitAccessories :',e);
 		console.error(e.stack);
 	}
 };
@@ -1537,7 +1618,7 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 		
 		accessory.model = eqLogic.eqType_name;
 		accessory.manufacturer = 'Jeedom>'+ this.rooms[eqLogic.object_id] +'>'+accessory.name;
-		accessory.serialNumber = '<'+eqLogic.id+'-'+eqLogic.logicalId+'>';
+		accessory.serialNumber = '<'+eqLogic.id+(eqLogic.logicalId ? '-'+eqLogic.logicalId : '')+'>';
 		accessory.services_add = HBservices;
 		return accessory;
 	}
@@ -1791,9 +1872,9 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 // -- Return : nothing
 JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, service) {
 	try{
-		//var that = this;
+		var that = this;
 		
-		var action,rgb;
+		var action,rgb,cmdId;
 		switch (characteristic.UUID) {
 			case Characteristic.ResetTotal.UUID :
 				this.log('info','--Reset Graphiques Porte Reçu');
@@ -1801,7 +1882,33 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.On.UUID :
 			case Characteristic.LockPhysicalControls.UUID :
-				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+				if(service.infos.scenario) {
+					if(value == 0) {
+						// off
+						action = 'stop';
+						cmdId  = service.cmd_id;
+						
+						that.jeedomClient.executeScenarioAction(cmdId, action).then(function(response) {
+							that.log('info','[Commande Scenario envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'response:'+JSON.stringify(response));
+						}).catch(function(err) {
+							that.log('error','Erreur à l\'envoi de la commande Scenario ' + action + ' vers ' + cmdId , err);
+							console.error(err.stack);
+						});
+					} else {
+						// on
+						action = 'run';
+						cmdId  = service.cmd_id;
+						
+						that.jeedomClient.executeScenarioAction(cmdId, action).then(function(response) {
+							that.log('info','[Commande Scenario envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'response:'+JSON.stringify(response));
+						}).catch(function(err) {
+							that.log('error','Erreur à l\'envoi de la commande Scenario ' + action + ' vers ' + cmdId , err);
+							console.error(err.stack);
+						});
+					}
+				} else {
+					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+				}
 			break;
 			case Characteristic.Mute.UUID :
 				this.command(value == 0 ? 'Unmute' : 'Mute', null, service);
@@ -1970,24 +2077,37 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		switch (characteristic.UUID) {
 			// Switch or Light
 			case Characteristic.On.UUID :
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
-						if(parseInt(cmd.currentValue) == 0) returnValue=false;
-						else returnValue=true;
+				if(service.infos.scenario) {
+					let scenario = that.jeedomClient.getScenarioPropertiesFromCache(service.infos.scenario.id);
+					switch(scenario.state) {
+						case 'stop':
+							returnValue = false;
+						break;
+						case 'in progress':
+							returnValue = true;
 						break;
 					}
-					if (cmd.generic_type == 'LIGHT_STATE_BOOL' && cmd.id == service.infos.state_bool.id) {
-						if(parseInt(cmd.currentValue) == 0) returnValue=false;
-						else returnValue=true;
-						break;
-					}
-					if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
-						break;
-					}
-					if (cmd.generic_type == "SWITCH_STATE" && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
-						break;
+					
+				} else {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
+							if(parseInt(cmd.currentValue) == 0) returnValue=false;
+							else returnValue=true;
+							break;
+						}
+						if (cmd.generic_type == 'LIGHT_STATE_BOOL' && cmd.id == service.infos.state_bool.id) {
+							if(parseInt(cmd.currentValue) == 0) returnValue=false;
+							else returnValue=true;
+							break;
+						}
+						if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
+							returnValue = cmd.currentValue;
+							break;
+						}
+						if (cmd.generic_type == "SWITCH_STATE" && cmd.id == service.cmd_id) {
+							returnValue = cmd.currentValue;
+							break;
+						}
 					}
 				}
 			break;
@@ -3206,23 +3326,15 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 				    update.option.value != undefined && 
 				    update.option.cmd_id) {
 					
-						that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
-						that.updateSubscribers(update);// Update subscribers
+					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
+					that.updateSubscribers(update);// Update subscribers
 
 				} else if(update.name == 'scenario::update' &&
-					   update.option.scenario_id) {
+						  update.option.state != undefined && 
+						  update.option.scenario_id) {
 						   
-					var scenario = that.jeedomClient.getScenarioPropertiesFromCache(update.option.scenario_id);
-					that.jeedomClient.updateModelScenario(update.option.scenario_id,update.option.state);
-					
-					switch(update.option.state) {
-						case 'stop':
-							that.log('debug',"Scenario",scenario.name,'stoppé');
-						break;
-						case 'in progress':
-							that.log('debug',"Scenario",scenario.name,'en cours');
-						break;
-					}
+					that.jeedomClient.updateModelScenario(update.option.scenario_id,update.option.state); // Update cachedModel
+					that.updateSubscribers(update);// Update subscribers
 					
 				} else if(DEV_DEBUG && update.name == 'eqLogic::update' &&
 				   update.option.eqLogic_id) {
@@ -3258,32 +3370,39 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 // -- Return : nothing
 JeedomPlatform.prototype.updateSubscribers = function(update) {
 	var that = this;
-	var subCharact,subService;
+	var subCharact,subService,updateID;
 	for (let i = 0; i < that.updateSubscriptions.length; i++) {
 		subCharact = that.updateSubscriptions[i].characteristic;
 		subService = that.updateSubscriptions[i].service;
 
-		// that.log('debug',"update :",update.option.cmd_id,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
-		let infoFound = findMyID(subService.infos,update.option.cmd_id);
-		let statusFound = findMyID(subService.statusArr,update.option.cmd_id);
+		if(update.option.scenario_id) {
+			updateID = update.option.scenario_id;
+		} else if(update.option.cmd_id) {
+			updateID = update.option.cmd_id;
+		}
+		
+		//that.log('debug',"update :",updateID,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
+		let infoFound = findMyID(subService.infos,updateID);
+		let statusFound = findMyID(subService.statusArr,updateID);
 		if(infoFound != -1 || statusFound != -1) {
 			let returnValue = that.getAccessoryValue(subCharact, subService);
 			if(returnValue !== undefined && returnValue !== 'no_response') {
 				returnValue = sanitizeValue(returnValue,subCharact);
 				if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
 					if(!that.settingLight) { // and it's not currently being modified
-						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 						subCharact.setValue(returnValue, undefined, 'fromJeedom');
 					} else {
-						if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+						if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 					}
 				}
 				else {
-					that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+update.option.cmd_id+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+update.option.cmd_id+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+					that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 					subCharact.setValue(returnValue, undefined, 'fromJeedom');
 				}
 			}
 		}
+
 	}
 };
 
@@ -3644,7 +3763,7 @@ function RegisterCustomCharacteristics() {
 		// Required Characteristics
 
 		// Optional Characteristics
-		this.addOptionalCharacteristic(Characteristic.Name);
+		this.addOptionalCharacteristic(Characteristic.UVIndex);
 	};
 	inherits(Service.WeatherService, Service);
 	Service.WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';	
