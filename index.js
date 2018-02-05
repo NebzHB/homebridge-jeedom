@@ -198,7 +198,7 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 					Messg   += scenario.isVisible == '1' ? 'visible' : 'invisible';
 					Messg   += scenario.isActive == '1' ? ', activé' : ', désactivé';
 					Messg   += scenario.object_id != null ? '' : ', pas dans une pièce';
-					Messg   += scenario.sendToHomebridge != '0' ? '' : ', pas coché pour Homebridge';
+					Messg   += scenario.sendToHomebridge == '1' ? '' : ', pas coché pour Homebridge';
 					that.log(Messg);
 
 					scenario.eqType_name = "Scenario";
