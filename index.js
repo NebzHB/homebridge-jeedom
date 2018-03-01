@@ -30,6 +30,7 @@ var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
+const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM'];
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -580,7 +581,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
-					Serv.actions.push = cmd.Push;
+					Serv.actions.Push = cmd.Push;
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -1936,7 +1937,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							console.error(err.stack);
 						});
 					}
-				} else if (service.actions.push){
+				} else if (service.actions.Push){
 					if(value == 1) {
 						this.command('Pushed', null, service);
 						setTimeout(function() {
@@ -2157,7 +2158,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						} else if (cmd.generic_type == "SWITCH_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
 							break;
-						} else if (cmd.generic_type == "PUSH_BUTTON" && cmd.id == service.actions.push) {
+						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.actions.Push) {
 							returnValue = false;
 							break;
 						}
@@ -3202,7 +3203,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;			
 					case 'PUSH_BUTTON' :
-						if((action == 'Pushed') && service.actions.push && cmd.id == service.actions.push.id) {
+					case 'CAMERA_UP' :
+					case 'CAMERA_DOWN' :
+					case 'CAMERA_LEFT' :
+					case 'CAMERA_RIGHT' :
+					case 'CAMERA_ZOOM' :
+					case 'CAMERA_DEZOOM' :
+						if((action == 'Pushed') && service.actions.Push && cmd.id == service.actions.Push.id) {
 							cmdId = cmd.id;			
 							cmdFound=cmd.generic_type;							
 							found = true;
