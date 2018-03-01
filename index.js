@@ -568,6 +568,35 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			} else {
 				HBservice = null;
 			}
+		}	
+		if (eqLogic.services.Push) {
+			eqLogic.services.Push.forEach(function(cmd) {
+				if (cmd.Push) {
+					HBservice = {
+						controlService : new Service.Switch(eqLogic.name),
+						characteristics : [Characteristic.On]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.actions.push = cmd.Push;
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					Serv.cmd_id = cmd.Push.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Interrupteur Etat"');
+			} else {
+				HBservice = null;
+			}
 		}		
 		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
 			eqLogic.services.power.forEach(function(cmd) {
@@ -1907,6 +1936,13 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							console.error(err.stack);
 						});
 					}
+				} else if (service.actions.push){
+					if(value == 1) {
+						this.command('Pushed', null, service);
+						setTimeout(function() {
+							characteristic.updateValue(sanitizeValue(false,characteristic), undefined, 'fromSetValue');
+						}, 100);
+					}					
 				} else {
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
@@ -2111,18 +2147,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							if(parseInt(cmd.currentValue) == 0) returnValue=false;
 							else returnValue=true;
 							break;
-						}
-						if (cmd.generic_type == 'LIGHT_STATE_BOOL' && cmd.id == service.infos.state_bool.id) {
+						} else if (cmd.generic_type == 'LIGHT_STATE_BOOL' && cmd.id == service.infos.state_bool.id) {
 							if(parseInt(cmd.currentValue) == 0) returnValue=false;
 							else returnValue=true;
 							break;
-						}
-						if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
+						} else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
 							break;
-						}
-						if (cmd.generic_type == "SWITCH_STATE" && cmd.id == service.cmd_id) {
+						} else if (cmd.generic_type == "SWITCH_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
+							break;
+						} else if (cmd.generic_type == "PUSH_BUTTON" && cmd.id == service.actions.push) {
+							returnValue = false;
 							break;
 						}
 					}
@@ -3164,7 +3200,14 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdFound=cmd.generic_type;							
 							found = true;
 						}
-					break;					
+					break;			
+					case 'PUSH_BUTTON' :
+						if((action == 'Pushed') && service.actions.push && cmd.id == service.actions.push.id) {
+							cmdId = cmd.id;			
+							cmdFound=cmd.generic_type;							
+							found = true;
+						}
+					break;
 					case 'LIGHT_OFF' :
 						if((action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;					
