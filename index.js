@@ -535,11 +535,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.Switch) {
 			eqLogic.services.Switch.forEach(function(cmd) {
 				if (cmd.state) {
+					let SwitchName = eqLogic.name;
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE') SwitchName=cmd.state.name;
 					HBservice = {
-						controlService : new Service.Switch(eqLogic.name),
+						controlService : new Service.Switch(SwitchName),
 						characteristics : [Characteristic.On]
 					};
 					let Serv = HBservice.controlService;
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE') Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
@@ -573,8 +576,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.Push) {
 			eqLogic.services.Push.forEach(function(cmd) {
 				if (cmd.Push && cmd.Push.subType == 'other') {
+					let SwitchName=cmd.Push.name;
 					HBservice = {
-						controlService : new Service.Switch(eqLogic.name),
+						controlService : new Service.Switch(SwitchName),
 						characteristics : [Characteristic.On]
 					};
 					let Serv = HBservice.controlService;
@@ -582,6 +586,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.actions.Push = cmd.Push;
+					Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
