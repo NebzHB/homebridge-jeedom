@@ -30,7 +30,7 @@ var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
-const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM'];
+const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET'];
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -572,7 +572,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}	
 		if (eqLogic.services.Push) {
 			eqLogic.services.Push.forEach(function(cmd) {
-				if (cmd.Push) {
+				if (cmd.Push && cmd.Push.subType == 'other') {
 					HBservice = {
 						controlService : new Service.Switch(eqLogic.name),
 						characteristics : [Characteristic.On]
@@ -594,7 +594,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 			if(!HBservice) {
-				that.log('warn','Pas de type générique "Info/Interrupteur Etat"');
+				that.log('warn','La Commande Action associée doit être du type "Autre"');
 			} else {
 				HBservice = null;
 			}
@@ -2155,7 +2155,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						} else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
 							break;
-						} else if (cmd.generic_type == "SWITCH_STATE" && cmd.id == service.cmd_id) {
+						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
 							break;
 						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.actions.Push) {
@@ -3199,6 +3199,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'SWITCH_ON' :
+					case 'CAMERA_RECORD' :
 						if((value == 255 || action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
 							cmdId = cmd.id;			
 							cmdFound=cmd.generic_type;							
@@ -3219,6 +3220,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					case 'CAMERA_RIGHT' :
 					case 'CAMERA_ZOOM' :
 					case 'CAMERA_DEZOOM' :
+					case 'CAMERA_PRESET' :
 						if(action == 'Pushed' && service.actions.Push && cmd.id == service.actions.Push.id) {
 							cmdId = cmd.id;			
 							cmdFound=cmd.generic_type;							
@@ -3240,6 +3242,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'SWITCH_OFF' :
+					case 'CAMERA_STOP' :
 						if((value == 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;		
 							cmdFound=cmd.generic_type;
