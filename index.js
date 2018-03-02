@@ -2161,6 +2161,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.actions.Push) {
 							returnValue = false;
 							break;
+						} else if (cmd.generic_type == "GENERIC_ACTION" && cmd.subType == 'other' && cmd.id == service.actions.Push) {
+							returnValue = false;
+							break;
 						}
 					}
 				}
@@ -3202,6 +3205,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							found = true;
 						}
 					break;			
+					case 'GENERIC_ACTION' :
+						if(cmd.subType == 'other' && action == 'Pushed' && service.actions.Push && cmd.id == service.actions.Push.id) {
+							cmdId = cmd.id;			
+							cmdFound=cmd.generic_type;							
+							found = true;
+						}
+					break;
 					case 'PUSH_BUTTON' :
 					case 'CAMERA_UP' :
 					case 'CAMERA_DOWN' :
@@ -3209,7 +3219,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					case 'CAMERA_RIGHT' :
 					case 'CAMERA_ZOOM' :
 					case 'CAMERA_DEZOOM' :
-						if((action == 'Pushed') && service.actions.Push && cmd.id == service.actions.Push.id) {
+						if(action == 'Pushed' && service.actions.Push && cmd.id == service.actions.Push.id) {
 							cmdId = cmd.id;			
 							cmdFound=cmd.generic_type;							
 							found = true;
