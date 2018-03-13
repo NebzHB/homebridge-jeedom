@@ -1652,7 +1652,7 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 		accessory.context.eqLogic = eqLogic;
 		
 		accessory.model = eqLogic.eqType_name;
-		accessory.manufacturer = 'Jeedom>'+ this.rooms[eqLogic.object_id] +'>'+accessory.name;
+		accessory.manufacturer = this.config.name+'>'+ this.rooms[eqLogic.object_id] +'>'+accessory.name;
 		accessory.serialNumber = '<'+eqLogic.id+(eqLogic.logicalId ? '-'+eqLogic.logicalId : '')+'-'+this.config.name+'>';
 		accessory.services_add = HBservices;
 		return accessory;
