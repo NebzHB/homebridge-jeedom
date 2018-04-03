@@ -3799,7 +3799,58 @@ function RegisterCustomCharacteristics() {
 	};
 	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
 	inherits(Characteristic.AQI, Characteristic);	
+	
+	Characteristic.WindSpeed = function() {
+		Characteristic.call(this, 'Wind speed', '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41');
+		this.setProps({
+			format: Characteristic.Formats.FLOAT,
+			unit: "km/h",
+			maxValue: 100,
+			minValue: 0,
+			minStep: 0.1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.WindSpeed.UUID = '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41';
+	inherits(Characteristic.WindSpeed, Characteristic);
 
+	Characteristic.WindDirection = function() {
+		Characteristic.call(this, 'Wind direction', '46f1284c-1912-421b-82f5-eb75008b167e');
+		this.setProps({
+			format: Characteristic.Formats.STRING,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.WindDirection.UUID = '46f1284c-1912-421b-82f5-eb75008b167e';
+	inherits(Characteristic.WindDirection, Characteristic);
+
+	Characteristic.WeatherConditionCategory = function() {
+		Characteristic.call(this, 'Condition category', 'cd65a9ab-85ad-494a-b2bd-2f380084134c');
+		this.setProps({
+			format: Characteristic.Formats.UINT8,
+			maxValue: 4,
+			minValue: 0,
+			minStep: 1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.WeatherConditionCategory.UUID = 'cd65a9ab-85ad-494a-b2bd-2f380084134c';
+	inherits(Characteristic.WeatherConditionCategory, Characteristic);
+
+	Characteristic.WeatherCondition = function() {
+		Characteristic.call(this, 'Condition', 'cd65a9ab-85ad-494a-b2bd-2f380084134d');
+		this.setProps({
+			format: Characteristic.Formats.STRING,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.WeatherCondition.UUID = 'cd65a9ab-85ad-494a-b2bd-2f380084134d';
+	inherits(Characteristic.WeatherCondition, Characteristic);
+	
 	/**
 	 * FakeGato History Service
 	 */
