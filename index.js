@@ -2375,6 +2375,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'WEATHER_WIND_DIRECTION' && cmd.id == service.infos.wind_direction.id) {
 						returnValue = cmd.currentValue;
+						if(!isNaN(returnValue)) { // if numeric
+							let key=parseInt((returnValue/22.5)+0.5) % 16;
+							let arr=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+							returnValue=arr[key];
+						}
 						break;
 					}
 				}
