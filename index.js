@@ -1426,10 +1426,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [
 							Characteristic.CurrentTemperature,
 							Characteristic.CurrentRelativeHumidity,
-							Characteristic.AirPressure,
-							Characteristic.WindSpeed,
-							Characteristic.WindDirection,
-							Characteristic.WeatherCondition
+							Characteristic.AirPressure
 						]
 					};
 					let Serv = HBservice.controlService;
@@ -1445,10 +1442,43 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.pressure=cmd2.pressure;
 						} else if (cmd2.wind_speed) {
 							Serv.infos.wind_speed=cmd2.wind_speed;
+							HBservice.characteristics.push(Characteristic.WindSpeed);
+							Serv.addCharacteristic(Characteristic.WindSpeed);
+							Serv.getCharacteristic(Characteristic.WindSpeed).displayName = cmd.wind_speed.name;
+							
+							let unite = Serv.infos.wind_speed.unite ? Serv.infos.wind_speed.unite : '';
+							if(unite) {
+								let props = {};
+								props.unit=unite;
+								Serv.getCharacteristic(Characteristic.WindSpeed).setProps(props);
+							}
 						} else if (cmd2.wind_direction) {
 							Serv.infos.wind_direction=cmd2.wind_direction;
+							HBservice.characteristics.push(Characteristic.WindDirection);
+							Serv.addCharacteristic(Characteristic.WindDirection);
+							Serv.getCharacteristic(Characteristic.WindDirection).displayName = cmd.wind_direction.name;
 						} else if (cmd2.condition) {
 							Serv.infos.condition=cmd2.condition;
+							HBservice.characteristics.push(Characteristic.WeatherCondition);
+							Serv.addCharacteristic(Characteristic.WeatherCondition);
+							Serv.getCharacteristic(Characteristic.WeatherCondition).displayName = cmd.condition.name;
+						} else if (cmd2.UVIndex) {
+							Serv.infos.UVIndex=cmd2.UVIndex;
+							HBservice.characteristics.push(Characteristic.UVIndex);
+							Serv.addCharacteristic(Characteristic.UVIndex);
+							Serv.getCharacteristic(Characteristic.UVIndex).displayName = cmd.UVIndex.name;
+						} else if (cmd2.visibility) {
+							Serv.infos.visibility=cmd2.visibility;
+							HBservice.characteristics.push(Characteristic.Visibility);
+							Serv.addCharacteristic(Characteristic.Visibility);
+							Serv.getCharacteristic(Characteristic.Visibility).displayName = cmd.visibility.name;
+							
+							let unite = Serv.infos.wind_speed.unite ? Serv.infos.wind_speed.unite : '';
+							if(unite) {
+								let props = {};
+								props.unit=unite;
+								Serv.getCharacteristic(Characteristic.Visibility).setProps(props);
+							}
 						}
 					});
 
@@ -2442,7 +2472,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.UVIndex.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'UV' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'UV' && cmd.id == service.cmd_id) ||
+					    (cmd.generic_type == 'WEATHER_UVINDEX' && cmd.id == service.infos.UVIndex.id)) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;		
+			case Characteristic.Visibility.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_VISIBILITY' && cmd.id == service.infos.visibility.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -3920,6 +3959,21 @@ function RegisterCustomCharacteristics() {
 	};
 	Characteristic.WeatherCondition.UUID = 'cd65a9ab-85ad-494a-b2bd-2f380084134d';
 	inherits(Characteristic.WeatherCondition, Characteristic);
+
+	Characteristic.Visibility = function() {
+			Characteristic.call(this, 'Visibility', 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857');
+			this.setProps({
+				format: Characteristic.Formats.UINT8,
+				unit: "km",
+				maxValue: 200,
+				minValue: 0,
+				minStep: 1,
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
+	inherits(Characteristic.Visibility, Characteristic);
 	
 	/**
 	 * FakeGato History Service
@@ -3968,8 +4022,14 @@ function RegisterCustomCharacteristics() {
 		Service.call(this, displayName, 'E863F001-079E-48FF-8F27-9C2605A29F52', subtype);
 
 		// Required Characteristics
+		this.addCharacteristic(Characteristic.CurrentTemperature);
+		this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
+		this.addCharacteristic(Characteristic.AirPressure);
 
 		// Optional Characteristics
+		this.addOptionalCharacteristic(Characteristic.WindDirection);
+		this.addOptionalCharacteristic(Characteristic.WindSpeed);
+		this.addOptionalCharacteristic(Characteristic.WeatherCondition);
 		this.addOptionalCharacteristic(Characteristic.UVIndex);
 	};
 	inherits(Service.WeatherService, Service);
