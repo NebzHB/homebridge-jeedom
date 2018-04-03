@@ -1444,7 +1444,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.wind_speed=cmd2.wind_speed;
 							HBservice.characteristics.push(Characteristic.WindSpeed);
 							Serv.addCharacteristic(Characteristic.WindSpeed);
-							Serv.getCharacteristic(Characteristic.WindSpeed).displayName = cmd.wind_speed.name;
+							Serv.getCharacteristic(Characteristic.WindSpeed).displayName = cmd2.wind_speed.name;
 							
 							let unite = Serv.infos.wind_speed.unite ? Serv.infos.wind_speed.unite : '';
 							if(unite) {
@@ -1456,22 +1456,22 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.wind_direction=cmd2.wind_direction;
 							HBservice.characteristics.push(Characteristic.WindDirection);
 							Serv.addCharacteristic(Characteristic.WindDirection);
-							Serv.getCharacteristic(Characteristic.WindDirection).displayName = cmd.wind_direction.name;
+							Serv.getCharacteristic(Characteristic.WindDirection).displayName = cmd2.wind_direction.name;
 						} else if (cmd2.condition) {
 							Serv.infos.condition=cmd2.condition;
 							HBservice.characteristics.push(Characteristic.WeatherCondition);
 							Serv.addCharacteristic(Characteristic.WeatherCondition);
-							Serv.getCharacteristic(Characteristic.WeatherCondition).displayName = cmd.condition.name;
+							Serv.getCharacteristic(Characteristic.WeatherCondition).displayName = cmd2.condition.name;
 						} else if (cmd2.UVIndex) {
 							Serv.infos.UVIndex=cmd2.UVIndex;
 							HBservice.characteristics.push(Characteristic.UVIndex);
 							Serv.addCharacteristic(Characteristic.UVIndex);
-							Serv.getCharacteristic(Characteristic.UVIndex).displayName = cmd.UVIndex.name;
+							Serv.getCharacteristic(Characteristic.UVIndex).displayName = cmd2.UVIndex.name;
 						} else if (cmd2.visibility) {
 							Serv.infos.visibility=cmd2.visibility;
 							HBservice.characteristics.push(Characteristic.Visibility);
 							Serv.addCharacteristic(Characteristic.Visibility);
-							Serv.getCharacteristic(Characteristic.Visibility).displayName = cmd.visibility.name;
+							Serv.getCharacteristic(Characteristic.Visibility).displayName = cmd2.visibility.name;
 							
 							let unite = Serv.infos.wind_speed.unite ? Serv.infos.wind_speed.unite : '';
 							if(unite) {
