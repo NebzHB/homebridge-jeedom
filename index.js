@@ -686,9 +686,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.addCharacteristic(Characteristic.PM2_5Density);
 					}
 					// AQI Generic
-					HBservice.characteristics.push(Characteristic.AQI);
-					Serv.addCharacteristic(Characteristic.AQI);
-					Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
+					//HBservice.characteristics.push(Characteristic.AQI);
+					//Serv.addCharacteristic(Characteristic.AQI);
+					//Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
+					
+					HBservice.characteristics.push(Characteristic.AQExtra1Characteristic);
+					Serv.addCharacteristic(Characteristic.AQExtra1Characteristic);
+					
+					HBservice.characteristics.push(Characteristic.AQExtra2Characteristic);
+					Serv.addCharacteristic(Characteristic.AQExtra2Characteristic);
 					
 					if(cmd.Index.subType=='numeric') {
 						Serv.levelNum=[];		
@@ -2357,14 +2363,25 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
-			case Characteristic.AQI.UUID :
+			/*case Characteristic.AQI.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
 				}
-			break;					
+			break;		*/
+			case Characteristic.AQExtra1Characteristic.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.AQExtra2Characteristic.UUID :
+				returnValue = '';
+			break;	
 			case Characteristic.PM2_5Density.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_PM25' && cmd.id == service.cmd_id) {
@@ -3141,37 +3158,40 @@ function sanitizeValue(currentValue,characteristic) {
 				return val;
 
 	switch(characteristic.props.format) {
-			case "uint8" :
-			case "uint16":
-			case "uint32" :
-			case "uint64" :
+			case Characteristic.Formats.UINT8 :
+			case Characteristic.Formats.UINT16:
+			case Characteristic.Formats.UINT32 :
+			case Characteristic.Formats.UINT64 :
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
 				if(!val) val = 0;
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
 			break;
-			case "int" :
+			case Characteristic.Formats.INT :
 				val = parseInt(currentValue);
 				if(!val) val = 0;
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
 			break;
-			case "float" :
+			case Characteristic.Formats.FLOAT :
 				val = minStepRound(parseFloat(currentValue),characteristic);
 				if(!val) val = 0.0;
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
 			break;
-			case "bool" :
+			case Characteristic.Formats.BOOL :
 				val = toBool(currentValue);
 				if(!val) val = false;
 			break;
-			case "string" :
-			case "tlv8" :
+			case Characteristic.Formats.STRING :
+			case Characteristic.Formats.TLV8 :
 				if(currentValue !== undefined)
 					val = currentValue.toString();
 				if(!val) val = '';
+			break;
+			default :
+				val = currentValue;
 			break;
 	}
 	return val;
@@ -3981,6 +4001,28 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
 	inherits(Characteristic.AQI, Characteristic);	
 
+	Characteristic.AQExtra1Characteristic = function() {
+		Characteristic.call(this, 'AQX1', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.UINT16,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN	]
+		});
+		this.value = this.getDefaultValue();
+    };
+	Characteristic.AQExtra1Characteristic.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.AQExtra1Characteristic, Characteristic);	
+
+    Characteristic.AQExtra2Characteristic = function() {
+		Characteristic.call(this, 'AQX2', 'E863F132-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.DATA,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN	]
+		});
+        this.value = this.getDefaultValue();
+	};	
+	Characteristic.AQExtra2Characteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.AQExtra2Characteristic, Characteristic);	
+	
 	Characteristic.WindSpeed = function() {
 		Characteristic.call(this, 'Wind speed', '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41');
 		this.setProps({
