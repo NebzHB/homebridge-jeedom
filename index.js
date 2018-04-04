@@ -1422,25 +1422,95 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.weather.forEach(function(cmd) {
 				if(cmd.temperature) {
 					HBservice = {
-						controlService : new Service.WeatherService(eqLogic.name),
-						characteristics : [
-							Characteristic.CurrentTemperature,
-							Characteristic.CurrentRelativeHumidity,
-							Characteristic.AirPressure
-						]
+						controlService : new Service.TemperatureSensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentTemperature]
 					};
 					let Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.temperature=cmd.temperature;
-					Serv.weather=true;
+
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
+
+					Serv.cmd_id = cmd.temperature.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+				if(cmd.humidity) {
+					HBservice = {
+						controlService : new Service.HumiditySensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentRelativeHumidity]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.humidity=cmd.humidity;
+
+					Serv.cmd_id = cmd.humidity.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+				if(cmd.pressure) {
+					HBservice = {
+						controlService : new Service.PressureSensor(eqLogic.name),
+						characteristics : [Characteristic.AirPressure]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.pressure=cmd.pressure;
+
+					Serv.cmd_id = cmd.pressure.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+				if(cmd.condition) {
+					HBservice = {
+						controlService : new Service.WeatherService(eqLogic.name),
+						characteristics : [Characteristic.WeatherCondition]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.condition=cmd.condition;
+
 					eqServicesCopy.weather.forEach(function(cmd2) {
-						if (cmd2.humidity) {
-							Serv.infos.humidity=cmd2.humidity;
-						} else if (cmd2.pressure) {
-							Serv.infos.pressure=cmd2.pressure;
-						} else if (cmd2.wind_speed) {
+						if (cmd2.wind_speed) {
 							Serv.infos.wind_speed=cmd2.wind_speed;
 							HBservice.characteristics.push(Characteristic.WindSpeed);
 							Serv.addCharacteristic(Characteristic.WindSpeed);
@@ -1457,11 +1527,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							HBservice.characteristics.push(Characteristic.WindDirection);
 							Serv.addCharacteristic(Characteristic.WindDirection);
 							Serv.getCharacteristic(Characteristic.WindDirection).displayName = cmd2.wind_direction.name;
-						} else if (cmd2.condition) {
-							Serv.infos.condition=cmd2.condition;
-							HBservice.characteristics.push(Characteristic.WeatherCondition);
-							Serv.addCharacteristic(Characteristic.WeatherCondition);
-							Serv.getCharacteristic(Characteristic.WeatherCondition).displayName = cmd2.condition.name;
 						} else if (cmd2.UVIndex) {
 							Serv.infos.UVIndex=cmd2.UVIndex;
 							HBservice.characteristics.push(Characteristic.UVIndex);
@@ -1482,18 +1547,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					});
 
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
-
-					Serv.cmd_id = cmd.temperature.id;
+					Serv.cmd_id = cmd.condition.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(that.fakegato && !eqLogic.hasLogging) {
-						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
 					
 					HBservices.push(HBservice);
 					HBservice = null;
@@ -4022,14 +4080,15 @@ function RegisterCustomCharacteristics() {
 		Service.call(this, displayName, 'E863F001-079E-48FF-8F27-9C2605A29F52', subtype);
 
 		// Required Characteristics
-		this.addCharacteristic(Characteristic.CurrentTemperature);
-		this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
-		this.addCharacteristic(Characteristic.AirPressure);
+		//this.addCharacteristic(Characteristic.CurrentTemperature);
+		//this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
+		//this.addCharacteristic(Characteristic.AirPressure);
+		this.addCharacteristic(Characteristic.WeatherCondition);
 
 		// Optional Characteristics
 		this.addOptionalCharacteristic(Characteristic.WindDirection);
 		this.addOptionalCharacteristic(Characteristic.WindSpeed);
-		this.addOptionalCharacteristic(Characteristic.WeatherCondition);
+		//this.addOptionalCharacteristic(Characteristic.WeatherCondition);
 		this.addOptionalCharacteristic(Characteristic.UVIndex);
 	};
 	inherits(Service.WeatherService, Service);
