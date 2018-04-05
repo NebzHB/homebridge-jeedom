@@ -29,7 +29,7 @@ debug.NO = 1000;
 var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
-const GenericAssociated = ['GENERIC_INFO','SHOCK','NOISE','RAIN_CURRENT','RAIN_TOTAL'];
+const GenericAssociated = ['GENERIC_INFO','SHOCK','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION'];
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET'];
 
 module.exports = function(homebridge) {
