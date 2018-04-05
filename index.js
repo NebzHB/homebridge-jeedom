@@ -686,15 +686,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.addCharacteristic(Characteristic.PM2_5Density);
 					}
 					// AQI Generic
-					//HBservice.characteristics.push(Characteristic.AQI);
-					//Serv.addCharacteristic(Characteristic.AQI);
-					//Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
-					
-					HBservice.characteristics.push(Characteristic.AQExtra1Characteristic);
-					Serv.addCharacteristic(Characteristic.AQExtra1Characteristic);
-					
-					HBservice.characteristics.push(Characteristic.AQExtra2Characteristic);
-					Serv.addCharacteristic(Characteristic.AQExtra2Characteristic);
+					if(!that.fakegato) {
+						HBservice.characteristics.push(Characteristic.AQI);
+						Serv.addCharacteristic(Characteristic.AQI);
+						Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
+					} else {
+						HBservice.characteristics.push(Characteristic.AQExtra1Characteristic);
+						Serv.addCharacteristic(Characteristic.AQExtra1Characteristic);
+						
+						HBservice.characteristics.push(Characteristic.AQExtra2Characteristic);
+						Serv.addCharacteristic(Characteristic.AQExtra2Characteristic);
+					}
 					
 					if(cmd.Index.subType=='numeric') {
 						Serv.levelNum=[];		
@@ -1442,6 +1444,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.temperature=cmd.temperature;
+					Serv.isPrimaryService = true;
 
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
@@ -1459,7 +1462,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					HBservices.push(HBservice);
 					HBservice = null;
-				}
+				}		
 				if(cmd.humidity) {
 					HBservice = {
 						controlService : new Service.HumiditySensor(eqLogic.name),
@@ -1484,7 +1487,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					HBservices.push(HBservice);
 					HBservice = null;
-				}
+				}		
 				if(cmd.pressure) {
 					HBservice = {
 						controlService : new Service.PressureSensor(eqLogic.name),
@@ -1509,7 +1512,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					HBservices.push(HBservice);
 					HBservice = null;
-				}
+				}				
 				if(cmd.condition) {
 					HBservice = {
 						controlService : new Service.WeatherService(eqLogic.name),
@@ -2369,18 +2372,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
-			/*case Characteristic.AQI.UUID :
+			case Characteristic.AQI.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						returnValue = parseInt(cmd.currentValue);
 						break;
 					}
 				}
-			break;		*/
+			break;
 			case Characteristic.AQExtra1Characteristic.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						returnValue = parseInt(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
@@ -2397,7 +2400,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.PM2_5Density.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_PM25' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						returnValue = parseInt(cmd.currentValue);
 						break;
 					}
 				}
@@ -4147,6 +4150,26 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Service.WeatherService, Service);
 	Service.WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';	
+	
+	/**
+	 * Custom Service 'EveRoom Service'
+	 */
+
+	Service.EveRoomService = function(displayName, subtype) {
+		Service.call(this, displayName, '0000008D-0000-1000-8000-0026BB765291', subtype);
+
+		// Required Characteristics
+		//this.addCharacteristic(Characteristic.CurrentTemperature);
+		//this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
+		//this.addCharacteristic(Characteristic.AirPressure);
+		this.addCharacteristic(Characteristic.AirQuality);
+
+		// Optional Characteristics
+		//this.addOptionalCharacteristic(Characteristic.WeatherCondition);
+
+	};
+	inherits(Service.EveRoomService, Service);
+	Service.EveRoomService.UUID = '0000008D-0000-1000-8000-0026BB765291';	
 	
 	/**
 	 * Custom Service 'Custom Service'
