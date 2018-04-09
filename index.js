@@ -663,6 +663,68 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.CO2) {
+			eqLogic.services.CO2.forEach(function(cmd) {
+				if (cmd.CO2) {
+					HBservice = {
+						controlService : new Service.AirQualitySensor(eqLogic.name),
+						characteristics : [Characteristic.AirQuality,Characteristic.CarbonDioxideLevel]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.CO2=cmd.CO2;
+					
+					if(cmd.CO2.subType=='numeric') {
+						Serv.levelNum=[];		
+						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=700;
+						Serv.levelNum[Characteristic.AirQuality.GOOD]=1100;
+						Serv.levelNum[Characteristic.AirQuality.FAIR]=1600;
+						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=2100;
+						Serv.levelNum[Characteristic.AirQuality.POOR]=100000;
+					} else {
+						Serv.levelTxt=[];		
+						Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
+						Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
+						Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
+						Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
+						Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
+					}
+					
+					Serv.cmd_id = cmd.CO2.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'CO2';
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					let uniteCO2 = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
+					if(uniteCO2) {
+						let propsCO2 = {};
+						propsCO2.unit=uniteCO2;
+						Serv.getCharacteristic(Characteristic.CarbonDioxideLevel).setProps(propsCO2);
+					}
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						HBservice.characteristics.push(Characteristic.PPM);
+						Serv.addCharacteristic(Characteristic.PPM);
+						let unite = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
+						if(unite) {
+							let props = {};
+							props.unit=unite;
+							Serv.getCharacteristic(Characteristic.PPM).setProps(props);
+						}
+						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
+						Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
+
+						eqLogic.loggingService ={type:"room", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}	
 		if (eqLogic.services.AirQuality) {
 			eqLogic.services.AirQuality.forEach(function(cmd) {
 				if (cmd.Index) {
@@ -686,17 +748,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.addCharacteristic(Characteristic.PM2_5Density);
 					}
 					// AQI Generic
-					if(!that.fakegato) {
-						HBservice.characteristics.push(Characteristic.AQI);
-						Serv.addCharacteristic(Characteristic.AQI);
-						Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
-					} else {
-						HBservice.characteristics.push(Characteristic.AQExtra1Characteristic);
-						Serv.addCharacteristic(Characteristic.AQExtra1Characteristic);
-						
-						HBservice.characteristics.push(Characteristic.AQExtra2Characteristic);
-						Serv.addCharacteristic(Characteristic.AQExtra2Characteristic);
-					}
+					HBservice.characteristics.push(Characteristic.AQI);
+					Serv.addCharacteristic(Characteristic.AQI);
+					Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
 					
 					if(cmd.Index.subType=='numeric') {
 						Serv.levelNum=[];		
@@ -715,19 +769,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					Serv.cmd_id = cmd.Index.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'AQI';
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(that.fakegato && !eqLogic.hasLogging) {
-						eqLogic.loggingService ={type:"room", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
-					
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
 			});
-		}		
+		} 	
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach(function(cmd) {
 				if (cmd.presence) {
@@ -2353,7 +2402,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.AirQuality.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2') && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
 							returnValue = Characteristic.AirQuality.EXCELLENT;
@@ -2380,9 +2429,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
-			case Characteristic.AQExtra1Characteristic.UUID :
+			case Characteristic.PPM.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
+					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
@@ -2394,7 +2443,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;	
-			case Characteristic.AQExtra2Characteristic.UUID :
+			case Characteristic.CarbonDioxideLevel.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						break;
+					}
+				}
+			break;	
+			case Characteristic.AQExtraCharacteristic.UUID :
 				returnValue = '';
 			break;	
 			case Characteristic.PM2_5Density.UUID :
@@ -4016,18 +4073,18 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
 	inherits(Characteristic.AQI, Characteristic);	
 
-	Characteristic.AQExtra1Characteristic = function() {
-		Characteristic.call(this, 'AQX1', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
+	Characteristic.PPM = function() {
+		Characteristic.call(this, 'PPM', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 			format: Characteristic.Formats.UINT16,
 			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN	]
 		});
 		this.value = this.getDefaultValue();
     };
-	Characteristic.AQExtra1Characteristic.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.AQExtra1Characteristic, Characteristic);	
+	Characteristic.PPM.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.PPM, Characteristic);	
 
-    Characteristic.AQExtra2Characteristic = function() {
+    Characteristic.AQExtraCharacteristic = function() {
 		Characteristic.call(this, 'AQX2', 'E863F132-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 			format: Characteristic.Formats.DATA,
@@ -4035,8 +4092,8 @@ function RegisterCustomCharacteristics() {
 		});
         this.value = this.getDefaultValue();
 	};	
-	Characteristic.AQExtra2Characteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.AQExtra2Characteristic, Characteristic);	
+	Characteristic.AQExtraCharacteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.AQExtraCharacteristic, Characteristic);	
 	
 	Characteristic.WindSpeed = function() {
 		Characteristic.call(this, 'Wind speed', '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41');
