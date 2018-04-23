@@ -663,6 +663,68 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.CO2) {
+			eqLogic.services.CO2.forEach(function(cmd) {
+				if (cmd.CO2) {
+					HBservice = {
+						controlService : new Service.AirQualitySensor(eqLogic.name),
+						characteristics : [Characteristic.AirQuality,Characteristic.CarbonDioxideLevel]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.CO2=cmd.CO2;
+					
+					if(cmd.CO2.subType=='numeric') {
+						Serv.levelNum=[];		
+						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=700;
+						Serv.levelNum[Characteristic.AirQuality.GOOD]=1100;
+						Serv.levelNum[Characteristic.AirQuality.FAIR]=1600;
+						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=2100;
+						Serv.levelNum[Characteristic.AirQuality.POOR]=100000;
+					} else {
+						Serv.levelTxt=[];		
+						Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
+						Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
+						Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
+						Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
+						Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
+					}
+					
+					Serv.cmd_id = cmd.CO2.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'CO2';
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					let uniteCO2 = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
+					if(uniteCO2) {
+						let propsCO2 = {};
+						propsCO2.unit=uniteCO2;
+						Serv.getCharacteristic(Characteristic.CarbonDioxideLevel).setProps(propsCO2);
+					}
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						HBservice.characteristics.push(Characteristic.PPM);
+						Serv.addCharacteristic(Characteristic.PPM);
+						let unite = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
+						if(unite) {
+							let props = {};
+							props.unit=unite;
+							Serv.getCharacteristic(Characteristic.PPM).setProps(props);
+						}
+						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
+						Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
+
+						eqLogic.loggingService ={type:"room", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}	
 		if (eqLogic.services.AirQuality) {
 			eqLogic.services.AirQuality.forEach(function(cmd) {
 				if (cmd.Index) {
@@ -707,13 +769,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					Serv.cmd_id = cmd.Index.id;
 					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'AQI';
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
 			});
-		}		
+		} 	
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach(function(cmd) {
 				if (cmd.presence) {
@@ -1417,7 +1480,148 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			}	
 			
-		}			
+		}	
+		if (eqLogic.services.weather) {
+			eqLogic.services.weather.forEach(function(cmd) {
+				if(cmd.temperature) {
+					HBservice = {
+						controlService : new Service.TemperatureSensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentTemperature]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.temperature=cmd.temperature;
+					Serv.isPrimaryService = true;
+
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
+
+					Serv.cmd_id = cmd.temperature.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}		
+				if(cmd.humidity) {
+					HBservice = {
+						controlService : new Service.HumiditySensor(eqLogic.name),
+						characteristics : [Characteristic.CurrentRelativeHumidity]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.humidity=cmd.humidity;
+
+					Serv.cmd_id = cmd.humidity.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}		
+				if(cmd.pressure) {
+					HBservice = {
+						controlService : new Service.PressureSensor(eqLogic.name),
+						characteristics : [Characteristic.AirPressure]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.pressure=cmd.pressure;
+
+					Serv.cmd_id = cmd.pressure.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}				
+				if(cmd.condition) {
+					HBservice = {
+						controlService : new Service.WeatherService(eqLogic.name),
+						characteristics : [Characteristic.WeatherCondition]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.condition=cmd.condition;
+
+					eqServicesCopy.weather.forEach(function(cmd2) {
+						if (cmd2.wind_speed) {
+							Serv.infos.wind_speed=cmd2.wind_speed;
+							HBservice.characteristics.push(Characteristic.WindSpeed);
+							Serv.addCharacteristic(Characteristic.WindSpeed);
+							Serv.getCharacteristic(Characteristic.WindSpeed).displayName = cmd2.wind_speed.name;
+							
+							let unite = Serv.infos.wind_speed.unite ? Serv.infos.wind_speed.unite : '';
+							if(unite) {
+								let props = {};
+								props.unit=unite;
+								Serv.getCharacteristic(Characteristic.WindSpeed).setProps(props);
+							}
+						} else if (cmd2.wind_direction) {
+							Serv.infos.wind_direction=cmd2.wind_direction;
+							HBservice.characteristics.push(Characteristic.WindDirection);
+							Serv.addCharacteristic(Characteristic.WindDirection);
+							Serv.getCharacteristic(Characteristic.WindDirection).displayName = cmd2.wind_direction.name;
+						} else if (cmd2.UVIndex) {
+							Serv.infos.UVIndex=cmd2.UVIndex;
+							HBservice.characteristics.push(Characteristic.UVIndex);
+							Serv.addCharacteristic(Characteristic.UVIndex);
+							Serv.getCharacteristic(Characteristic.UVIndex).displayName = cmd2.UVIndex.name;
+						} else if (cmd2.visibility) {
+							Serv.infos.visibility=cmd2.visibility;
+							HBservice.characteristics.push(Characteristic.Visibility);
+							Serv.addCharacteristic(Characteristic.Visibility);
+							Serv.getCharacteristic(Characteristic.Visibility).displayName = cmd2.visibility.name;
+							
+							let unite = Serv.infos.wind_speed.unite ? Serv.infos.wind_speed.unite : '';
+							if(unite) {
+								let props = {};
+								props.unit=unite;
+								Serv.getCharacteristic(Characteristic.Visibility).setProps(props);
+							}
+						}
+					});
+
+					Serv.cmd_id = cmd.condition.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.cmd_id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}		
 		if (eqLogic.services.thermostat) {
 			eqLogic.services.thermostat.forEach(function(cmd) {
 				if(cmd.setpoint) {
@@ -2198,7 +2402,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.AirQuality.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2') && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
 							returnValue = Characteristic.AirQuality.EXCELLENT;
@@ -2220,15 +2424,40 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.AQI.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						returnValue = parseInt(cmd.currentValue);
 						break;
 					}
 				}
-			break;					
+			break;
+			case Characteristic.PPM.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+							  time: moment().unix(),
+							  ppm: returnValue
+							});
+						}
+						break;
+					}
+				}
+			break;	
+			case Characteristic.CarbonDioxideLevel.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						break;
+					}
+				}
+			break;	
+			case Characteristic.AQExtraCharacteristic.UUID :
+				returnValue = '';
+			break;	
 			case Characteristic.PM2_5Density.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_PM25' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						returnValue = parseInt(cmd.currentValue);
 						break;
 					}
 				}
@@ -2265,10 +2494,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentTemperature.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == service.cmd_id) || 
-					    (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
+					    (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id) ||
+						(cmd.generic_type == 'WEATHER_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && cmd.generic_type == 'TEMPERATURE') {
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE')) {
 							service.eqLogic.loggingService.addEntry({
 							  time: moment().unix(),
 							  temp: returnValue
@@ -2280,7 +2510,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.CurrentRelativeHumidity.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'HUMIDITY' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'HUMIDITY' && cmd.id == service.cmd_id) ||
+					    (cmd.generic_type == 'WEATHER_HUMIDITY' && cmd.id == service.infos.humidity.id)) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
@@ -2295,7 +2526,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;			
 			case Characteristic.AirPressure.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'PRESSURE' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'PRESSURE' && cmd.id == service.cmd_id) ||
+					    (cmd.generic_type == 'WEATHER_PRESSURE' && cmd.id == service.infos.pressure.id)) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
@@ -2308,6 +2540,35 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;			
+			case Characteristic.WindSpeed.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_WIND_SPEED' && cmd.id == service.infos.wind_speed.id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;		
+			case Characteristic.WindDirection.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_WIND_DIRECTION' && cmd.id == service.infos.wind_direction.id) {
+						returnValue = cmd.currentValue;
+						if(!isNaN(returnValue)) { // if numeric
+							let key=parseInt((returnValue/22.5)+0.5) % 16;
+							let arr=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+							returnValue=arr[key];
+						}
+						break;
+					}
+				}
+			break;	
+			case Characteristic.WeatherCondition.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_CONDITION' && cmd.id == service.infos.condition.id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
 			case Characteristic.LeakDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLOOD' && cmd.id == service.cmd_id) {
@@ -2358,7 +2619,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.UVIndex.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'UV' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'UV' && cmd.id == service.cmd_id) ||
+					    (cmd.generic_type == 'WEATHER_UVINDEX' && cmd.id == service.infos.UVIndex.id)) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;		
+			case Characteristic.Visibility.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_VISIBILITY' && cmd.id == service.infos.visibility.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -2960,37 +3230,40 @@ function sanitizeValue(currentValue,characteristic) {
 				return val;
 
 	switch(characteristic.props.format) {
-			case "uint8" :
-			case "uint16":
-			case "uint32" :
-			case "uint64" :
+			case Characteristic.Formats.UINT8 :
+			case Characteristic.Formats.UINT16:
+			case Characteristic.Formats.UINT32 :
+			case Characteristic.Formats.UINT64 :
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
 				if(!val) val = 0;
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
 			break;
-			case "int" :
+			case Characteristic.Formats.INT :
 				val = parseInt(currentValue);
 				if(!val) val = 0;
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
 			break;
-			case "float" :
+			case Characteristic.Formats.FLOAT :
 				val = minStepRound(parseFloat(currentValue),characteristic);
 				if(!val) val = 0.0;
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
 			break;
-			case "bool" :
+			case Characteristic.Formats.BOOL :
 				val = toBool(currentValue);
 				if(!val) val = false;
 			break;
-			case "string" :
-			case "tlv8" :
+			case Characteristic.Formats.STRING :
+			case Characteristic.Formats.TLV8 :
 				if(currentValue !== undefined)
 					val = currentValue.toString();
 				if(!val) val = '';
+			break;
+			default :
+				val = currentValue;
 			break;
 	}
 	return val;
@@ -3800,6 +4073,80 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
 	inherits(Characteristic.AQI, Characteristic);	
 
+	Characteristic.PPM = function() {
+		Characteristic.call(this, 'PPM', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.UINT16,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN	]
+		});
+		this.value = this.getDefaultValue();
+    };
+	Characteristic.PPM.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.PPM, Characteristic);	
+
+    Characteristic.AQExtraCharacteristic = function() {
+		Characteristic.call(this, 'AQX2', 'E863F132-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Characteristic.Formats.DATA,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN	]
+		});
+        this.value = this.getDefaultValue();
+	};	
+	Characteristic.AQExtraCharacteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.AQExtraCharacteristic, Characteristic);	
+	
+	Characteristic.WindSpeed = function() {
+		Characteristic.call(this, 'Wind speed', '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41');
+		this.setProps({
+			format: Characteristic.Formats.FLOAT,
+			unit: "km/h",
+			maxValue: 100,
+			minValue: 0,
+			minStep: 0.1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.WindSpeed.UUID = '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41';
+	inherits(Characteristic.WindSpeed, Characteristic);
+
+	Characteristic.WindDirection = function() {
+		Characteristic.call(this, 'Wind direction', '46f1284c-1912-421b-82f5-eb75008b167e');
+		this.setProps({
+			format: Characteristic.Formats.STRING,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.WindDirection.UUID = '46f1284c-1912-421b-82f5-eb75008b167e';
+	inherits(Characteristic.WindDirection, Characteristic);
+
+	Characteristic.WeatherCondition = function() {
+		Characteristic.call(this, 'Condition', 'cd65a9ab-85ad-494a-b2bd-2f380084134d');
+		this.setProps({
+			format: Characteristic.Formats.STRING,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.WeatherCondition.UUID = 'cd65a9ab-85ad-494a-b2bd-2f380084134d';
+	inherits(Characteristic.WeatherCondition, Characteristic);
+
+	Characteristic.Visibility = function() {
+			Characteristic.call(this, 'Visibility', 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857');
+			this.setProps({
+				format: Characteristic.Formats.UINT8,
+				unit: "km",
+				maxValue: 200,
+				minValue: 0,
+				minStep: 1,
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
+	inherits(Characteristic.Visibility, Characteristic);
+	
 	/**
 	 * FakeGato History Service
 	 */
@@ -3847,12 +4194,39 @@ function RegisterCustomCharacteristics() {
 		Service.call(this, displayName, 'E863F001-079E-48FF-8F27-9C2605A29F52', subtype);
 
 		// Required Characteristics
+		//this.addCharacteristic(Characteristic.CurrentTemperature);
+		//this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
+		//this.addCharacteristic(Characteristic.AirPressure);
+		this.addCharacteristic(Characteristic.WeatherCondition);
 
 		// Optional Characteristics
+		this.addOptionalCharacteristic(Characteristic.WindDirection);
+		this.addOptionalCharacteristic(Characteristic.WindSpeed);
+		//this.addOptionalCharacteristic(Characteristic.WeatherCondition);
 		this.addOptionalCharacteristic(Characteristic.UVIndex);
 	};
 	inherits(Service.WeatherService, Service);
 	Service.WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';	
+	
+	/**
+	 * Custom Service 'EveRoom Service'
+	 */
+
+	Service.EveRoomService = function(displayName, subtype) {
+		Service.call(this, displayName, '0000008D-0000-1000-8000-0026BB765291', subtype);
+
+		// Required Characteristics
+		//this.addCharacteristic(Characteristic.CurrentTemperature);
+		//this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
+		//this.addCharacteristic(Characteristic.AirPressure);
+		this.addCharacteristic(Characteristic.AirQuality);
+
+		// Optional Characteristics
+		//this.addOptionalCharacteristic(Characteristic.WeatherCondition);
+
+	};
+	inherits(Service.EveRoomService, Service);
+	Service.EveRoomService.UUID = '0000008D-0000-1000-8000-0026BB765291';	
 	
 	/**
 	 * Custom Service 'Custom Service'
