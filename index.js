@@ -4296,6 +4296,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 						characteristic.props.minValue = 0;
 					}
 					if (characteristic.UUID && characteristic.UUID == Characteristic.CurrentTemperature.UUID) {
+						characteristic.props.maxValue = 300;
 						characteristic.props.minValue = -50;
 						characteristic.props.minStep = 0.01;
 					}
