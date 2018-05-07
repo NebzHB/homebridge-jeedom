@@ -2404,16 +2404,20 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2') && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
-						if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
-							returnValue = Characteristic.AirQuality.EXCELLENT;
-						} else if(returnValue > service.levelNum[Characteristic.AirQuality.EXCELLENT] && returnValue <= service.levelNum[Characteristic.AirQuality.GOOD]) {
-							returnValue = Characteristic.AirQuality.GOOD;
-						} else if(returnValue > service.levelNum[Characteristic.AirQuality.GOOD] && returnValue <= service.levelNum[Characteristic.AirQuality.FAIR]) {
-							returnValue = Characteristic.AirQuality.FAIR;
-						} else if(returnValue > service.levelNum[Characteristic.AirQuality.FAIR] && returnValue <= service.levelNum[Characteristic.AirQuality.INFERIOR]) {
-							returnValue = Characteristic.AirQuality.INFERIOR;
-						} else if(returnValue > service.levelNum[Characteristic.AirQuality.INFERIOR] && returnValue <= service.levelNum[Characteristic.AirQuality.POOR]) {
-							returnValue = Characteristic.AirQuality.POOR;
+						if(Array.isArray(service.levelNum)) {
+							if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
+								returnValue = Characteristic.AirQuality.EXCELLENT;
+							} else if(returnValue > service.levelNum[Characteristic.AirQuality.EXCELLENT] && returnValue <= service.levelNum[Characteristic.AirQuality.GOOD]) {
+								returnValue = Characteristic.AirQuality.GOOD;
+							} else if(returnValue > service.levelNum[Characteristic.AirQuality.GOOD] && returnValue <= service.levelNum[Characteristic.AirQuality.FAIR]) {
+								returnValue = Characteristic.AirQuality.FAIR;
+							} else if(returnValue > service.levelNum[Characteristic.AirQuality.FAIR] && returnValue <= service.levelNum[Characteristic.AirQuality.INFERIOR]) {
+								returnValue = Characteristic.AirQuality.INFERIOR;
+							} else if(returnValue > service.levelNum[Characteristic.AirQuality.INFERIOR] && returnValue <= service.levelNum[Characteristic.AirQuality.POOR]) {
+								returnValue = Characteristic.AirQuality.POOR;
+							} else {
+								returnValue = Characteristic.AirQuality.UNKNOWN;
+							}
 						} else {
 							returnValue = Characteristic.AirQuality.UNKNOWN;
 						}
