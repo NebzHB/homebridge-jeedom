@@ -2971,13 +2971,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						if(cmd.eqType == 'nuki') {
 							if (DEV_DEBUG) that.log('debug','LockCurrentState (nuki) : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 						//} else if(cmd.eqType == 'thekeys') {
 						//	if (DEV_DEBUG) that.log('debug','LockCurrentState (thekeys) : ',cmd.currentValue);
-						//	returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;  
+						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;  
 						} else {
 							if (DEV_DEBUG) that.log('debug','LockCurrentState : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) === true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 						}
 					}
 				}
@@ -2987,13 +2987,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						if(cmd.eqType == 'nuki') {
 							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						//} else if(cmd.eqType == 'thekeys') {
 						//	if (DEV_DEBUG) that.log('debug','LockTargetState (thekeys) : ',cmd.currentValue);
-						//	returnValue = toBool(cmd.currentValue) == false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						} else {
 							if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) == true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+							returnValue = toBool(cmd.currentValue) === true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						}
 					}
 				}
