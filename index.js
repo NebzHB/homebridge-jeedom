@@ -2188,7 +2188,8 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 			break;
 			case Characteristic.LockTargetState.UUID :
-				action = value === false ? 'unsecure' : 'secure';
+				this.log('debug','LockTargetState value :',value);
+				action = value === 0 ? 'unsecure' : 'secure';
 				this.command(action, 0, service);
 			break;
 			case Characteristic.SecuritySystemTargetState.UUID:
