@@ -2988,6 +2988,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						let targetVal = cmd.currentValue;
 						if(service.target !== undefined) targetVal=service.target;
+						else service.target=cmd.currentValue;
 						
 						if(cmd.eqType == 'nuki') {
 							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue,'service.target : ',service.target);
