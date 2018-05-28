@@ -2189,7 +2189,8 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.LockTargetState.UUID :
 				this.log('debug','LockTargetState value :',value);
-				action = value === 0 ? 'unsecure' : 'secure';
+				service.target=value;
+				action = value === Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
 				this.command(action, 0, service);
 			break;
 			case Characteristic.SecuritySystemTargetState.UUID:
@@ -2985,15 +2986,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.LockTargetState.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
+						let targetVal = cmd.currentValue;
+						if(service.target !== undefined) targetVal=service.target;
+						
 						if(cmd.eqType == 'nuki') {
-							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue,'service.target : ',service.target);
+							returnValue = toBool(targetVal) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						//} else if(cmd.eqType == 'thekeys') {
 						//	if (DEV_DEBUG) that.log('debug','LockTargetState (thekeys) : ',cmd.currentValue);
 						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						} else {
-							if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) === true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
+							if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue,'service.target : ',service.target);
+							returnValue = toBool(targetVal) === true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						}
 					}
 				}
