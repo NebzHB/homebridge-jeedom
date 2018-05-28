@@ -2973,7 +2973,20 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						service.target=cmd.currentValue;
 						if(cmd.eqType == 'nuki') {
 							if (DEV_DEBUG) that.log('debug','LockCurrentState (nuki) : ',cmd.currentValue);
-							returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
+							switch(parseInt(cmd.currentValue)) {
+								case 0 :
+									returnValue=Characteristic.LockCurrentState.SECURED;
+									break;
+								case 1 :
+									returnValue=Characteristic.LockCurrentState.UNSECURED;
+									break;
+								case 2 :
+									returnValue=Characteristic.LockCurrentState.JAMMED;
+									break;
+								default : 
+									returnValue=Characteristic.LockCurrentState.UNKNOWN;
+									break;
+							}
 						//} else if(cmd.eqType == 'thekeys') {
 						//	if (DEV_DEBUG) that.log('debug','LockCurrentState (thekeys) : ',cmd.currentValue);
 						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;  
