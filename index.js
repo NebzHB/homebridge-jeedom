@@ -1737,10 +1737,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.set_state) {
 					cmd.set_state.forEach(function(set_action) {
 						var ModeName = "";
-						if(!set_action.name.toLowerCase().includes('mode'))
-							ModeName = "Mode "+set_action.name;
-						else
+						if(set_action.name.toLowerCase().includes('mode') || set_action.name.toLowerCase().includes('modo'))
 							ModeName = set_action.name;
+						else
+							ModeName = "Mode "+set_action.name;
 						
 						HBservice = {
 							controlService : new Service.Switch(ModeName),
