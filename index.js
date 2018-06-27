@@ -1736,9 +1736,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.mode.forEach(function(cmd) {
 				if (cmd.set_state) {
 					cmd.set_state.forEach(function(set_action) {
+						var ModeName = "";
+						if(!set_action.name.toLowerCase().includes('mode'))
+							ModeName = "Mode "+set_action.name;
+						else
+							ModeName = set_action.name;
 						
 						HBservice = {
-							controlService : new Service.Switch("Mode "+set_action.name),
+							controlService : new Service.Switch(ModeName),
 							characteristics : [Characteristic.On]
 						};
 						let Serv = HBservice.controlService;
