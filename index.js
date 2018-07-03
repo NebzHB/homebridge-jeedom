@@ -536,14 +536,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.faucet.forEach(function(cmd) {
 				if (cmd.state) {
 					HBservice = {
-						controlService : new Service.Faucet(eqLogic.name),
-						characteristics : [Characteristic.Active]
+						controlService : new Service.Valve(eqLogic.name),
+						characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType]
 					};
 					let Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
+					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.WATER_FAUCET);
 					eqServicesCopy.faucet.forEach(function(cmd2) {
 						if (cmd2.on) {
 							Serv.actions.on = cmd2.on;
@@ -2516,6 +2517,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
+			case Characteristic.InUse.UUID :
 			case Characteristic.Active.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FAUCET_STATE' && cmd.id == service.cmd_id) {
