@@ -532,6 +532,44 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}
+		if (eqLogic.services.faucet) {
+			eqLogic.services.faucet.forEach(function(cmd) {
+				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.Faucet(eqLogic.name),
+						characteristics : [Characteristic.Active]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.state=cmd.state;
+					eqServicesCopy.faucet.forEach(function(cmd2) {
+						if (cmd2.on) {
+							Serv.actions.on = cmd2.on;
+						} else if (cmd2.off) {
+							Serv.actions.off = cmd2.off;
+						}
+					});
+					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Robinet Bouton On"');
+					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Robinet Bouton Off"');
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					Serv.cmd_id = cmd.state.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Robinet Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
 		if (eqLogic.services.Switch) {
 			eqLogic.services.Switch.forEach(function(cmd) {
 				if (cmd.state) {
@@ -2237,6 +2275,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
 			break;	
+			case Characteristic.Active.UUID :
+				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+			break;
 			case Characteristic.LockPhysicalControls.UUID :				
 				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 			break;
@@ -2472,6 +2513,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							returnValue = false;
 							break;
 						}
+					}
+				}
+			break;
+			case Characteristic.Active.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FAUCET_STATE' && cmd.id == service.cmd_id) {
+						returnValue = cmd.currentValue;
+						break;
 					}
 				}
 			break;
@@ -3519,6 +3568,20 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'GB_TOGGLE' :
 						if(action == 'GBtoggle') {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
+					case 'FAUCET_ON' :
+						if(action == 'turnOn') {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
+					case 'FAUCET_OFF' :
+						if(action == 'turnOff') {
 							cmdId = cmd.id;
 							found = true;
 							cmdFound=cmd.generic_type;
