@@ -1771,6 +1771,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice = null;
 				} 
 			});
+			if(modeState) {
 			var set_state_previous = null;
 			eqLogic.services.mode.forEach(function(cmd) {
 				if (cmd.set_state) {
@@ -1816,6 +1817,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 				}
 			});
+			} else {
+				that.log('warn','Vous utilisez le type générique Mode en dehors du plugin Mode !');	
+			}
 		}
 		if (eqLogic.services.alarm) {
 			eqLogic.services.alarm.forEach(function(cmd) {
