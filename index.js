@@ -132,7 +132,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
-				console.error(err.stack);
+				if(err) console.error(err.stack);
 			});
 	}
 	catch(e){
