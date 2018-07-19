@@ -89,6 +89,7 @@ function JeedomPlatform(logger, config, api) {
 		this.pollingUpdateRunning = false;
 		this.pollingID = null;
 		this.settingLight = false;
+		this.settingFan = false;
 		
 		this.pollerPeriod = config.pollerperiod;
 		if ( typeof this.pollerPeriod == 'string')
@@ -571,6 +572,65 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}
+		if (eqLogic.services.fan) {
+			eqLogic.services.fan.forEach(function(cmd) {
+				if (cmd.state) {
+					let FanType="Switch";
+					let maxPower;
+					HBservice = {
+						controlService : new Service.Fan(eqLogic.name),
+						characteristics : [Characteristic.On]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.state=cmd.state;
+
+					eqServicesCopy.fan.forEach(function(cmd2) {
+						if (cmd2.on) {
+							Serv.actions.on=cmd2.on;
+						} else if (cmd2.off) {
+							Serv.actions.off=cmd2.off;
+						} else if (cmd2.slider) {
+							Serv.actions.slider=cmd2.slider;
+						}
+					});
+					if (Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Ventilateur OFF"'); 
+					if (!Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Ventilateur ON"');
+					if (!Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Ventilateur ON" et "Action/Ventilateur OFF"');
+					
+					if(Serv.actions.slider) {
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
+							maxPower = parseInt(Serv.actions.slider.configuration.maxValue);
+						else
+							maxPower = 100; // if not set in Jeedom it's 100
+						FanType += "_Slider";
+						HBservice.characteristics.push(Characteristic.RotationSpeed);
+						Serv.addCharacteristic(Characteristic.RotationSpeed);
+					} else {
+						that.log('info','Le ventilateur n\'a pas de variateur');
+					}
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					that.log('info','Le ventilateur est du type :',FanType+','+maxPower);
+					Serv.FanType = FanType;
+					Serv.maxPower = maxPower;
+					Serv.cmd_id = cmd.state.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Ventilateur Etat"');
+			} else {
+				HBservice = null;
+			}
+		}		
 		if (eqLogic.services.Switch) {
 			eqLogic.services.Switch.forEach(function(cmd) {
 				if (cmd.state) {
@@ -2386,6 +2446,17 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				this.log('debug','---------set Bright:',oldValue,'% soit',value,' / ',maxJeedom);
 				this.command('setValue', value, service);
 			break;
+			case Characteristic.RotationSpeed.UUID :
+				this.settingFan=true;
+				let maxJeedomP = parseInt(service.maxPower) || 100;
+				value = parseInt(value);
+				let oldValueP=value;
+				if(maxJeedomP) {
+					value = Math.round((value / 100)*maxJeedomP);
+				}
+				this.log('debug','---------set Power:',oldValueP,'% soit',value,' / ',maxJeedomP);
+				this.command('setValue', value, service);
+			break;
 			default :
 				this.command('setValue', value, service);
 			break;
@@ -2498,6 +2569,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				} else {
 					for (const cmd of cmdList) {
 						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
+							if(parseInt(cmd.currentValue) == 0) returnValue=false;
+							else returnValue=true;
+							break;
+						} else if (cmd.generic_type == 'FAN_STATE' && cmd.id == service.cmd_id) {
 							if(parseInt(cmd.currentValue) == 0) returnValue=false;
 							else returnValue=true;
 							break;
@@ -2787,6 +2862,21 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'WEATHER_VISIBILITY' && cmd.id == service.infos.visibility.id) {
 						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;		
+			case Characteristic.RotationSpeed.UUID :
+				returnValue = 0;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FAN_STATE' && cmd.subType != 'binary' && cmd.id == service.cmd_id) {
+						let maxJeedom = parseInt(service.maxPower) || 100;
+						returnValue = parseInt(cmd.currentValue);
+						if(maxJeedom) {
+							returnValue = Math.round((returnValue / maxJeedom)*100);
+						}
+						if (DEV_DEBUG) that.log('debug','---------update Power(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
+						//that.log('debug','------------PowerVentilo jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
 						break;
 					}
 				}
@@ -3622,6 +3712,21 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							needToTemporize=900;
 						}
 					break;
+					case 'FAN_SLIDER' :
+						if(action == 'setValue' && service.actions.slider && cmd.id == service.actions.slider.id) {
+							cmdId = cmd.id;
+							if (action == 'turnOn' && service.actions.on) {
+								this.log('info','???????? should never go here ON');
+								cmdId=service.actions.on.id;
+							} else if (action == 'turnOff' && service.actions.off) {
+								this.log('info','???????? should never go here OFF');
+								cmdId=service.actions.off.id;
+							}		
+							found = true;
+							cmdFound=cmd.generic_type;
+							needToTemporize=900;
+						}
+					break;
 					case 'SPEAKER_SET_VOLUME' :
 						if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
 							if(action == 'setValue') {
@@ -3676,6 +3781,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							found = true;
 						}
 					break;
+					case 'FAN_ON' :
+						if((value == 255 || action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
+							cmdId = cmd.id;			
+							cmdFound=cmd.generic_type;							
+							found = true;
+						}
+					break;
 					case 'SWITCH_ON' :
 					case 'CAMERA_RECORD' :
 						if((value == 255 || action == 'turnOn') && service.actions.on && cmd.id == service.actions.on.id) {
@@ -3713,6 +3825,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'ENERGY_OFF' :
+						if((value == 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
+							cmdId = cmd.id;		
+							cmdFound=cmd.generic_type;
+							found = true;
+						}
+					break;
+					case 'FAN_OFF' :
 						if((value == 0 || action == 'turnOff') && service.actions.off && cmd.id == service.actions.off.id) {
 							cmdId = cmd.id;		
 							cmdFound=cmd.generic_type;
@@ -3830,6 +3949,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			if(service.temporizator) clearTimeout(service.temporizator);
 			service.temporizator = setTimeout(function(){
 				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
+				if(cmdFound=="FAN_SLIDER") that.settingFan=false;
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 				}).catch(function(err) {
@@ -3948,6 +4068,13 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				returnValue = sanitizeValue(returnValue,subCharact);
 				if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
 					if(!that.settingLight) { // and it's not currently being modified
+						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
+					} else {
+						if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+					}
+				} else if(infoFound != -1 && infoFound.generic_type=="FAN_STATE") { // if it's a FAN_STATE
+					if(!that.settingFan) { // and it's not currently being modified
 						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 					} else {
