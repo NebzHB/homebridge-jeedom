@@ -546,6 +546,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
 					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.WATER_FAUCET);
+					Serv.ValveType=Characteristic.ValveType.WATER_FAUCET;
 					eqServicesCopy.faucet.forEach(function(cmd2) {
 						if (cmd2.on) {
 							Serv.actions.on = cmd2.on;
@@ -585,6 +586,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
 					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.IRRIGATION);
+					Serv.ValveType=Characteristic.ValveType.IRRIGATION;
 					eqServicesCopy.irrigation.forEach(function(cmd2) {
 						if (cmd2.on) {
 							Serv.actions.on = cmd2.on;
@@ -624,6 +626,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
 					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.GENERIC_VALVE);
+					Serv.ValveType=Characteristic.ValveType.GENERIC_VALVE;
 					eqServicesCopy.valve.forEach(function(cmd2) {
 						if (cmd2.on) {
 							Serv.actions.on = cmd2.on;
@@ -2682,6 +2685,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
+			break;
+			case Characteristic.ValveType.UUID :
+				returnValue = service.ValveType;
 			break;
 			case Characteristic.LockPhysicalControls.UUID :
 				for (const cmd of cmdList) {
