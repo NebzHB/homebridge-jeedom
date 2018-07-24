@@ -572,6 +572,84 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}
+		if (eqLogic.services.irrigation) {
+			eqLogic.services.irrigation.forEach(function(cmd) {
+				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.Valve(eqLogic.name),
+						characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.state=cmd.state;
+					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.IRRIGATION);
+					eqServicesCopy.irrigation.forEach(function(cmd2) {
+						if (cmd2.on) {
+							Serv.actions.on = cmd2.on;
+						} else if (cmd2.off) {
+							Serv.actions.off = cmd2.off;
+						}
+					});
+					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Irrigation Bouton On"');
+					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Irrigation Bouton Off"');
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					Serv.cmd_id = cmd.state.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Irrigation Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
+		if (eqLogic.services.valve) {
+			eqLogic.services.valve.forEach(function(cmd) {
+				if (cmd.state) {
+					HBservice = {
+						controlService : new Service.Valve(eqLogic.name),
+						characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.state=cmd.state;
+					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.GENERIC_VALVE);
+					eqServicesCopy.valve.forEach(function(cmd2) {
+						if (cmd2.on) {
+							Serv.actions.on = cmd2.on;
+						} else if (cmd2.off) {
+							Serv.actions.off = cmd2.off;
+						}
+					});
+					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Valve générique Bouton On"');
+					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Valve générique Bouton Off"');
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					Serv.cmd_id = cmd.state.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Valve générique Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
 		if (eqLogic.services.fan) {
 			eqLogic.services.fan.forEach(function(cmd) {
 				if (cmd.state) {
@@ -2599,7 +2677,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.InUse.UUID :
 			case Characteristic.Active.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'FAUCET_STATE' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'FAUCET_STATE' || cmd.generic_type == 'IRRIG_STATE' || cmd.generic_type == 'VALVE_STATE') && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -3677,6 +3755,34 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'FAUCET_OFF' :
+						if(action == 'turnOff') {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
+					case 'IRRIG_ON' :
+						if(action == 'turnOn') {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
+					case 'IRRIG_OFF' :
+						if(action == 'turnOff') {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
+					case 'VALVE_ON' :
+						if(action == 'turnOn') {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
+					case 'VALVE_OFF' :
 						if(action == 'turnOff') {
 							cmdId = cmd.id;
 							found = true;
