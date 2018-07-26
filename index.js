@@ -716,7 +716,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.Switch.forEach(function(cmd) {
 				if (cmd.state) {
 					let SwitchName = eqLogic.name;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE') SwitchName=eqLogic.name+' '+cmd.state.name;
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE') SwitchName=cmd.state.name;
 					HBservice = {
 						controlService : new Service.Switch(SwitchName),
 						characteristics : [Characteristic.On]
@@ -787,9 +787,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
 			eqLogic.services.power.forEach(function(cmd) {
 				if (cmd.power) {
-					let ServiceName = cmd.consumption ? cmd.consumption.name : cmd.power.name;
 					HBservice = {
-						controlService : new Service.PowerMonitor(eqLogic.name+' '+ServiceName),
+						controlService : new Service.PowerMonitor(eqLogic.name),
 						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption]
 					};
 					let Serv = HBservice.controlService;
@@ -962,7 +961,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.presence.forEach(function(cmd) {
 				if (cmd.presence) {
 					HBservice = {
-						controlService : new Service.MotionSensor(eqLogic.name+' '+cmd.presence.name),
+						controlService : new Service.MotionSensor(eqLogic.name),
 						characteristics : [Characteristic.MotionDetected]
 					};
 					let Serv = HBservice.controlService;
@@ -999,7 +998,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.occupancy.forEach(function(cmd) {
 				if (cmd.occupancy) {
 					HBservice = {
-						controlService : new Service.OccupancySensor(eqLogic.name+' '+cmd.occupancy.name),
+						controlService : new Service.OccupancySensor(eqLogic.name),
 						characteristics : [Characteristic.OccupancyDetected]
 					};
 					let Serv = HBservice.controlService;
@@ -1099,7 +1098,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.uv.forEach(function(cmd) {
 				if (cmd.uv) {
 					HBservice = {
-						controlService : new Service.WeatherService(eqLogic.name+' '+cmd.uv.name),
+						controlService : new Service.WeatherService(eqLogic.name),
 						characteristics : [Characteristic.UVIndex]
 					};
 					let Serv = HBservice.controlService;
@@ -1162,7 +1161,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.temperature.forEach(function(cmd) {
 				if (cmd.temperature) {
 					HBservice = {
-						controlService : new Service.TemperatureSensor(eqLogic.name+' '+cmd.temperature.name),
+						controlService : new Service.TemperatureSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentTemperature]
 					};
 					let Serv = HBservice.controlService;
@@ -1193,7 +1192,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.humidity.forEach(function(cmd) {
 				if (cmd.humidity) {
 					HBservice = {
-						controlService : new Service.HumiditySensor(eqLogic.name+' '+cmd.humidity.name),
+						controlService : new Service.HumiditySensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentRelativeHumidity]
 					};
 					let Serv = HBservice.controlService;
@@ -1223,7 +1222,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.pressure.forEach(function(cmd) {
 				if (cmd.pressure) {
 					HBservice = {
-						controlService : new Service.PressureSensor(eqLogic.name+' '+cmd.pressure.name),
+						controlService : new Service.PressureSensor(eqLogic.name),
 						characteristics : [Characteristic.AirPressure]
 					};
 					let Serv = HBservice.controlService;
@@ -1340,7 +1339,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.brightness.forEach(function(cmd) {
 				if (cmd.brightness) {
 					HBservice = {
-						controlService : new Service.LightSensor(eqLogic.name+' '+cmd.brightness.name),
+						controlService : new Service.LightSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentAmbientLightLevel]
 					};
 					let Serv = HBservice.controlService;
@@ -1666,7 +1665,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.weather.forEach(function(cmd) {
 				if(cmd.temperature) {
 					HBservice = {
-						controlService : new Service.TemperatureSensor(eqLogic.name+' '+cmd.temperature.name),
+						controlService : new Service.TemperatureSensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentTemperature]
 					};
 					let Serv = HBservice.controlService;
@@ -1695,7 +1694,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}		
 				if(cmd.humidity) {
 					HBservice = {
-						controlService : new Service.HumiditySensor(eqLogic.name+' '+cmd.humidity.name),
+						controlService : new Service.HumiditySensor(eqLogic.name),
 						characteristics : [Characteristic.CurrentRelativeHumidity]
 					};
 					let Serv = HBservice.controlService;
@@ -1720,7 +1719,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}		
 				if(cmd.pressure) {
 					HBservice = {
-						controlService : new Service.PressureSensor(eqLogic.name+' '+cmd.pressure.name),
+						controlService : new Service.PressureSensor(eqLogic.name),
 						characteristics : [Characteristic.AirPressure]
 					};
 					let Serv = HBservice.controlService;
@@ -1745,7 +1744,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}				
 				if(cmd.condition) {
 					HBservice = {
-						controlService : new Service.WeatherService(eqLogic.name+' '+cmd.condition.name),
+						controlService : new Service.WeatherService(eqLogic.name),
 						characteristics : [Characteristic.WeatherCondition]
 					};
 					let Serv = HBservice.controlService;
