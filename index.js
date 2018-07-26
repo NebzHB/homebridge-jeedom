@@ -3999,6 +3999,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					case 'ALARM_SET_MODE' :
 						if(action == 'SetAlarmMode') {
 							that.log('debug',"ALARM_SET_MODE","SetAlarmMode=",action,value);
+							cmdFound=cmd.generic_type;
 							if(value == Characteristic.SecuritySystemTargetState.NIGHT_ARM && id_NIGHT != undefined) {
 								cmdId = id_NIGHT;
 								that.log('debug',"set nuit");
