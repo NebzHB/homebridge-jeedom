@@ -260,7 +260,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				else
 				{
 					that.log('debug','eqLogic > '+JSON.stringify(device).replace("\n",''));
-					that.log('┌──── ' + that.rooms[device.object_id] + ' > ' +device.name+' ('+device.id+')');
+					that.log('┌──── ' + that.rooms[device.object_id] + ' > ' +device.name+((device.pseudo)?' > pseudo: '+device.pseudo:'')+' ('+device.id+')');
 					var Messg= '│ Accessoire ';
 					Messg   += device.isVisible == '1' ? 'visible' : 'invisible';
 					Messg   += device.isEnable == '1' ? ', activé' : ', désactivé';
@@ -331,7 +331,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		var HBservice = null;	
 		var eqServicesCopy = eqLogic.services;
 		that.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
-		that.log('┌──── ' + that.rooms[eqLogic.object_id] + ' > ' + eqLogic.name + ' (' + eqLogic.id + ')');
+		that.log('┌──── ' + that.rooms[eqLogic.object_id] + ' > ' + eqLogic.name +((eqLogic.pseudo)?' > pseudo: '+eqLogic.pseudo:'')+ ' (' + eqLogic.id + ')');
+		eqLogic.origName=eqLogic.name;
+		if(eqLogic.pseudo)
+			eqLogic.name = eqLogic.pseudo;
+		
 		if (eqLogic.services.light) {
 			eqLogic.services.light.forEach(function(cmd) {
 				if (cmd.state) {
@@ -696,7 +700,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
-					that.log('info','Le ventilateur est du type :',FanType+','+maxPower);
+					that.log('info','Le ventilateur est du type :',FanType+((maxPower)?','+maxPower:''));
 					Serv.FanType = FanType;
 					Serv.maxPower = maxPower;
 					Serv.cmd_id = cmd.state.id;
@@ -2112,7 +2116,7 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 		accessory.context.eqLogic = eqLogic;
 		
 		accessory.model = eqLogic.eqType_name;
-		accessory.manufacturer = this.rooms[eqLogic.object_id] +'>'+accessory.name;
+		accessory.manufacturer = this.rooms[eqLogic.object_id] +'>'+eqLogic.origName+((eqLogic.pseudo)?' ('+accessory.name+')':'');
 		accessory.serialNumber = '<'+eqLogic.id+(eqLogic.logicalId ? '-'+eqLogic.logicalId : '')+'-'+this.config.name+'>';
 		accessory.services_add = HBservices;
 		return accessory;
