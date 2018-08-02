@@ -340,7 +340,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.light.forEach(function(cmd) {
 				if (cmd.state) {
 					let LightType="Switch";
-					let maxBright;
 					HBservice = {
 						controlService : new Service.Lightbulb(eqLogic.name),
 						characteristics : [Characteristic.On]
@@ -380,10 +379,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
-							maxBright = parseInt(Serv.actions.slider.configuration.maxValue);
+							Serv.maxBright = parseInt(Serv.actions.slider.configuration.maxValue);
 						else
-							maxBright = 100; // if not set in Jeedom it's 100
-						LightType += "_Slider";
+							Serv.maxBright = 100; // if not set in Jeedom it's 100
+						LightType += "_Slider"+','+Serv.maxBright;
 						HBservice.characteristics.push(Characteristic.Brightness);
 						Serv.addCharacteristic(Characteristic.Brightness);
 					} else {
@@ -411,15 +410,25 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(Serv.infos.color_temp) {
 						LightType += "_Temp";
 						var props = {};
-						if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.minValue && parseInt(Serv.actions.setcolor_temp.configuration.minValue))
-							props.minValue = parseInt(Serv.actions.setcolor_temp.configuration.minValue);
-						else
-							props.minValue = 0; // if not set in Jeedom it's 0
-						if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.maxValue && parseInt(Serv.actions.setcolor_temp.configuration.maxValue))
-							props.maxValue = parseInt(Serv.actions.setcolor_temp.configuration.maxValue);
-						else
-							props.maxValue = 100; // if not set in Jeedom it's 100
 						
+						if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.maxValue && Serv.actions.setcolor_temp.configuration.minValue && parseInt(Serv.actions.setcolor_temp.configuration.maxValue) && parseInt(Serv.actions.setcolor_temp.configuration.minValue)) {
+							if(parseInt(Serv.actions.setcolor_temp.configuration.maxValue) > 500 && parseInt(Serv.actions.setcolor_temp.configuration.minValue) > 500) { // Kelvin
+								// convert to Mired (and take the max value to the min)
+								props.minValue = parseInt(1000000/Serv.actions.setcolor_temp.configuration.maxValue);
+								props.maxValue = parseInt(1000000/Serv.actions.setcolor_temp.configuration.minValue);
+								Serv.colorTempType="kelvin";
+								LightType+=Serv.colorTempType;
+							} else { // already mired
+								props.minValue = parseInt(Serv.actions.setcolor_temp.configuration.minValue);
+								props.maxValue = parseInt(Serv.actions.setcolor_temp.configuration.maxValue);
+								Serv.colorTempType="mired";
+								LightType+=Serv.colorTempType;
+							}
+						} else {
+							that.log('error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
+							props.minValue = 0; // if not set in Jeedom it's 0
+							props.maxValue = 20000; // if not set in Jeedom it's 100
+						}
 						var unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
 						if(unite) props.unit=unite;
 						HBservice.characteristics.push(Characteristic.ColorTemperature);
@@ -430,9 +439,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
-					that.log('info','La lumière est du type :',LightType+','+maxBright);
+					that.log('info','La lumière est du type :',LightType);
 					Serv.LightType = LightType;
-					Serv.maxBright = maxBright;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
@@ -2506,6 +2514,10 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				this.log('debug',"ColorTemperature set : ",value);
+				if(service.colorTempType=="kelvin")	{
+						value = parseInt(1000000/value);
+						this.log('debug',"Conversion en mired : ",value);
+				} 
 				this.command('setValueTemp', value, service);
 			break;
 			case Characteristic.Hue.UUID :
@@ -3013,7 +3025,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR_TEMP') {
-						returnValue = cmd.currentValue;
+						if(service.colorTempType=="kelvin") returnValue = parseInt(1000000/cmd.currentValue);
+						else returnValue = cmd.currentValue;
 						break;
 					}
 				}
