@@ -1861,12 +1861,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
 
+					props = {};
+					props.validValues=[0];
 					if(eqLogic.thermoModes) {
 						if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
 							Serv.thermo.chauf = {};
 							let splitted = eqLogic.thermoModes.Chauf.split('|');
 							Serv.thermo.chauf.mode_label = splitted[1];
 							Serv.thermo.chauf.mode_id = splitted[0];
+							props.validValues.push(1);
 						}
 						else
 							that.log('warn','Pas de config du mode Chauffage');
@@ -1875,6 +1878,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							let splitted = eqLogic.thermoModes.Clim.split('|');
 							Serv.thermo.clim.mode_label = splitted[1];
 							Serv.thermo.clim.mode_id = splitted[0];
+							props.validValues.push(2);
 						}
 						else
 							that.log('warn','Pas de config du mode Climatisation');
@@ -1889,6 +1893,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(that.myPlugin == "homebridge")
 							that.log('warn','Pas de config des modes du thermostat');
 					}
+					//Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
+					props.validValues.push(3);
+					Serv.getCharacteristic(Characteristic.TargetHeatingCoolingState).setProps(props);
 					Serv.cmd_id = cmd.setpoint.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
@@ -1997,19 +2004,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
-
+					
+					var props = {};
+					props.validValues=[];
 					var away_mode_id,away_mode_label,present_mode_label,present_mode_id,night_mode_label,night_mode_id;
 					if(eqLogic.alarmModes) {
-						if(eqLogic.alarmModes.SetModeAbsent && eqLogic.alarmModes.SetModeAbsent != "NOT") {
-							Serv.alarm.away = {};
-							let splitted = eqLogic.alarmModes.SetModeAbsent.split('|');
-							away_mode_label = splitted[1];
-							Serv.alarm.away.mode_label = splitted[1];
-							away_mode_id = splitted[0];
-							Serv.alarm.away.mode_id = splitted[0];
-						}
-						else
-							that.log('warn','Pas de config du mode À distance/Absence');
 						if(eqLogic.alarmModes.SetModePresent && eqLogic.alarmModes.SetModePresent != "NOT") {
 							Serv.alarm.present = {};
 							let splitted = eqLogic.alarmModes.SetModePresent.split('|');
@@ -2017,9 +2016,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.alarm.present.mode_label = splitted[1];
 							present_mode_id = splitted[0];
 							Serv.alarm.present.mode_id = splitted[0];
+							props.validValues.push(0);
 						}
 						else
 							that.log('warn','Pas de config du mode Domicile/Présence');
+						if(eqLogic.alarmModes.SetModeAbsent && eqLogic.alarmModes.SetModeAbsent != "NOT") {
+							Serv.alarm.away = {};
+							let splitted = eqLogic.alarmModes.SetModeAbsent.split('|');
+							away_mode_label = splitted[1];
+							Serv.alarm.away.mode_label = splitted[1];
+							away_mode_id = splitted[0];
+							Serv.alarm.away.mode_id = splitted[0];
+							props.validValues.push(1);
+						}
+						else
+							that.log('warn','Pas de config du mode À distance/Absence');
 						if(eqLogic.alarmModes.SetModeNuit && eqLogic.alarmModes.SetModeNuit != "NOT") {
 							Serv.alarm.night = {};
 							let splitted = eqLogic.alarmModes.SetModeNuit.split('|');
@@ -2027,6 +2038,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.alarm.night.mode_label = splitted[1];
 							night_mode_id = splitted[0];
 							Serv.alarm.night.mode_id = splitted[0];
+							props.validValues.push(2);
 						}
 						else
 							that.log('warn','Pas de config du mode Nuit');
@@ -2035,6 +2047,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(that.myPlugin == "homebridge")
 							that.log('warn','Pas de config des modes de l\'alarme');
 					}
+					props.validValues.push(3);
+					Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
 					Serv.cmd_id = cmd.enable_state.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
