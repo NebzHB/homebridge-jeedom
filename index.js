@@ -1981,6 +1981,42 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				that.log('warn','Vous utilisez le type générique Mode en dehors du plugin Mode !');	
 			}
 		}
+		if (eqLogic.services.siren) {
+			eqLogic.services.siren.forEach(function(cmd) {
+				if(cmd.state) {
+					HBservice = {
+						controlService : new Service.SecuritySystem(eqLogic.name),
+						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.state=cmd.state;
+					Serv.siren=true;
+
+					eqServicesCopy.siren.forEach(function(cmd2) {
+						if (cmd2.on) {
+							Serv.actions.on=cmd2.on;
+						} else if (cmd2.off) {
+							Serv.actions.off=cmd2.off;
+						}
+					});
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					//Serv.getCharacteristic(Characteristic.SecuritySystemCurrentState).setProps({validValues:[3,4]});
+					Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps({validValues:[3]});
+					Serv.cmd_id = cmd.state.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
 		if (eqLogic.services.alarm) {
 			eqLogic.services.alarm.forEach(function(cmd) {
 				if(cmd.enable_state) {
@@ -2490,6 +2526,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				this.command(action, 0, service);
 			break;
 			case Characteristic.SecuritySystemTargetState.UUID:
+				if(service.alarm)
 				this.command('SetAlarmMode', value, service);
 			break;
 			case Characteristic.CurrentPosition.UUID:
@@ -3065,7 +3102,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					let currentValue = cmd.currentValue;
 					
-					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
+					if ((cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) || (cmd.generic_type == 'SIREN_STATE')) {
 						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
@@ -3108,13 +3145,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.SecuritySystemCurrentState.UUID :
 				for (const cmd of cmdList) {
 					let currentValue = cmd.currentValue;
-					
-					if (cmd.generic_type == 'ALARM_STATE' && currentValue == 1) {
+					if(cmd.generic_type == 'SIREN_STATE') that.log('debug',"SIREN_STATE=",currentValue);
+					if ((cmd.generic_type == 'ALARM_STATE' && currentValue == 1) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 1)) {
 						if (DEV_DEBUG) that.log('debug',"Alarm_State=",currentValue);
 						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 						break;
 					}
-					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) {
+					if ((cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 0)) {
 						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
 						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 						break;
