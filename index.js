@@ -2173,7 +2173,7 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 		accessory.context.uniqueSeed = eqLogic.id + accessory.name;
 		accessory.context.eqLogic = eqLogic;
 		
-		accessory.model = ((eqLogic.eqType_name == "jeelink" && eqLogic.real_eqType) ? eqLogic.eqType_name.':'.eqLogic.real_eqType : eqLogic.eqType_name);
+		accessory.model = ((eqLogic.eqType_name == "jeelink" && eqLogic.real_eqType) ? eqLogic.eqType_name+':'+eqLogic.real_eqType : eqLogic.eqType_name);
 		accessory.manufacturer = this.rooms[eqLogic.object_id] +'>'+eqLogic.origName+((eqLogic.pseudo)?' ('+accessory.name+')':'');
 		accessory.serialNumber = '<'+eqLogic.id+(eqLogic.logicalId ? '-'+eqLogic.logicalId : '')+'-'+this.config.name+'>';
 		accessory.services_add = HBservices;
