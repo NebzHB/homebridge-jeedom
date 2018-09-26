@@ -2173,9 +2173,10 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 		accessory.context.uniqueSeed = eqLogic.id + accessory.name;
 		accessory.context.eqLogic = eqLogic;
 		
-		accessory.model = eqLogic.eqType_name;
+		accessory.model = ((eqLogic.eqType_name == "jeelink" && eqLogic.real_eqType) ? eqLogic.eqType_name.':'.eqLogic.real_eqType : eqLogic.eqType_name);
 		accessory.manufacturer = this.rooms[eqLogic.object_id] +'>'+eqLogic.origName+((eqLogic.pseudo)?' ('+accessory.name+')':'');
-		accessory.serialNumber = '<'+eqLogic.id+(eqLogic.logicalId ? '-'+eqLogic.logicalId : '')+'-'+this.config.name+'>';
+		var logicalId = ((eqLogic.eqType_name == "jeelink" && eqLogic.real_logicalId) ? eqLogic.real_logicalId : eqLogic.logicalId);
+		accessory.serialNumber = '<'+eqLogic.id+(logicalId ? '-'+logicalId : '')+'-'+this.config.name+'>';
 		accessory.services_add = HBservices;
 		return accessory;
 	}
@@ -3364,7 +3365,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						service.target=cmd.currentValue;
-						if(cmd.eqType == 'nuki') {
+						if(cmd.eqType == 'nuki' || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'nuki')) {
 							if (DEV_DEBUG) that.log('debug','LockCurrentState (nuki) : ',cmd.currentValue);
 							switch(parseInt(cmd.currentValue)) {
 								case 0 :
@@ -3380,7 +3381,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									returnValue=Characteristic.LockCurrentState.UNKNOWN;
 									break;
 							}
-						//} else if(cmd.eqType == 'thekeys') {
+						//} else if(cmd.eqType == 'thekeys'  || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'thekeys')) {
 						//	if (DEV_DEBUG) that.log('debug','LockCurrentState (thekeys) : ',cmd.currentValue);
 						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 						} else {
@@ -3397,10 +3398,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if(service.target !== undefined) targetVal=service.target;
 						else service.target=targetVal;
 
-						if(cmd.eqType == 'nuki') {
+						if(cmd.eqType == 'nuki' || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'nuki')) {
 							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue,'service.target : ',service.target);
 							returnValue = toBool(targetVal) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
-						//} else if(cmd.eqType == 'thekeys') {
+						//} else if(cmd.eqType == 'thekeys' || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'thekeys')) {
 						//	if (DEV_DEBUG) that.log('debug','LockTargetState (thekeys) : ',cmd.currentValue);
 						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						} else {
