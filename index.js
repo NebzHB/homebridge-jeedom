@@ -3202,6 +3202,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								default:
 								case 'off' :
 								case 'arrêté' :
+								case 'arret' :
 									returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
 								break;
 								case 'heat':
@@ -3248,6 +3249,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
 							case 'Off':
+							case 'Arret':
 							case undefined:
 								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
 							break;							
@@ -3257,7 +3259,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							case mode_CHAUF:
 								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
 							break;
-							case "Aucun":
+							case 'Aucun':
+							case 'Thermostat':
 								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 							break;
 						}
