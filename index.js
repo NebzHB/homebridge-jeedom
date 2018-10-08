@@ -505,6 +505,57 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}
+		if (eqLogic.services.windowMoto) {
+			eqLogic.services.windowMoto.forEach(function(cmd) {
+				if (cmd.state) {
+					let maxValue;
+					HBservice = {
+						controlService : new Service.Window(eqLogic.name),
+						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.state=cmd.state;
+
+					eqServicesCopy.windowMoto.forEach(function(cmd2) {
+						if (cmd2.up) {
+							Serv.actions.up = cmd2.up;
+						} else if (cmd2.down) {
+							Serv.actions.down = cmd2.down;
+						} else if (cmd2.slider) {
+							Serv.actions.slider = cmd2.slider;
+						}
+					});
+					if(Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre"'); 
+					if(!Serv.actions.up && Serv.actions.down) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Monter"');
+					if(!Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');
+					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');
+					if(Serv.actions.slider) {
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
+							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
+						else
+							maxValue = 100; // if not set in Jeedom it's 100
+					}
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+					
+					Serv.maxValue = maxValue;
+					Serv.cmd_id = cmd.state.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+
+					HBservices.push(HBservice);
+				}
+			});
+			if(!HBservice) {
+				that.log('warn','Pas de type générique "Info/Fenêtre Motorisée Etat"');
+			} else {
+				HBservice = null;
+			}
+		}
 		if (eqLogic.services.energy) {
 			eqLogic.services.energy.forEach(function(cmd) {
 				if (cmd.state) {
@@ -2562,6 +2613,36 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 
 					this.command(action, value, service);
 				}
+				if (service.UUID == Service.Window.UUID) {
+					if(service.actions.down && service.actions.up) {
+						if (service.actions.slider) {
+							if (parseInt(value) === 0)
+								action = 'windowDown';
+							else if (parseInt(value) === 99 || parseInt(value) === 100)
+								action = 'windowUp';
+							else
+								action = 'setValue';
+						}
+						else {
+							if (parseInt(value) < 50)
+								action = 'windowDown';
+							else
+								action = 'windowUp';
+						}
+					}
+					else if (service.actions.slider) {
+						action = 'setValue';
+						let maxJeedom = parseInt(service.maxValue) || 100;
+						value = parseInt(value);
+						let oldValue = value;
+						if(maxJeedom) {
+							value = Math.round((value / 100)*maxJeedom);
+						}
+						this.log('debug','---------set WindowMoto Value:',oldValue,'% soit',value,' / ',maxJeedom);
+					}
+
+					this.command(action, value, service);
+				}
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				this.log('debug',"ColorTemperature set : ",value);
@@ -3343,7 +3424,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
-			// Flaps
+			// Flaps & windowMoto
 			case Characteristic.CurrentPosition.UUID :
 			case Characteristic.TargetPosition.UUID :
 				for (const cmd of cmdList) {
@@ -3355,6 +3436,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						}
 						returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						that.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
+						break;
+					}
+					if (cmd.generic_type == 'WINDOW_STATE' && cmd.id == service.cmd_id) {
+						let maxJeedom = parseInt(service.maxValue) || 100;
+						returnValue = parseInt(cmd.currentValue);
+						if(maxJeedom) {
+							returnValue = Math.round((returnValue / maxJeedom)*100);
+						}
+						//returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (window might need yearly tunning)
+						that.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
 						break;
 					}
 				}
@@ -3788,7 +3879,36 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdFound=cmd.generic_type;
 						}
 					break;
+					case 'WINDOW_DOWN' :
+						if(action == 'windowDown' && service.actions.down && cmd.id == service.actions.down.id) {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
+					case 'WINDOW_UP' :
+						if(action == 'windowUp' && service.actions.up && cmd.id == service.actions.up.id) {
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+						}
+					break;
 					case 'FLAP_SLIDER' :
+						if(value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
+							cmdId = cmd.id;
+							if (action == 'turnOn' && service.actions.down) {
+								cmdId=service.actions.down.id;
+							} else if (action == 'turnOff' && service.actions.up) {
+								cmdId=service.actions.up.id;
+							}		
+							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
+							value =	Math.round(value * 99/100);							
+							found = true;
+							cmdFound=cmd.generic_type;
+							needToTemporize=500;
+						}
+					break;
+					case 'WINDOW_SLIDER' :
 						if(value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.down) {
