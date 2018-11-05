@@ -29,7 +29,7 @@ debug.NO = 1000;
 var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
-const GenericAssociated = ['GENERIC_INFO','SHOCK','NOISE','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
+const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET'];
 
 module.exports = function(homebridge) {
@@ -906,6 +906,52 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.Noise) {
+			eqLogic.services.Noise.forEach(function(cmd) {
+				if (cmd.Noise) {
+					HBservice = {
+						controlService : new Service.NoiseSensor(eqLogic.name),
+						characteristics : [Characteristic.NoiseLevel,Characteristic.NoiseQuality]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.Noise=cmd.Noise;
+					
+					if(cmd.Noise.subType=='numeric') {
+						Serv.levelNum=[];		
+						Serv.levelNum[Characteristic.NoiseQuality.SILENT]=50;
+						Serv.levelNum[Characteristic.NoiseQuality.CALM]=65;
+						Serv.levelNum[Characteristic.NoiseQuality.LIGHTLYNOISY]=70;
+						Serv.levelNum[Characteristic.NoiseQuality.NOISY]=80;
+						Serv.levelNum[Characteristic.NoiseQuality.TOONOISY]=100;
+					} else {
+						Serv.levelTxt=[];		
+						Serv.levelTxt[Characteristic.NoiseQuality.SILENT]="Silencieux";
+						Serv.levelTxt[Characteristic.NoiseQuality.CALM]="Calme";
+						Serv.levelTxt[Characteristic.NoiseQuality.LIGHTLYNOISY]="Légèrement Bruyant";
+						Serv.levelTxt[Characteristic.NoiseQuality.NOISY]="Bruyant";
+						Serv.levelTxt[Characteristic.NoiseQuality.TOONOISY]="Trop Bruyant";
+					}
+					
+					Serv.cmd_id = cmd.Noise.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'Noise';
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					let uniteNoise = Serv.infos.Noise.unite ? Serv.infos.Noise.unite : '';
+					if(uniteNoise) {
+						let propsNoise = {};
+						propsNoise.unit=uniteNoise;
+						Serv.getCharacteristic(Characteristic.NoiseLevel).setProps(propsNoise);
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}			
 		if (eqLogic.services.CO2) {
 			eqLogic.services.CO2.forEach(function(cmd) {
 				if (cmd.CO2) {
@@ -921,10 +967,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(cmd.CO2.subType=='numeric') {
 						Serv.levelNum=[];		
-						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=700;
-						Serv.levelNum[Characteristic.AirQuality.GOOD]=1100;
-						Serv.levelNum[Characteristic.AirQuality.FAIR]=1600;
-						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=2100;
+						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=900;//700
+						Serv.levelNum[Characteristic.AirQuality.GOOD]=1150;//1100
+						Serv.levelNum[Characteristic.AirQuality.FAIR]=1400;//1600
+						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=1600;//2100
 						Serv.levelNum[Characteristic.AirQuality.POOR]=100000;
 					} else {
 						Serv.levelTxt=[];		
@@ -2885,6 +2931,31 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
+			case Characteristic.NoiseQuality.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'NOISE' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						if(Array.isArray(service.levelNum)) {
+							if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.NoiseQuality.SILENT]) {
+								returnValue = Characteristic.NoiseQuality.SILENT;
+							} else if(returnValue > service.levelNum[Characteristic.NoiseQuality.SILENT] && returnValue <= service.levelNum[Characteristic.NoiseQuality.CALM]) {
+								returnValue = Characteristic.NoiseQuality.CALM;
+							} else if(returnValue > service.levelNum[Characteristic.NoiseQuality.CALM] && returnValue <= service.levelNum[Characteristic.NoiseQuality.LIGHTLYNOISY]) {
+								returnValue = Characteristic.NoiseQuality.LIGHTLYNOISY;
+							} else if(returnValue > service.levelNum[Characteristic.NoiseQuality.LIGHTLYNOISY] && returnValue <= service.levelNum[Characteristic.NoiseQuality.NOISY]) {
+								returnValue = Characteristic.NoiseQuality.NOISY;
+							} else if(returnValue > service.levelNum[Characteristic.NoiseQuality.NOISY] && returnValue <= service.levelNum[Characteristic.NoiseQuality.TOONOISY]) {
+								returnValue = Characteristic.NoiseQuality.TOONOISY;
+							} else {
+								returnValue = Characteristic.NoiseQuality.UNKNOWN;
+							}
+						} else {
+							returnValue = Characteristic.NoiseQuality.UNKNOWN;
+						}
+						break;
+					}
+				}
+			break;
 			case Characteristic.AQI.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_INDEX' && cmd.id == service.cmd_id) {
@@ -2910,6 +2981,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CarbonDioxideLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						break;
+					}
+				}
+			break;	
+			case Characteristic.NoiseLevel.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'NOISE' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						break;
 					}
@@ -4778,6 +4857,42 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
 	inherits(Characteristic.Visibility, Characteristic);
 	
+	Characteristic.NoiseLevel = function() {
+			Characteristic.call(this, 'Noise Level', 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5');
+			this.setProps({
+				format: Characteristic.Formats.UINT8,
+				unit: "dB",
+				maxValue: 1000,
+				minValue: 0,
+				minStep: 1,
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.NoiseLevel.UUID = 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5';
+	inherits(Characteristic.NoiseLevel, Characteristic);
+	
+	Characteristic.NoiseQuality = function() {
+			Characteristic.call(this, 'Noise Quality', '627ea399-29d9-5dc8-9a02-08ae928f73d8');
+			this.setProps({
+				format: Characteristic.Formats.UINT8,
+				maxValue: 5,
+				minValue: 0,
+				minStep: 1,
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.NoiseQuality.UUID = '627ea399-29d9-5dc8-9a02-08ae928f73d8';
+	inherits(Characteristic.NoiseQuality, Characteristic);
+	
+	Characteristic.NoiseQuality.UNKNOWN = 0;
+	Characteristic.NoiseQuality.SILENT = 1;
+	Characteristic.NoiseQuality.CALM = 2;
+	Characteristic.NoiseQuality.LIGHTLYNOISY = 3;
+	Characteristic.NoiseQuality.NOISY = 4;
+	Characteristic.NoiseQuality.TOONOISY = 5;
+	
 	/**
 	 * FakeGato History Service
 	 */
@@ -4816,6 +4931,22 @@ function RegisterCustomCharacteristics() {
 	};
 	inherits(Service.PressureSensor, Service);
 	Service.PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+	
+	/**
+	 * Custom Service 'Noise Sensor'
+	 */
+
+	Service.NoiseSensor = function(displayName, subtype) {
+		Service.call(this, displayName, '6237cefc-9f4d-54b2-8033-2eda0053b811', subtype);
+
+		// Required Characteristics
+		this.addCharacteristic(Characteristic.NoiseLevel);
+		this.addCharacteristic(Characteristic.NoiseQuality);
+		// Optional Characteristics
+
+	};
+	inherits(Service.NoiseSensor, Service);
+	Service.NoiseSensor.UUID = '6237cefc-9f4d-54b2-8033-2eda0053b811';
 
 	/**
 	 * Custom Service 'Weather Service'
