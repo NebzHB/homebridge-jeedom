@@ -1181,7 +1181,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.GenericBOOL);
 						Serv.addCharacteristic(Characteristic.GenericBOOL);
 						Serv.getCharacteristic(Characteristic.GenericBOOL).displayName = cmd.state.name;
-					} else if (cmd.state.subType=="string") {
+					} else if (cmd.state.subType=="string" || cmd.state.subType=="other") {
 						that.log('debug','Le générique',cmd.state.name,'est une chaîne');
 						HBservice.characteristics.push(Characteristic.GenericSTRING);
 						Serv.addCharacteristic(Characteristic.GenericSTRING);
