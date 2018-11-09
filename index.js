@@ -957,7 +957,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.CO2) {
 					HBservice = {
 						controlService : new Service.AirQualitySensor(eqLogic.name),
-						characteristics : [Characteristic.AirQuality,Characteristic.CarbonDioxideLevel]
+						characteristics : [Characteristic.AirQuality,Characteristic.CarbonDioxideLevel,Characteristic.CarbonDioxideDetected]
 					};
 					let Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
@@ -2986,6 +2986,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;	
+			case Characteristic.CarbonDioxideDetected.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
+						if(parseInt(cmd.currentValue)>=1400)
+							returnValue = Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL;
+						else
+							returnValue = Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
+						break;
+					}
+				}
+			break;
 			case Characteristic.NoiseLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'NOISE' && cmd.id == service.cmd_id) {
