@@ -897,6 +897,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.battery=cmd.battery;
 					Serv.infos.batteryCharging=cmd.batteryCharging || {id:'NOT'};
+					eqServicesCopy.battery.forEach(function(cmd2) {
+						if (cmd2.batteryCharging) {
+							Serv.infos.batteryCharging=cmd2.batteryCharging;
+						} else {
+							Serv.infos.batteryCharging={id:'NOT'};
+						}
+					});
 					Serv.cmd_id = cmd.battery.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
