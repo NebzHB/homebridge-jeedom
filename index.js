@@ -958,6 +958,30 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice = null;
 				}
 			});
+		}		
+		if (eqLogic.services.CO) {
+			eqLogic.services.CO.forEach(function(cmd) {
+				if (cmd.CO) {
+					HBservice = {
+						controlService : new Service.CarbonMonoxideSensor(eqLogic.name),
+						characteristics : [Characteristic.CarbonMonoxideDetected]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.CO=cmd.CO;
+					
+					Serv.cmd_id = cmd.CO.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'CO';
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+										
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
 		}			
 		if (eqLogic.services.CO2) {
 			eqLogic.services.CO2.forEach(function(cmd) {
@@ -3000,6 +3024,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							returnValue = Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL;
 						else
 							returnValue = Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
+						break;
+					}
+				}
+			break;
+			case Characteristic.CarbonMonoxideDetected.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'CO' && cmd.id == service.cmd_id) {
+						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						returnValue = toBool(cmd.currentValue);
+						if(returnValue === false) returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+						else returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;						
 						break;
 					}
 				}
