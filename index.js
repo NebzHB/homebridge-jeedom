@@ -2033,6 +2033,109 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 		}
+		if (eqLogic.services.thermostatHC) {
+			eqLogic.services.thermostatHC.forEach(function(cmd) {
+				if(cmd.setpointH) {
+					HBservice = {
+						controlService : new Service.HeaterCooler(eqLogic.name),
+						characteristics : [Characteristic.CurrentTemperature, Characteristic.CoolingThresholdTemperature, Characteristic.HeatingThresholdTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState]
+					};
+					let Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.setpointH=cmd.setpointH;
+					Serv.thermoHC={};
+					eqServicesCopy.thermostatHC.forEach(function(cmd2) {
+						if (cmd2.setpointC) {
+							Serv.infos.setpointC=cmd2.setpointC;
+						} else if (cmd2.state_name) {
+							Serv.infos.state_name=cmd2.state_name;
+						} else if (cmd2.lock) {
+							Serv.infos.lock=cmd2.lock;
+							HBservice.characteristics.push(Characteristic.LockPhysicalControls);
+							Serv.addCharacteristic(Characteristic.LockPhysicalControls);
+							Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
+						} else if (cmd2.mode) {
+							Serv.infos.mode=cmd2.mode;
+						} else if (cmd2.temperature) {
+							Serv.infos.temperature=cmd2.temperature;
+						} else if (cmd2.state) {
+							Serv.infos.state=cmd2.state;
+						} else if (cmd2.set_lock) {
+							Serv.actions.set_lock=cmd2.set_lock;
+						} else if (cmd2.set_unlock) {
+							Serv.actions.set_unlock=cmd2.set_unlock;
+						} else if (cmd2.set_setpointH) {
+							Serv.actions.set_setpointH=cmd2.set_setpointH;
+						} else if (cmd2.set_setpointC) {
+							Serv.actions.set_setpointC=cmd2.set_setpointC;
+						}
+					});
+
+					var props = {};
+					if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.minValue && parseInt(Serv.actions.set_setpointH.configuration.minValue))
+						props.minValue = parseInt(Serv.actions.set_setpointH.configuration.minValue);
+					if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.maxValue && parseInt(Serv.actions.set_setpointH.configuration.maxValue))
+						props.maxValue = parseInt(Serv.actions.set_setpointH.configuration.maxValue);
+					if(props.minValue && props.maxValue)
+						Serv.getCharacteristic(Characteristic.HeatingThresholdTemperature).setProps(props);	
+					
+					props = {};
+					if(Serv.actions.set_setpointC && Serv.actions.set_setpointC.configuration && Serv.actions.set_setpointC.configuration.minValue && parseInt(Serv.actions.set_setpointC.configuration.minValue))
+						props.minValue = parseInt(Serv.actions.set_setpointC.configuration.minValue);
+					if(Serv.actions.set_setpointC && Serv.actions.set_setpointC.configuration && Serv.actions.set_setpointC.configuration.maxValue && parseInt(Serv.actions.set_setpointC.configuration.maxValue))
+						props.maxValue = parseInt(Serv.actions.set_setpointC.configuration.maxValue);
+					if(props.minValue && props.maxValue)
+						Serv.getCharacteristic(Characteristic.CoolingThresholdTemperature).setProps(props);	
+					
+					// add Active, Tampered and Defect Characteristics if needed
+					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);	
+
+					props = {};
+					props.validValues=[0];
+					if(eqLogic.thermoModes) {
+						if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
+							Serv.thermoHC.chauf = {};
+							let splitted = eqLogic.thermoModes.Chauf.split('|');
+							Serv.thermoHC.chauf.mode_label = splitted[1];
+							Serv.thermoHC.chauf.mode_id = splitted[0];
+							props.validValues.push(1);
+						}
+						else
+							that.log('warn','Pas de config du mode Chauffage');
+						if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
+							Serv.thermoHC.clim = {};
+							let splitted = eqLogic.thermoModes.Clim.split('|');
+							Serv.thermoHC.clim.mode_label = splitted[1];
+							Serv.thermoHC.clim.mode_id = splitted[0];
+							props.validValues.push(2);
+						}
+						else
+							that.log('warn','Pas de config du mode Climatisation');
+						if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
+							Serv.thermoHC.off = {};
+							let splitted = eqLogic.thermoModes.Off.split('|');
+							Serv.thermoHC.off.mode_label = splitted[1];
+							Serv.thermoHC.off.mode_id = splitted[0];
+						}
+					}
+					else {
+						if(that.myPlugin == "homebridge")
+							that.log('warn','Pas de config des modes du thermostatHC');
+					}
+					//Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
+					props.validValues.push(3);
+					Serv.getCharacteristic(Characteristic.TargetHeatingCoolingState).setProps(props);
+					Serv.cmd_id = cmd.setpointH.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
+		}
 		if (eqLogic.services.mode) {
 			let modeState=null;
 			eqLogic.services.mode.forEach(function(cmd) {
@@ -2631,6 +2734,28 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					characteristic.updateValue(sanitizeValue(value,characteristic), undefined, 'fromSetValue');
 				}, 100);
 			break;
+			case Characteristic.CoolingThresholdTemperature.UUID :
+				if (Math.abs(value - characteristic.value) >= 0.5) {
+					value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
+					this.command('setTargetLevelC', value, service);
+				} else {
+					value = characteristic.value;
+				}
+				setTimeout(function() {
+					characteristic.updateValue(sanitizeValue(value,characteristic), undefined, 'fromSetValue');
+				}, 100);			
+			break;
+			case Characteristic.HeatingThresholdTemperature.UUID :
+				if (Math.abs(value - characteristic.value) >= 0.5) {
+					value = parseFloat((Math.round(value / 0.5) * 0.5).toFixed(1));
+					this.command('setTargetLevelH', value, service);
+				} else {
+					value = characteristic.value;
+				}
+				setTimeout(function() {
+					characteristic.updateValue(sanitizeValue(value,characteristic), undefined, 'fromSetValue');
+				}, 100);			
+			break;
 			case Characteristic.TimeInterval.UUID :
 				this.command('setTime', value + Math.trunc((new Date()).getTime() / 1000), service);
 			break;
@@ -3091,6 +3216,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == service.cmd_id) || 
 					    (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id) ||
+						(cmd.generic_type == 'THERMOSTAT_HC_TEMPERATURE' && cmd.id == service.infos.temperature.id) ||
 						(cmd.generic_type == 'WEATHER_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
 						
 						returnValue = cmd.currentValue;
@@ -3408,7 +3534,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentHeatingCoolingState.UUID :
 				var stateNameFound=false;
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME') {
+					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME' || cmd.generic_type == 'THERMOSTAT_HC_STATE_NAME') {
 						if(cmd.currentValue != undefined && cmd.currentValue != null) {
 							that.log('debug','----Current State Thermo :',cmd.currentValue.toString().toLowerCase());
 							switch(cmd.currentValue.toString().toLowerCase()) {
@@ -3478,12 +3604,54 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							break;
 						}
 						break;
+					} else if (cmd.generic_type == 'THERMOSTAT_HC_MODE') {
+						
+						if(service.thermoHC.clim && service.thermoHC.clim.mode_label !== undefined)
+							mode_CLIM=service.thermoHC.clim.mode_label;
+						if(service.thermoHC.chauf && service.thermoHC.chauf.mode_label !== undefined)
+							mode_CHAUF=service.thermoHC.chauf.mode_label;
+						
+						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
+						switch(cmd.currentValue) {
+							case 'Off':
+							case 'Arret':
+							case undefined:
+								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
+							break;							
+							case mode_CLIM:
+								returnValue = Characteristic.TargetHeatingCoolingState.COOL;
+							break;
+							case mode_CHAUF:
+								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
+							break;
+							case 'Aucun':
+							case 'Thermostat':
+								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
+							break;
+						}
+						break;
 					}
 				}
 			break;
 			case Characteristic.TargetTemperature.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.CoolingThresholdTemperature.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'THERMOSTAT_HC_SETPOINT_C') {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.HeatingThresholdTemperature.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'THERMOSTAT_HC_SETPOINT_H') {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -3647,7 +3815,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				if(returnValue === 0) {
 					// no mute status, just verify the volume, if 0 its muted
 					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == service.infos.volume.id) {
+						if ((cmd.generic_type == 'SPEAKER_VOLUME' || cmd.generic_type == 'VOLUME') && cmd.id == service.infos.volume.id) {
 							if(cmd.currentValue == 0) {
 								returnValue = true;
 							} else {
@@ -3660,7 +3828,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.Volume.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'SPEAKER_VOLUME' && cmd.id == service.infos.volume.id) {
+					if ((cmd.generic_type == 'SPEAKER_VOLUME' || cmd.generic_type == 'VOLUME') && cmd.id == service.infos.volume.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -3971,7 +4139,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		}
 		// /ALARM	
 		// THERMOSTAT
-		var id_CHAUF,id_CLIM,id_OFF;
+		var id_CHAUF,id_CLIM,id_OFF,id_CHAUF_HC,id_CLIM_HC,id_OFF_HC;
 		if(action == 'TargetHeatingCoolingState') {
 			if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined)
 				id_CHAUF = 	service.thermo.chauf.mode_id;
@@ -3979,6 +4147,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				id_CLIM = 	service.thermo.clim.mode_id;
 			if(service.thermo.off && service.thermo.off.mode_id != undefined)
 				id_OFF = 	service.thermo.off.mode_id;
+
+			if(service.thermoHC.chauf && service.thermoHC.chauf.mode_id != undefined)
+				id_CHAUF_HC = 	service.thermoHC.chauf.mode_id;
+			if(service.thermoHC.clim && service.thermoHC.clim.mode_id != undefined)
+				id_CLIM_HC = 	service.thermoHC.clim.mode_id;
+			if(service.thermoHC.off && service.thermoHC.off.mode_id != undefined)
+				id_OFF_HC = 	service.thermoHC.off.mode_id;
 		}		
 		// /THERMOSTAT
 		var needToTemporize=0;
@@ -4163,6 +4338,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'SPEAKER_SET_VOLUME' :
+					case 'SET_VOLUME' :
 						if(service.actions.set_volume && cmd.id == service.actions.set_volume.id) {
 							if(action == 'setValue') {
 								cmdId = cmd.id;
@@ -4348,6 +4524,26 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							needToTemporize=900;
 						}
 					break;
+					case 'THERMOSTAT_HC_SET_SETPOINT_H' :
+						if(action == 'setTargetLevelH') {
+							if(value > 0) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								found = true;
+							}
+							needToTemporize=900;
+						}
+					break;
+					case 'THERMOSTAT_HC_SET_SETPOINT_C' :
+						if(action == 'setTargetLevelC') {
+							if(value > 0) {
+								cmdId = cmd.id;
+								cmdFound=cmd.generic_type;
+								found = true;
+							}
+							needToTemporize=900;
+						}
+					break;
 					case 'THERMOSTAT_SET_MODE' :
 						if(action == 'TargetHeatingCoolingState') {
 							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF != undefined) {
@@ -4365,6 +4561,28 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							} else if(value == Characteristic.TargetHeatingCoolingState.AUTO) {
 								cmdId = service.actions.set_setpoint.id;
 								value = service.infos.setpoint.currentValue;
+								that.log('debug','set AUTO',value);
+								found = true;
+							}
+						}
+					break;
+					case 'THERMOSTAT_HC_SET_MODE' :
+						if(action == 'TargetHeatingCoolingState') {
+							if(value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF != undefined) {
+								cmdId = id_OFF_HC;
+								that.log('debug',"set OFF");
+								found = true;
+							} else if(value == Characteristic.TargetHeatingCoolingState.HEAT && id_CHAUF != undefined) {
+								cmdId = id_CHAUF_HC;
+								that.log('debug',"set CHAUF");
+								found = true;
+							} else if(value == Characteristic.TargetHeatingCoolingState.COOL && id_CLIM != undefined) {
+								cmdId = id_CLIM_HC;
+								that.log('debug',"set CLIM");
+								found = true;
+							} else if(value == Characteristic.TargetHeatingCoolingState.AUTO) {
+								cmdId = service.actions.set_setpointH.id;
+								value = service.infos.setpointH.currentValue;
 								that.log('debug','set AUTO',value);
 								found = true;
 							}
