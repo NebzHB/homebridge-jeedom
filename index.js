@@ -4141,19 +4141,22 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		// THERMOSTAT
 		var id_CHAUF,id_CLIM,id_OFF,id_CHAUF_HC,id_CLIM_HC,id_OFF_HC;
 		if(action == 'TargetHeatingCoolingState') {
-			if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined)
-				id_CHAUF = 	service.thermo.chauf.mode_id;
-			if(service.thermo.clim && service.thermo.clim.mode_id != undefined)
-				id_CLIM = 	service.thermo.clim.mode_id;
-			if(service.thermo.off && service.thermo.off.mode_id != undefined)
-				id_OFF = 	service.thermo.off.mode_id;
-
-			if(service.thermoHC.chauf && service.thermoHC.chauf.mode_id != undefined)
-				id_CHAUF_HC = 	service.thermoHC.chauf.mode_id;
-			if(service.thermoHC.clim && service.thermoHC.clim.mode_id != undefined)
-				id_CLIM_HC = 	service.thermoHC.clim.mode_id;
-			if(service.thermoHC.off && service.thermoHC.off.mode_id != undefined)
-				id_OFF_HC = 	service.thermoHC.off.mode_id;
+			if(service.thermo) {
+				if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined)
+					id_CHAUF = 	service.thermo.chauf.mode_id;
+				if(service.thermo.clim && service.thermo.clim.mode_id != undefined)
+					id_CLIM = 	service.thermo.clim.mode_id;
+				if(service.thermo.off && service.thermo.off.mode_id != undefined)
+					id_OFF = 	service.thermo.off.mode_id;
+			}
+			if(service.thermoHC) {
+				if(service.thermoHC.chauf && service.thermoHC.chauf.mode_id != undefined)
+					id_CHAUF_HC = 	service.thermoHC.chauf.mode_id;
+				if(service.thermoHC.clim && service.thermoHC.clim.mode_id != undefined)
+					id_CLIM_HC = 	service.thermoHC.clim.mode_id;
+				if(service.thermoHC.off && service.thermoHC.off.mode_id != undefined)
+					id_OFF_HC = 	service.thermoHC.off.mode_id;
+			}
 		}		
 		// /THERMOSTAT
 		var needToTemporize=0;
