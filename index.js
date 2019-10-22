@@ -695,10 +695,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.on = cmd2.on;
 						} else if (cmd2.off) {
 							Serv.actions.off = cmd2.off;
+						} else if (cmd2.setDuration) {
+							Serv.actions.setDuration = cmd2.setDuration;
 						}
 					});
 					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Valve générique Bouton On"');
 					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Valve générique Bouton Off"');
+					
+					if(Serv.actions.setDuration) {
+						HBservice.characteristics.push(Characteristic.SetDuration);
+						Serv.addOptionalCharacteristic(Characteristic.SetDuration);
+					}
+					if(Serv.infos.remainingDuration) {
+						HBservice.characteristics.push(Characteristic.RemainingDuration);
+						Serv.addOptionalCharacteristic(Characteristic.RemainingDuration);
+					}
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -3370,7 +3381,25 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
-			break;				
+			break;	
+			case Characteristic.RemainingDuration.UUID :
+				returnValue = 0;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'VALVE_REMAINING_DURATION') {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.SetDuration.UUID :
+				returnValue = 0;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'VALVE_SET_DURATION') {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;			
 			//Generic_info
 			case Characteristic.GenericFLOAT.UUID :
 			case Characteristic.GenericINT.UUID :
@@ -5166,6 +5195,35 @@ function RegisterCustomCharacteristics() {
 	Characteristic.NoiseQuality.LIGHTLYNOISY = 3;
 	Characteristic.NoiseQuality.NOISY = 4;
 	Characteristic.NoiseQuality.TOONOISY = 5;
+	
+	
+	Characteristic.SetDuration = function() {
+			Characteristic.call(this, 'Set Duration', '000000D3-0000-1000-8000-0026BB765291');
+			this.setProps({
+				format: Characteristic.Formats.UINT32,
+				maxValue: 3600,
+				minValue: 0,
+				minStep: 1,
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.SetDuration.UUID = '000000D3-0000-1000-8000-0026BB765291';
+	inherits(Characteristic.SetDuration, Characteristic);
+	
+	Characteristic.RemainingDuration = function() {
+			Characteristic.call(this, 'Remaining Duration', '000000D4-0000-1000-8000-0026BB765291');
+			this.setProps({
+				format: Characteristic.Formats.UINT32,
+			      	maxValue: 3600,
+			      	minValue: 0,
+			      	minStep: 1,
+			      	perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.RemainingDuration.UUID = '000000D4-0000-1000-8000-0026BB765291';
+	inherits(Characteristic.RemainingDuration, Characteristic);
 	
 	/**
 	 * FakeGato History Service
