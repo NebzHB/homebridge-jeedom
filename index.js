@@ -697,6 +697,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.off = cmd2.off;
 						} else if (cmd2.setDuration) {
 							Serv.actions.setDuration = cmd2.setDuration;
+						} else if (cmd2.remainingDuration) {
+							Serv.infos.remainingDuration = cmd2.remainingDuration;
 						}
 					});
 					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Valve générique Bouton On"');
