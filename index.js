@@ -184,6 +184,15 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = scenario.id + '-' + Serv.subtype;
 
+					if(that.fakegato && !scenario.hasLogging) {
+						//HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+
+						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						scenario.loggingService = {type:"switch", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+
+						scenario.hasLogging=true;
+					}
+
 					scenario.eqType_name = "Scenario";
 					scenario.logicalId = "";
 					
@@ -3005,6 +3014,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						case 'in progress':
 							returnValue = true;
 						break;
+					}
+					if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						service.eqLogic.loggingService.addEntry({
+						  time: moment().unix(),
+						  status: ((returnValue)?1:0)
+						});
 					}
 					
 				} else if(service.modeSwitch){
