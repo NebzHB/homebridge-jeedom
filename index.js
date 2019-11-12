@@ -820,6 +820,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						//HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+
+						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.loggingService = {type:"switch", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+
+						eqLogic.hasLogging=true;
+					}
+					
 					HBservices.push(HBservice);
 				}
 			});
@@ -3029,6 +3039,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							break;
 						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
+							if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+								service.eqLogic.loggingService.addEntry({
+								  time: moment().unix(),
+								  status: returnValue
+								});
+							}
 							break;
 						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.actions.Push) {
 							returnValue = false;
