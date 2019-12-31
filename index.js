@@ -3037,7 +3037,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				} else {
 					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
+						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool) {
 							if(parseInt(cmd.currentValue) == 0) returnValue=false;
 							else returnValue=true;
 							break;
