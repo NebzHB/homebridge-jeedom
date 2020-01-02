@@ -184,6 +184,15 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = scenario.id + '-' + Serv.subtype;
 
+					if(that.fakegato && !scenario.hasLogging) {
+						//HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+
+						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						scenario.loggingService = {type:"switch", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+
+						scenario.hasLogging=true;
+					}
+
 					scenario.eqType_name = "Scenario";
 					scenario.logicalId = "";
 					
@@ -695,10 +704,23 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.on = cmd2.on;
 						} else if (cmd2.off) {
 							Serv.actions.off = cmd2.off;
+						} else if (cmd2.setDuration) {
+							Serv.actions.setDuration = cmd2.setDuration;
+						} else if (cmd2.remainingDuration) {
+							Serv.infos.remainingDuration = cmd2.remainingDuration;
 						}
 					});
 					if(!Serv.actions.on) that.log('warn','Pas de type générique "Action/Valve générique Bouton On"');
 					if(!Serv.actions.off) that.log('warn','Pas de type générique "Action/Valve générique Bouton Off"');
+					
+					if(Serv.actions.setDuration) {
+						HBservice.characteristics.push(Characteristic.SetDuration);
+						Serv.addOptionalCharacteristic(Characteristic.SetDuration);
+					}
+					if(Serv.infos.remainingDuration) {
+						HBservice.characteristics.push(Characteristic.RemainingDuration);
+						Serv.addOptionalCharacteristic(Characteristic.RemainingDuration);
+					}
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
@@ -807,6 +829,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						//HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+
+						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.loggingService = {type:"switch", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+
+						eqLogic.hasLogging=true;
+					}
+					
 					HBservices.push(HBservice);
 				}
 			});
@@ -2983,6 +3015,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							returnValue = true;
 						break;
 					}
+					if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						service.eqLogic.loggingService.addEntry({
+						  time: moment().unix(),
+						  status: ((returnValue)?1:0)
+						});
+					}
 					
 				} else if(service.modeSwitch){
 					for (const cmd of cmdList) {
@@ -2999,7 +3037,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				} else {
 					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id) {
+						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool) {
 							if(parseInt(cmd.currentValue) == 0) returnValue=false;
 							else returnValue=true;
 							break;
@@ -3016,11 +3054,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							break;
 						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
+							if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+								service.eqLogic.loggingService.addEntry({
+								  time: moment().unix(),
+								  status: ((returnValue)?1:0)
+								});
+							}
 							break;
-						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.actions.Push) {
+						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.actions.Push.id) {
 							returnValue = false;
 							break;
-						} else if (cmd.generic_type == "GENERIC_ACTION" && cmd.subType == 'other' && cmd.id == service.actions.Push) {
+						} else if (cmd.generic_type == "GENERIC_ACTION" && cmd.subType == 'other' && cmd.id == service.actions.Push.id) {
 							returnValue = false;
 							break;
 						}
@@ -3370,7 +3414,25 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
-			break;				
+			break;	
+			case Characteristic.RemainingDuration.UUID :
+				returnValue = 0;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'VALVE_REMAINING_DURATION') {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.SetDuration.UUID :
+				returnValue = 0;
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'VALVE_SET_DURATION') {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;			
 			//Generic_info
 			case Characteristic.GenericFLOAT.UUID :
 			case Characteristic.GenericINT.UUID :
@@ -5166,6 +5228,35 @@ function RegisterCustomCharacteristics() {
 	Characteristic.NoiseQuality.LIGHTLYNOISY = 3;
 	Characteristic.NoiseQuality.NOISY = 4;
 	Characteristic.NoiseQuality.TOONOISY = 5;
+	
+	
+	Characteristic.SetDuration = function() {
+			Characteristic.call(this, 'Set Duration', '000000D3-0000-1000-8000-0026BB765291');
+			this.setProps({
+				format: Characteristic.Formats.UINT32,
+				maxValue: 3600,
+				minValue: 0,
+				minStep: 1,
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.SetDuration.UUID = '000000D3-0000-1000-8000-0026BB765291';
+	inherits(Characteristic.SetDuration, Characteristic);
+	
+	Characteristic.RemainingDuration = function() {
+			Characteristic.call(this, 'Remaining Duration', '000000D4-0000-1000-8000-0026BB765291');
+			this.setProps({
+				format: Characteristic.Formats.UINT32,
+			      	maxValue: 3600,
+			      	minValue: 0,
+			      	minStep: 1,
+			      	perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			});
+			this.value = this.getDefaultValue();
+		};
+	Characteristic.RemainingDuration.UUID = '000000D4-0000-1000-8000-0026BB765291';
+	inherits(Characteristic.RemainingDuration, Characteristic);
 	
 	/**
 	 * FakeGato History Service
