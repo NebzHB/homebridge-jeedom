@@ -3061,10 +3061,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								});
 							}
 							break;
-						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.actions.Push) {
+						} else if (PushButtonAssociated.indexOf(cmd.generic_type) != -1 && service.actions.Push && cmd.id == service.actions.Push.id) {
 							returnValue = false;
 							break;
-						} else if (cmd.generic_type == "GENERIC_ACTION" && cmd.subType == 'other' && cmd.id == service.actions.Push) {
+						} else if (cmd.generic_type == "GENERIC_ACTION" && cmd.subType == 'other' && service.actions.Push && cmd.id == service.actions.Push.id) {
 							returnValue = false;
 							break;
 						}
