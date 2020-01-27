@@ -5408,7 +5408,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 			service = services[s];
 			
 			if(!newAccessory.getService(service.controlService)){// not exist ?
-				this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+				this.log('debug',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
 				newAccessory.addService(service.controlService);
 				for (var i = 0; i < service.characteristics.length; i++) {
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
@@ -5428,7 +5428,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 						characteristic.props.minStep = 0.01;
 					}
 					this.platform.bindCharacteristicEvents(characteristic, service.controlService);
-					this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
+					this.log('debug','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 				}
 			}
 			else
@@ -5461,7 +5461,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 			for(service of serviceList){ // dont work in one loop or with temp object :(
 				this.log('debug',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
 				for (const c of service.characteristics) {
-					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+					this.log('debug','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
 					cachedValues[service.subtype+c.displayName]=c.value;
 				}
 				accessory.removeService(service);
