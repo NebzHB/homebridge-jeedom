@@ -124,12 +124,13 @@ JeedomPlatform.prototype.addAccessories = function() {
 				that.log('Enumération des objets Jeedom (Pièces)...');
 				model.objects.map(function(r){
 					that.rooms[r.id] = r.name;
-					that.log('Pièce > ' + r.name);
+					that.log('debug','Pièce > ' + r.name);
 				});
 			
+				that.log('Enumération des scénarios Jeedom...');
+				that.JeedomScenarios2HomeKitAccessories(model.scenarios);
 				that.log('Enumération des périphériques Jeedom...');
 				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
-				that.JeedomScenarios2HomeKitAccessories(model.scenarios);
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
@@ -2625,7 +2626,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 				}
 			}
 		}
-		this.log('Accessoire en cache: ' + accessory.displayName);
+		this.log('debug','Accessoire en cache: ' + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
 		//accessory.reachable = true;
 	}
