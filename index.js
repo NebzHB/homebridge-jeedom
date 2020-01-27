@@ -2475,7 +2475,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 		}
 		else
 		{
-			if(!silence) this.log('│ Accessoire Ignoré');
+			if(!silence) this.log('│ KO : Accessoire Ignoré');
 		}
 	}
 	catch(e){
@@ -2549,10 +2549,10 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		
 		if (isNewAccessory) {
-			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│ OK : Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│ OK : Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
 		HBAccessory.on('identify', function(paired, callback) {
