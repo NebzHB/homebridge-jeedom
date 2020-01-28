@@ -121,15 +121,16 @@ JeedomPlatform.prototype.addAccessories = function() {
 			.then(function(model){ // we got the base Model from the API
 				if(!model) that.log('error','Model invalide > ',model);
 				that.lastPoll=model.config.datetime;
-				that.log('Enumération des objets Jeedom (Pièces)...');
+				that.log('debug','Enumération des objets Jeedom (Pièces)...');
 				model.objects.map(function(r){
 					that.rooms[r.id] = r.name;
-					that.log('Pièce > ' + r.name);
+					that.log('debug','Pièce > ' + r.name);
 				});
 			
+				that.log('Enumération des scénarios Jeedom...');
+				that.JeedomScenarios2HomeKitAccessories(model.scenarios);
 				that.log('Enumération des périphériques Jeedom...');
 				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
-				that.JeedomScenarios2HomeKitAccessories(model.scenarios);
 				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
@@ -2463,7 +2464,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 			return;
 		}
 
-		if(!silence) this.log('│ Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
+		if(!silence) this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
 		existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
 		if(existingAccessory)
 		{
@@ -2474,7 +2475,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 		}
 		else
 		{
-			if(!silence) this.log('│ Accessoire Ignoré');
+			if(!silence) this.log('│ KO : Accessoire Ignoré');
 		}
 	}
 	catch(e){
@@ -2499,7 +2500,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		let isNewAccessory = false;
 		let services2Add = jeedomAccessory.services_add;
-		this.log('│ Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
+		this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
 		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
@@ -2544,14 +2545,14 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
 			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
 			//HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
-			this.log('info',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+			this.log('debug',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
 		}
 		
 		if (isNewAccessory) {
-			this.log('│ Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│ OK : Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			this.log('│ Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│ OK : Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
 		HBAccessory.on('identify', function(paired, callback) {
@@ -2581,12 +2582,12 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 		for (var a in this.accessories) {
 			if (this.accessories.hasOwnProperty(a)) {
 				if (this.accessories[a].UUID == UUID) {
-					if(!silence) this.log('│ Accessoire déjà existant dans le cache Homebridge');
+					if(!silence) this.log('debug',' Accessoire déjà existant dans le cache Homebridge');
 					return this.accessories[a];
 				}
 			}
 		}
-		if(!silence) this.log('│ Accessoire non existant dans le cache Homebridge');
+		if(!silence) this.log('debug',' Accessoire non existant dans le cache Homebridge');
 		return null;
 	}
 	catch(e){
@@ -2625,7 +2626,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 				}
 			}
 		}
-		this.log('Accessoire en cache: ' + accessory.displayName);
+		this.log('debug','Accessoire en cache: ' + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
 		//accessory.reachable = true;
 	}
@@ -5408,7 +5409,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 			service = services[s];
 			
 			if(!newAccessory.getService(service.controlService)){// not exist ?
-				this.log('info',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+				this.log('debug',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
 				newAccessory.addService(service.controlService);
 				for (var i = 0; i < service.characteristics.length; i++) {
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
@@ -5428,7 +5429,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 						characteristic.props.minStep = 0.01;
 					}
 					this.platform.bindCharacteristicEvents(characteristic, service.controlService);
-					this.log('info','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
+					this.log('debug','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 				}
 			}
 			else
@@ -5459,9 +5460,9 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 					serviceList.push(accessory.services[t]);
 			}		
 			for(service of serviceList){ // dont work in one loop or with temp object :(
-				this.log('info',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
+				this.log('debug',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
 				for (const c of service.characteristics) {
-					this.log('info','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+					this.log('debug','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
 					cachedValues[service.subtype+c.displayName]=c.value;
 				}
 				accessory.removeService(service);
