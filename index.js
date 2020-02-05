@@ -119,19 +119,22 @@ JeedomPlatform.prototype.addAccessories = function() {
 		that.log('Synchronisation Jeedom <> Homebridge...');
 		that.jeedomClient.getModel()
 			.then(function(model){ // we got the base Model from the API
-				if(!model) that.log('error','Model invalide > ',model);
-				that.lastPoll=model.config.datetime;
-				that.log('debug','Enumération des objets Jeedom (Pièces)...');
-				model.objects.map(function(r){
-					that.rooms[r.id] = r.name;
-					that.log('debug','Pièce > ' + r.name);
-				});
-			
-				that.log('Enumération des scénarios Jeedom...');
-				that.JeedomScenarios2HomeKitAccessories(model.scenarios);
-				that.log('Enumération des périphériques Jeedom...');
-				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
-				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
+				if(model && model.config) {
+					that.lastPoll=model.config.datetime;
+					that.log('debug','Enumération des objets Jeedom (Pièces)...');
+					model.objects.map(function(r){
+						that.rooms[r.id] = r.name;
+						that.log('debug','Pièce > ' + r.name);
+					});
+
+					that.log('Enumération des scénarios Jeedom...');
+					that.JeedomScenarios2HomeKitAccessories(model.scenarios);
+					that.log('Enumération des périphériques Jeedom...');
+					if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
+					that.JeedomDevices2HomeKitAccessories(model.eqLogics);
+				} else {
+					that.log('error','Model invalide > ',model);	
+				}
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
 				if(err) console.error(err.stack);
