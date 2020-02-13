@@ -119,19 +119,34 @@ JeedomPlatform.prototype.addAccessories = function() {
 		that.log('Synchronisation Jeedom <> Homebridge...');
 		that.jeedomClient.getModel()
 			.then(function(model){ // we got the base Model from the API
-				if(!model) that.log('error','Model invalide > ',model);
-				that.lastPoll=model.config.datetime;
-				that.log('debug','Enumération des objets Jeedom (Pièces)...');
-				model.objects.map(function(r){
-					that.rooms[r.id] = r.name;
-					that.log('debug','Pièce > ' + r.name);
-				});
-			
-				that.log('Enumération des scénarios Jeedom...');
-				that.JeedomScenarios2HomeKitAccessories(model.scenarios);
-				that.log('Enumération des périphériques Jeedom...');
-				if(model.eqLogics == null) that.log('error','Périf > '+model.eqLogics);
-				that.JeedomDevices2HomeKitAccessories(model.eqLogics);
+				if(model && typeof model == 'object' && model.config && typeof model.config == 'object' && model.config.datetime) {
+					that.lastPoll=model.config.datetime;
+					
+					that.log('debug','Enumération des objets Jeedom (Pièces)...');
+					if(model.objects && typeof model.objects == 'object' && Object.keys(model.objects).length !== 0) {
+						model.objects.map(function(r){
+							that.rooms[r.id] = r.name;
+							that.log('debug','Pièce > ' + r.name);
+						});
+					} else {
+						that.log('error','Pièce > '+model.objects);
+						throw new Error('Rooms list empty or invalid');
+					}
+
+					that.log('Enumération des scénarios Jeedom...');
+					that.JeedomScenarios2HomeKitAccessories(model.scenarios);
+					
+					that.log('Enumération des périphériques Jeedom...');
+					if(model.eqLogics && typeof model.eqLogics == 'object' && Object.keys(model.eqLogics).length !== 0) {
+						that.JeedomDevices2HomeKitAccessories(model.eqLogics);
+					} else {
+						that.log('error','Périf > '+model.eqLogics);
+						throw new Error('eqLogics list empty');	
+					}
+				} else {
+					that.log('error','Model invalide > ',model);
+					throw new Error('Invalid Model');
+				}
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
 				if(err) console.error(err.stack);
