@@ -2572,7 +2572,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		HBAccessory.on('identify', function(paired, callback) {
 			this.log(HBAccessory.displayName, "->Identifié!!!");
-			callback();
+			if(typeof callback == 'function') callback();
 		}.bind(this));
 		HBAccessory.reviewed = true;
 	}
