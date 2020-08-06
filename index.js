@@ -4703,7 +4703,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			service.temporizatorSec = setTimeout(function(){
 				if(cmdFound=="LIGHT_ON" || cmdFound=="LIGHT_OFF") {
 					if(that.settingLight) {
-						that.jeedomClient.updateModelInfo(service.infos.state_bool.id,true);
+						//that.jeedomClient.updateModelInfo(service.infos.state_bool.id,true);
 						setTimeout(function(){
 							that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 								that.log('info','[Commande LATE envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
