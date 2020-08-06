@@ -375,6 +375,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
 					if(eqLogic.OnAfterBrightness) Serv.OnAfterBrightness=true;
+					if(eqLogic.ignoreOnCommandOnBrightnessChange) Serv.ignoreOnCommandOnBrightnessChange=true;
 
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
@@ -4704,14 +4705,16 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				if(cmdFound=="LIGHT_ON" || cmdFound=="LIGHT_OFF") {
 					if(that.settingLight) {
 						//that.jeedomClient.updateModelInfo(service.infos.state_bool.id,true);
-						setTimeout(function(){
-							that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
-								that.log('info','[Commande LATE envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
-							}).catch(function(err) {
-								that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
-								console.error(err.stack);
-							});
-						},1000);
+						if(!service.ignoreOnCommandOnBrightnessChange) {
+							setTimeout(function(){
+								that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+									that.log('info','[Commande LATE envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+								}).catch(function(err) {
+									that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
+									console.error(err.stack);
+								});
+							},1000);
+						}
 						return
 					}
 				}
