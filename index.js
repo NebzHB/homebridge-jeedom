@@ -374,6 +374,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
+					if(eqLogic.OnAfterBrightness) Serv.OnAfterBrightness=true;
 
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
@@ -4238,6 +4239,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		}		
 		// /THERMOSTAT
 		var needToTemporize=0;
+		var needToTemporizeSec=0;
 		var cmdFound;
 		for (const cmd of cmdList) {
 			if(!found) {
@@ -4465,6 +4467,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;					
 							cmdFound=cmd.generic_type;
 							found = true;
+							if(service.OnAfterBrightness) needToTemporizeSec=20;
 						}
 					break;
 					case 'ENERGY_ON' :
@@ -4515,6 +4518,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;					
 							cmdFound=cmd.generic_type;
 							found = true;
+							if(service.OnAfterBrightness) needToTemporizeSec=20;
 						}
 					break;
 					case 'ENERGY_OFF' :
@@ -4674,18 +4678,19 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			}
 		}
 		
-		if(needToTemporize===0) {
+		if(needToTemporize===0 && needToTemporizeSec===0) {
 			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
 			}).catch(function(err) {
 				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
 				console.error(err.stack);
 			});
-		} else {
+		} else if(needToTemporize) {
 			if(service.temporizator) clearTimeout(service.temporizator);
 			service.temporizator = setTimeout(function(){
 				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
 				if(cmdFound=="FAN_SLIDER" || cmdFound=="FAN_SPEED") that.settingFan=false;
+				
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 				}).catch(function(err) {
@@ -4693,6 +4698,32 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					console.error(err.stack);
 				});
 			},needToTemporize);
+		} else if(needToTemporizeSec) {
+			if(service.temporizatorSec) clearTimeout(service.temporizatorSec);
+			service.temporizatorSec = setTimeout(function(){
+				if(cmdFound=="LIGHT_ON" || cmdFound=="LIGHT_OFF") {
+					if(that.settingLight) {
+						that.jeedomClient.updateModelInfo(service.infos.state_bool.id,true);
+						setTimeout(function(){
+							that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+								that.log('info','[Commande LATE envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+							}).catch(function(err) {
+								that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
+								console.error(err.stack);
+							});
+						},1000);
+						return
+					}
+				}
+				
+				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
+				}).catch(function(err) {
+					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
+					console.error(err.stack);
+				});
+				
+			},needToTemporizeSec);
 		}
 	}
 	catch(e){
