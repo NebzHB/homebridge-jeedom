@@ -4680,14 +4680,12 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		}
 		
 		if(needToTemporize===0 && needToTemporizeSec===0) {
-			if(!service.ignoreOnCommandOnBrightnessChange) {
-				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
-					that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
-				}).catch(function(err) {
-					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
-					console.error(err.stack);
-				});
-			}
+			that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
+				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
+			}).catch(function(err) {
+				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
+				console.error(err.stack);
+			});
 		} else if(needToTemporize) {
 			if(service.temporizator) clearTimeout(service.temporizator);
 			service.temporizator = setTimeout(function(){
