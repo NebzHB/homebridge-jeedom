@@ -4809,7 +4809,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		}
 	}).then(function(){
 		that.pollingUpdateRunning = false;
-		that.pollingID = setTimeout(function(){ that.log('debug','==RESTART POLLING==');that.startPollingUpdate(); }, that.pollerPeriod * 1000);
+		that.pollingID = setTimeout(function(){ /*that.log('debug','==RESTART POLLING==');*/that.startPollingUpdate(); }, that.pollerPeriod * 1000);
 	}).catch(function(err) {
 		that.log('error','Erreur de récupération des évènements de mise à jour: ', err);
 		console.error(err.stack);
