@@ -4365,7 +4365,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'FLAP_SLIDER' :
-						if(action != 'setValueHorTilt' && action != 'setValueVerTilt' && value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
+						if(action != 'setValueHorTilt' && action != 'setValueVerTilt' && action != 'flapUp' && action != 'flapDown' && value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.down) {
 								cmdId=service.actions.down.id;
