@@ -3550,7 +3550,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 				hsv = that.updateHomeKitColorFromJeedom(returnValue, service);
-				returnValue = Math.round(hsv.v);
+				returnValue = Math.round(hsv.s);
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
