@@ -4062,7 +4062,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'POWER' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
-						if(service.infos.power.unite.toLowerCase() == 'kw') {
+						if(service.infos.power && service.infos.power.unite && service.infos.power.unite.toLowerCase() == 'kw') {
 							returnValue = Math.round(cmd.currentValue*1000);
 						} else {
 							returnValue = cmd.currentValue;
@@ -4080,7 +4080,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TotalPowerConsumption.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == service.infos.consumption.id) {
-						if(service.infos.consumption.unite.toLowerCase() == 'wh') {
+						if(service.infos.consumption.unite && service.infos.consumption.unite.toLowerCase() == 'wh') {
 							returnValue = Math.round(cmd.currentValue)/1000;
 						} else {
 							returnValue = cmd.currentValue;
