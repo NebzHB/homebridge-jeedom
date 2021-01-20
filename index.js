@@ -19,7 +19,6 @@
 var Accessory, Service, Characteristic, UUIDGen;
 var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
-var moment = require('moment');
 var debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
@@ -494,6 +493,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
+					
 
 					eqServicesCopy.flap.forEach(function(cmd2) {
 						if (cmd2.up) {
@@ -502,18 +502,71 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.down = cmd2.down;
 						} else if (cmd2.slider) {
 							Serv.actions.slider = cmd2.slider;
+						} else if (cmd2.HorTiltSlider) {
+							Serv.actions.HorTiltSlider = cmd2.HorTiltSlider;
+						} else if (cmd2.VerTiltSlider) {
+							Serv.actions.VerTiltSlider = cmd2.VerTiltSlider;
+						} else if (cmd2.HorTiltState) {
+							Serv.infos.HorTiltState = cmd2.HorTiltState;
+						} else if (cmd2.VerTiltState) {
+							Serv.infos.VerTiltState = cmd2.VerTiltState;
 						}
 					});
 					if(Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre"'); 
 					if(!Serv.actions.up && Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Monter"');
 					if(!Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');
 					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');
+					if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) that.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');
+					if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) that.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');
+					if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');
+					if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');
+					
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
 							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
 						else
 							maxValue = 100; // if not set in Jeedom it's 100
 					}
+					if(Serv.actions.HorTiltSlider) {
+						let props = {};
+						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.maxValue && parseInt(Serv.actions.HorTiltSlider.configuration.maxValue))
+							props.maxValue = parseInt(Serv.actions.HorTiltSlider.configuration.maxValue);
+						else
+							props.maxValue = 90;
+						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.minValue && parseInt(Serv.actions.HorTiltSlider.configuration.minValue))
+							props.minValue = parseInt(Serv.actions.HorTiltSlider.configuration.minValue);
+						else
+							props.minValue = 0;
+							
+						HBservice.characteristics.push(Characteristic.CurrentHorizontalTiltAngle);
+						Serv.addCharacteristic(Characteristic.CurrentHorizontalTiltAngle);
+						Serv.getCharacteristic(Characteristic.CurrentHorizontalTiltAngle).setProps(props);
+						
+						HBservice.characteristics.push(Characteristic.TargetHorizontalTiltAngle);
+						Serv.addCharacteristic(Characteristic.TargetHorizontalTiltAngle);
+						Serv.getCharacteristic(Characteristic.TargetHorizontalTiltAngle).setProps(props);
+					}
+					
+					if(Serv.actions.VerTiltSlider) {
+						let props = {};
+						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.maxValue && parseInt(Serv.actions.VerTiltSlider.configuration.maxValue))
+							props.maxValue = parseInt(Serv.actions.VerTiltSlider.configuration.maxValue);
+						else
+							props.maxValue = 90;
+						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.minValue && parseInt(Serv.actions.VerTiltSlider.configuration.minValue))
+							props.minValue = parseInt(Serv.actions.VerTiltSlider.configuration.minValue);
+						else
+							props.minValue = 0;
+							
+						HBservice.characteristics.push(Characteristic.CurrentVerticalTiltAngle);
+						Serv.addCharacteristic(Characteristic.CurrentVerticalTiltAngle);
+						Serv.getCharacteristic(Characteristic.CurrentVerticalTiltAngle).setProps(props);
+						
+						HBservice.characteristics.push(Characteristic.TargetVerticalTiltAngle);
+						Serv.addCharacteristic(Characteristic.TargetVerticalTiltAngle);
+						Serv.getCharacteristic(Characteristic.TargetVerticalTiltAngle).setProps(props);
+					}
+					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -2896,6 +2949,12 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					this.command(action, value, service);
 				}
 			break;
+			case Characteristic.TargetHorizontalTiltAngle.UUID :
+				this.command('setValueHorTilt', value, service);
+			break;
+			case Characteristic.TargetVerticalTiltAngle.UUID :
+				this.command('setValueVerTilt', value, service);
+			break;
 			case Characteristic.ColorTemperature.UUID :
 				this.log('debug',"ColorTemperature set : ",value);
 				if(service.colorTempType=="kelvin")	{
@@ -2978,7 +3037,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 							if(realValue === false) {
 								service.eqLogic.numberOpened++;
 							}
-							service.eqLogic.lastAct=moment().unix()-service.eqLogic.loggingService.getInitialTime();
+							service.eqLogic.lastAct=Math.round(new Date().valueOf() / 1000)-service.eqLogic.loggingService.getInitialTime();
 							that.api.updatePlatformAccessories([this.findAccessoryByService(service)]);
 						}
 						break;
@@ -2989,7 +3048,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
 						if(that.fakegato) {
-							service.eqLogic.lastAct=moment().unix()-service.eqLogic.loggingService.getInitialTime();
+							service.eqLogic.lastAct=Math.round(new Date().valueOf() / 1000)-service.eqLogic.loggingService.getInitialTime();
 							that.api.updatePlatformAccessories([this.findAccessoryByService(service)]);
 						}
 						break;
@@ -3035,7 +3094,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 					if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 						service.eqLogic.loggingService.addEntry({
-						  time: moment().unix(),
+						  time: Math.round(new Date().valueOf() / 1000),
 						  status: ((returnValue)?1:0)
 						});
 					}
@@ -3074,7 +3133,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							returnValue = cmd.currentValue;
 							if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 								service.eqLogic.loggingService.addEntry({
-								  time: moment().unix(),
+								  time: Math.round(new Date().valueOf() / 1000),
 								  status: ((returnValue)?1:0)
 								});
 							}
@@ -3188,7 +3247,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = parseInt(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  ppm: returnValue
 							});
 						}
@@ -3257,7 +3316,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								service.eqLogic.numberOpened++;
 							}*/
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  status: returnValue
 							});
 						}
@@ -3284,7 +3343,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE')) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  temp: returnValue
 							});
 						}
@@ -3300,7 +3359,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  humidity: returnValue
 							});
 						}
@@ -3316,7 +3375,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  pressure: returnValue
 							});
 						}
@@ -3371,7 +3430,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = toBool(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  status: returnValue?1:0
 							});
 						}
@@ -3833,6 +3892,26 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.PositionState.UUID :
 				returnValue = Characteristic.PositionState.STOPPED;
 			break;
+			case Characteristic.CurrentHorizontalTiltAngle.UUID :
+			case Characteristic.TargetHorizontalTiltAngle.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FLAP_HOR_TILT_STATE') {
+						returnValue = parseInt(cmd.currentValue);
+						that.log('debug','---------update Blinds HorTilt Value(refresh):',returnValue);
+						break;
+					}
+				}
+			break;
+			case Characteristic.CurrentVerticalTiltAngle.UUID :
+			case Characteristic.TargetVerticalTiltAngle.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'FLAP_VER_TILT_STATE') {
+						returnValue = parseInt(cmd.currentValue);
+						that.log('debug','---------update Blinds VerTilt Value(refresh):',returnValue);
+						break;
+					}
+				}
+			break;
 			// Locks
 			case Characteristic.LockCurrentState.UUID :
 				for (const cmd of cmdList) {
@@ -3983,9 +4062,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'POWER' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
+						if(service.infos.power && service.infos.power.unite && service.infos.power.unite.toLowerCase() == 'kw') {
+							returnValue = Math.round(cmd.currentValue*1000);
+						} else {
+							returnValue = cmd.currentValue;
+						}
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  power: returnValue
 							});
 						}
@@ -3996,7 +4080,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TotalPowerConsumption.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == service.infos.consumption.id) {
-						returnValue = cmd.currentValue;
+						if(service.infos.consumption.unite && service.infos.consumption.unite.toLowerCase() == 'wh') {
+							returnValue = Math.round(cmd.currentValue)/1000;
+						} else {
+							returnValue = cmd.currentValue;
+						}
 						break;
 					}
 				}
@@ -4285,7 +4373,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'FLAP_SLIDER' :
-						if(value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
+						if(action != 'setValueHorTilt' && action != 'setValueVerTilt' && action != 'flapUp' && action != 'flapDown' && value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.down) {
 								cmdId=service.actions.down.id;
@@ -4299,8 +4387,24 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							needToTemporize=500;
 						}
 					break;
+					case 'FLAP_HOR_TILT_SLIDER' :
+						if(action == 'setValueHorTilt' && service.actions.HorTiltSlider && cmd.id == service.actions.HorTiltSlider.id) {// should add action == 'setValue'
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+							needToTemporize=500;
+						}
+					break;
+					case 'FLAP_VER_TILT_SLIDER' :
+						if(action == 'setValueVerTilt' && service.actions.VerTiltSlider && cmd.id == service.actions.VerTiltSlider.id) {// should add action == 'setValue'
+							cmdId = cmd.id;
+							found = true;
+							cmdFound=cmd.generic_type;
+							needToTemporize=500;
+						}
+					break;					
 					case 'WINDOW_SLIDER' :
-						if(value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
+						if(action != 'setValueHorTilt' && action != 'setValueVerTilt' && action != 'windowDown' && action != 'windowUp' && value >= 0 && service.actions.slider && cmd.id == service.actions.slider.id) {// should add action == 'setValue'
 							cmdId = cmd.id;
 							if (action == 'turnOn' && service.actions.down) {
 								cmdId=service.actions.down.id;
