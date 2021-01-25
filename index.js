@@ -3716,6 +3716,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				}*/
 			break;
 			case Characteristic.TargetHeatingCoolingState.UUID :
+				returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
 						
