@@ -4,6 +4,7 @@
   "cust_serial": "0004",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
+  "private":true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "echo \"Error: configure and run homebridge to start\" && exit 1"
