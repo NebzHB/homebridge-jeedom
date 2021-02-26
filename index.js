@@ -554,6 +554,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.TargetHorizontalTiltAngle);
 						Serv.addCharacteristic(Characteristic.TargetHorizontalTiltAngle);
 						Serv.getCharacteristic(Characteristic.TargetHorizontalTiltAngle).setProps(props);
+						that.log('debug','Horizontal Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.HorTiltSlider.configuration));
 					}
 					
 					if(Serv.actions.VerTiltSlider) {
@@ -574,6 +575,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.TargetVerticalTiltAngle);
 						Serv.addCharacteristic(Characteristic.TargetVerticalTiltAngle);
 						Serv.getCharacteristic(Characteristic.TargetVerticalTiltAngle).setProps(props);
+						that.log('debug','Vertical Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.VerTiltSlider.configuration));
 					}
 					
 					// add Active, Tampered and Defect Characteristics if needed
