@@ -492,7 +492,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.flap) {
 			eqLogic.services.flap.forEach(function(cmd) {
 				if (cmd.state) {
-					let maxValue;
+					let maxValue,minValue;
 					HBservice = {
 						controlService : new Service.WindowCovering(eqLogic.name),
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
@@ -604,7 +604,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.windowMoto) {
 			eqLogic.services.windowMoto.forEach(function(cmd) {
 				if (cmd.state) {
-					let maxValue;
+					let maxValue,minValue;
 					HBservice = {
 						controlService : new Service.Window(eqLogic.name),
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
