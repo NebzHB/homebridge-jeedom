@@ -2845,6 +2845,11 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						this.command('modeSet', null, service);
 					}
 				} else {
+					if(service.eqLogic.hasAdaptive) {
+						if(value == 0) {
+							this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
+						} 
+					}
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
 			break;	
@@ -2986,6 +2991,11 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				this.log('debug',"ColorTemperature set : ",value);
+				/*if(service.eqLogic.hasAdaptive) {
+					if(this.findAccessoryByService(service).adaptiveLightingController.isAdaptiveLightingActive) {
+						this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
+					} 
+				}*/
 				if(service.colorTempType=="kelvin")	{
 						value = parseInt(1000000/value);
 						this.log('debug',"Conversion en mired : ",value);
@@ -2995,12 +3005,22 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.Hue.UUID :
 				this.log('debug',"Hue set : ",value);
 				//this.command("setValue",value,service);
+				/*if(service.eqLogic.hasAdaptive) {
+					if(this.findAccessoryByService(service).adaptiveLightingController.isAdaptiveLightingActive) {
+						this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
+					} 
+				}*/
 				rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
 				this.syncColorCharacteristics(rgb, service);
 			break;
 			case Characteristic.Saturation.UUID :
 				this.log('debug',"Sat set : ",value);
 				//this.command("setValue",value,service);
+				/*if(service.eqLogic.hasAdaptive) {
+					if(this.findAccessoryByService(service).adaptiveLightingController.isAdaptiveLightingActive) {
+						this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
+					} 
+				}*/
 				rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
 				this.syncColorCharacteristics(rgb, service);
 			break;
