@@ -16,7 +16,7 @@
 /*jshint esversion: 6,node: true,-W041: false */
 'use strict';
 
-var Accessory, Service, Characteristic, UUIDGen;
+var Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
 var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
 var debug = {};
@@ -35,6 +35,7 @@ module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
+	AdaptiveLightingController = homebridge.hap.AdaptiveLightingController;
 	UUIDGen = homebridge.hap.uuid;
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
 	RegisterCustomCharacteristics();
@@ -460,6 +461,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						HBservice.characteristics.push(Characteristic.ColorTemperature);
 						Serv.addCharacteristic(Characteristic.ColorTemperature);
 						Serv.getCharacteristic(Characteristic.ColorTemperature).setProps(props);
+					}
+					if(Serv.infos.color_temp && Serv.actions.slider) {
+						if(!eqLogic.hasAdaptive) {
+							if (that.adaptiveLightingSupport()) {
+								LightType+='_Adaptive';
+								eqLogic.hasAdaptive=true;
+							}
+						}
 					}
 					
 					// add Active, Tampered and Defect Characteristics if needed
@@ -2450,6 +2459,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 	}		
 };
 
+JeedomPlatform.prototype.adaptiveLightingSupport = function() {
+	return (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'))
+};
+
 // -- createStatusCharact
 // -- Desc : Create StatusTampered, StatusFault and StatusActive Characteristics if exists
 // -- Params --
@@ -2616,6 +2629,12 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
 			//HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
 			this.log('debug',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+		}
+										
+		if(HBAccessory.context.eqLogic.hasAdaptive) {
+			var adaptiveLightingController = new AdaptiveLightingController(HBAccessory.getService(Service.Lightbulb));
+			HBAccessory.configureController(adaptiveLightingController);
+			HBAccessory.adaptiveLightingController = adaptiveLightingController;
 		}
 		
 		if (isNewAccessory) {
