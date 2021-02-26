@@ -535,6 +535,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
 						else
 							maxValue = 100; // if not set in Jeedom it's 100
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue))
+							minValue = parseInt(Serv.actions.slider.configuration.minValue);
+						else
+							minValue = 0; // if not set in Jeedom it's 0
 					}
 					if(Serv.actions.HorTiltSlider) {
 						let props = {};
@@ -582,6 +586,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					Serv.maxValue = maxValue;
+					Serv.minValue = minValue;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
@@ -628,11 +633,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
 						else
 							maxValue = 100; // if not set in Jeedom it's 100
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue))
+							minValue = parseInt(Serv.actions.slider.configuration.minValue);
+						else
+							minValue = 0; // if not set in Jeedom it's 0
 					}
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
 					Serv.maxValue = maxValue;
+					Serv.minValue = minValue;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
@@ -2929,11 +2939,10 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					else if (service.actions.slider) {
 						action = 'setValue';
 						let maxJeedom = parseInt(service.maxValue) || 100;
+						let minJeedom = parseInt(service.minValue) || 0;
 						value = parseInt(value);
 						let oldValue = value;
-						if(maxJeedom) {
-							value = Math.round((value / 100)*maxJeedom);
-						}
+						value = Math.round(((value / 100)*(maxJeedom-minJeedom))+minJeedom);
 						this.log('debug','---------set Blinds Value:',oldValue,'% soit',value,' / ',maxJeedom);
 					}
 
@@ -2959,11 +2968,10 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					else if (service.actions.slider) {
 						action = 'setValue';
 						let maxJeedom = parseInt(service.maxValue) || 100;
+						let minJeedom = parseInt(service.minValue) || 0;
 						value = parseInt(value);
 						let oldValue = value;
-						if(maxJeedom) {
-							value = Math.round((value / 100)*maxJeedom);
-						}
+						value = Math.round(((value / 100)*(maxJeedom-minJeedom))+minJeedom);
 						this.log('debug','---------set WindowMoto Value:',oldValue,'% soit',value,' / ',maxJeedom);
 					}
 
@@ -3891,20 +3899,22 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == service.cmd_id) {
 						let maxJeedom = parseInt(service.maxValue) || 100;
+						let minJeedom = parseInt(service.minValue) || 0;
 						returnValue = parseInt(cmd.currentValue);
-						if(maxJeedom) {
-							returnValue = Math.round((returnValue / maxJeedom)*100);
+						returnValue = Math.round(((returnValue-minJeedom) / (maxJeedom-minJeedom))*100);
+						
+						if(maxJeedom == 100) {
+							returnValue = returnValue > (maxJeedom-5) ? maxJeedom : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						}
-						returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						that.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
 						break;
 					}
 					if (cmd.generic_type == 'WINDOW_STATE' && cmd.id == service.cmd_id) {
 						let maxJeedom = parseInt(service.maxValue) || 100;
+						let minJeedom = parseInt(service.minValue) || 0;
 						returnValue = parseInt(cmd.currentValue);
-						if(maxJeedom) {
-							returnValue = Math.round((returnValue / maxJeedom)*100);
-						}
+						returnValue = Math.round(((returnValue-minJeedom) / (maxJeedom-minJeedom))*100);
+
 						//returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (window might need yearly tunning)
 						that.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
 						break;
