@@ -2846,9 +2846,11 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					}
 				} else {
 					if(service.eqLogic.hasAdaptive) {
-						if(value == 0) {
-							this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
-						} 
+						if(!service.infos.state_bool) {
+							if(value == 0) {
+								this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
+							}
+						}
 					}
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
