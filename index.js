@@ -491,8 +491,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.flap) {
 			eqLogic.services.flap.forEach(function(cmd) {
-				if (cmd.state) {
-					let maxValue,minValue;
+				if (cmd.state || cmd.stateClosing) {
 					HBservice = {
 						controlService : new Service.WindowCovering(eqLogic.name),
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
@@ -501,8 +500,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					
+					if(cmd.stateClosing) {
+						Serv.infos.state=cmd.stateClosing;
+						Serv.FlapType="Closing";
+					} else if(cmd.state) {
+						Serv.infos.state=cmd.state;
+						Serv.FlapType="Opening";
+					}
 
 					eqServicesCopy.flap.forEach(function(cmd2) {
 						if (cmd2.up) {
@@ -532,13 +536,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
-							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
+							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
 						else
-							maxValue = 100; // if not set in Jeedom it's 100
+							Serv.maxValue = 100; // if not set in Jeedom it's 100
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue))
-							minValue = parseInt(Serv.actions.slider.configuration.minValue);
+							Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
 						else
-							minValue = 0; // if not set in Jeedom it's 0
+							Serv.minValue = 0; // if not set in Jeedom it's 0
 					}
 					if(Serv.actions.HorTiltSlider) {
 						let props = {};
@@ -585,9 +589,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
-					Serv.maxValue = maxValue;
-					Serv.minValue = minValue;
-					Serv.cmd_id = cmd.state.id;
+					Serv.cmd_id = Serv.infos.state.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
@@ -596,7 +598,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 			if(!HBservice) {
-				that.log('warn','Pas de type générique "Info/Volet Etat"');
+				that.log('warn','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture');
 			} else {
 				HBservice = null;
 			}
@@ -604,7 +606,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.windowMoto) {
 			eqLogic.services.windowMoto.forEach(function(cmd) {
 				if (cmd.state) {
-					let maxValue,minValue;
 					HBservice = {
 						controlService : new Service.Window(eqLogic.name),
 						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
@@ -630,19 +631,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
-							maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
+							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
 						else
-							maxValue = 100; // if not set in Jeedom it's 100
+							Serv.maxValue = 100; // if not set in Jeedom it's 100
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue))
-							minValue = parseInt(Serv.actions.slider.configuration.minValue);
+							Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
 						else
-							minValue = 0; // if not set in Jeedom it's 0
+							Serv.minValue = 0; // if not set in Jeedom it's 0
 					}
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
-					Serv.maxValue = maxValue;
-					Serv.minValue = minValue;
 					Serv.cmd_id = cmd.state.id;
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
@@ -2927,46 +2926,86 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			case Characteristic.TargetPosition.UUID:
 			case Characteristic.PositionState.UUID: // could be Service.Window or Service.Door too so we check
 				if (service.UUID == Service.WindowCovering.UUID) {
-					if(service.actions.down && service.actions.up) {
-						if (service.actions.slider) {
-							if (parseInt(value) === 0)
-								action = 'flapDown';
-							else if (parseInt(value) === 99 || parseInt(value) === 100)
-								action = 'flapUp';
-							else
-								action = 'setValue';
+					if(service.FlapType=="Closing") { // flap in percent Closing (100% = closed / 0% = open)
+						if(service.actions.down && service.actions.up) {
+							if (service.actions.slider) {
+								if (parseInt(value) === service.minValue)
+									action = 'flapUp';
+								else if (parseInt(value) === service.maxValue)
+									action = 'flapDown';
+								else {
+									action = 'setValue';
+									let oldValue = value;
+									value = 100 - parseInt(value);// invert percentage
+									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
+									this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
+								}
+							}
+							else {
+								if (parseInt(value) < ((service.maxValue-service.minValue)/2))
+									action = 'flapUp';
+								else
+									action = 'flapDown';
+							}
 						}
-						else {
-							if (parseInt(value) < 50)
-								action = 'flapDown';
-							else
-								action = 'flapUp';
+						else if (service.actions.slider) {
+							action = 'setValue';
+							let oldValue = value;
+							value = 100 - parseInt(value);// invert percentage
+							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
+							this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
+						}
+					} else if (service.FlapType=="Opening") { // flap in percent Opening (100% = open / 0% = closed)
+						if(service.actions.down && service.actions.up) {
+							if (service.actions.slider) {
+								if (parseInt(value) === service.minValue)
+									action = 'flapDown';
+								else if (parseInt(value) === service.maxValue)
+									action = 'flapUp';
+								else {
+									action = 'setValue';
+									value = parseInt(value);
+									let oldValue = value;
+									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
+									this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
+								}
+							}
+							else {
+								if (parseInt(value) < ((service.maxValue-service.minValue)/2))
+									action = 'flapDown';
+								else
+									action = 'flapUp';
+							}
+						}
+						else if (service.actions.slider) {
+							action = 'setValue';
+							value = parseInt(value);
+							let oldValue = value;
+							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
+							this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
 						}
 					}
-					else if (service.actions.slider) {
-						action = 'setValue';
-						let maxJeedom = parseInt(service.maxValue) || 100;
-						let minJeedom = parseInt(service.minValue) || 0;
-						value = parseInt(value);
-						let oldValue = value;
-						value = Math.round(((value / 100)*(maxJeedom-minJeedom))+minJeedom);
-						this.log('debug','---------set Blinds Value:',oldValue,'% soit',value,' / ',maxJeedom);
-					}
+					
 
 					this.command(action, value, service);
 				}
 				if (service.UUID == Service.Window.UUID) {
 					if(service.actions.down && service.actions.up) {
 						if (service.actions.slider) {
-							if (parseInt(value) === 0)
+							if (parseInt(value) === service.minValue)
 								action = 'windowDown';
-							else if (parseInt(value) === 99 || parseInt(value) === 100)
+							else if (parseInt(value) === service.maxValue)
 								action = 'windowUp';
-							else
+							else {
 								action = 'setValue';
+								value = parseInt(value);
+								let oldValue = value;
+								value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
+								this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue);
+							}
 						}
 						else {
-							if (parseInt(value) < 50)
+							if (parseInt(value) < ((service.maxValue-service.minValue)/2))
 								action = 'windowDown';
 							else
 								action = 'windowUp';
@@ -2974,12 +3013,10 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					}
 					else if (service.actions.slider) {
 						action = 'setValue';
-						let maxJeedom = parseInt(service.maxValue) || 100;
-						let minJeedom = parseInt(service.minValue) || 0;
 						value = parseInt(value);
 						let oldValue = value;
-						value = Math.round(((value / 100)*(maxJeedom-minJeedom))+minJeedom);
-						this.log('debug','---------set WindowMoto Value:',oldValue,'% soit',value,' / ',maxJeedom);
+						value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
+						this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue);
 					}
 
 					this.command(action, value, service);
@@ -3920,25 +3957,30 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TargetPosition.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == service.cmd_id) {
-						let maxJeedom = parseInt(service.maxValue) || 100;
-						let minJeedom = parseInt(service.minValue) || 0;
 						returnValue = parseInt(cmd.currentValue);
-						returnValue = Math.round(((returnValue-minJeedom) / (maxJeedom-minJeedom))*100);
+						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
 						
-						if(maxJeedom == 100) {
-							returnValue = returnValue > (maxJeedom-5) ? maxJeedom : returnValue; // >95% is 100% in home (flaps need yearly tunning)
+						if(service.maxValue == 100) {
+							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						}
-						that.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
+						that.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue);
+						break;
+					}
+					if (cmd.generic_type == 'FLAP_STATE_CLOSING' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
+						if(service.maxValue == 100) {
+							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
+						}
+						returnValue = 100-returnValue; //invert percentage
+						that.log('debug','---------update Inverted Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue);
 						break;
 					}
 					if (cmd.generic_type == 'WINDOW_STATE' && cmd.id == service.cmd_id) {
-						let maxJeedom = parseInt(service.maxValue) || 100;
-						let minJeedom = parseInt(service.minValue) || 0;
 						returnValue = parseInt(cmd.currentValue);
-						returnValue = Math.round(((returnValue-minJeedom) / (maxJeedom-minJeedom))*100);
+						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
 
-						//returnValue = returnValue > 95 ? 100 : returnValue; // >95% is 100% in home (window might need yearly tunning)
-						that.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
+						that.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue);
 						break;
 					}
 				}
@@ -4433,9 +4475,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								cmdId=service.actions.down.id;
 							} else if (action == 'turnOff' && service.actions.up) {
 								cmdId=service.actions.up.id;
-							}		
-							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
-							value =	Math.round(value * 99/100);							
+							}								
 							found = true;
 							cmdFound=cmd.generic_type;
 							needToTemporize=500;
@@ -4465,8 +4505,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							} else if (action == 'turnOff' && service.actions.up) {
 								cmdId=service.actions.up.id;
 							}		
-							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave
-							value =	Math.round(value * 99/100);							
+							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave						
 							found = true;
 							cmdFound=cmd.generic_type;
 							needToTemporize=500;
