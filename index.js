@@ -533,16 +533,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) that.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');
 					if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');
 					if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');
-					
+					Serv.minValue=0;
+					Serv.maxValue=100;
 					if(Serv.actions.slider) {
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
-						else
-							Serv.maxValue = 100; // if not set in Jeedom it's 100
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue))
+						}
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue)) {
 							Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
-						else
-							Serv.minValue = 0; // if not set in Jeedom it's 0
+						}
 					}
 					if(Serv.actions.HorTiltSlider) {
 						let props = {};
