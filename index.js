@@ -19,7 +19,6 @@
 var Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
 var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
-var moment = require('moment');
 var debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
@@ -3125,7 +3124,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 							if(realValue === false) {
 								service.eqLogic.numberOpened++;
 							}
-							service.eqLogic.lastAct=moment().unix()-service.eqLogic.loggingService.getInitialTime();
+							service.eqLogic.lastAct=Math.round(new Date().valueOf() / 1000)-service.eqLogic.loggingService.getInitialTime();
 							that.api.updatePlatformAccessories([this.findAccessoryByService(service)]);
 						}
 						break;
@@ -3136,7 +3135,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
 						if(that.fakegato) {
-							service.eqLogic.lastAct=moment().unix()-service.eqLogic.loggingService.getInitialTime();
+							service.eqLogic.lastAct=Math.round(new Date().valueOf() / 1000)-service.eqLogic.loggingService.getInitialTime();
 							that.api.updatePlatformAccessories([this.findAccessoryByService(service)]);
 						}
 						break;
@@ -3182,7 +3181,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 					if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 						service.eqLogic.loggingService.addEntry({
-						  time: moment().unix(),
+						  time: Math.round(new Date().valueOf() / 1000),
 						  status: ((returnValue)?1:0)
 						});
 					}
@@ -3221,7 +3220,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							returnValue = cmd.currentValue;
 							if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 								service.eqLogic.loggingService.addEntry({
-								  time: moment().unix(),
+								  time: Math.round(new Date().valueOf() / 1000),
 								  status: ((returnValue)?1:0)
 								});
 							}
@@ -3335,7 +3334,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = parseInt(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  ppm: returnValue
 							});
 						}
@@ -3404,7 +3403,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								service.eqLogic.numberOpened++;
 							}*/
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  status: returnValue
 							});
 						}
@@ -3431,7 +3430,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE')) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  temp: returnValue
 							});
 						}
@@ -3447,7 +3446,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  humidity: returnValue
 							});
 						}
@@ -3463,7 +3462,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  pressure: returnValue
 							});
 						}
@@ -3518,7 +3517,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = toBool(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  status: returnValue?1:0
 							});
 						}
@@ -4165,7 +4164,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						}
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: moment().unix(),
+							  time: Math.round(new Date().valueOf() / 1000),
 							  power: returnValue
 							});
 						}
