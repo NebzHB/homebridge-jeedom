@@ -26,6 +26,7 @@
   ],
   "dependencies": {
     "request": ">=2.88.2",
+    "moment": "*",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "author": "Nebz <nebz@nebz.be>",
