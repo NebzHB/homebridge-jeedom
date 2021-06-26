@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - beta
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions/setup-node@v2.1.5
+        with:
+          node-version: 14
+      - name: Install dependencies
+        run: |
+          npm install
+      - name: eslint
+        uses: icrawl/action-eslint@v1
+        with:
+          custom-glob: /
