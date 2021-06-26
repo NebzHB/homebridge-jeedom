@@ -28,6 +28,11 @@
     "request": ">=2.88.2",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
+  "devDependencies": {
+    "@babel/core": ">=7.14.6",
+    "@babel/eslint-parser": "^7.14.5",
+    "eslint": "^7.29.0"
+  },
   "author": "Nebz <nebz@nebz.be>",
   "license": "GPL-2.0",
   "bugs": {
