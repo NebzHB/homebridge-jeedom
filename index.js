@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
-/*jshint esversion: 6,node: true,-W041: false */
+/* jshint esversion: 6,node: true,-W041: false */
 'use strict';
 
 var Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
