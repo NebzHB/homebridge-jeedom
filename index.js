@@ -70,7 +70,7 @@ function JeedomPlatform(logger, config, api) {
 		}
 		
 		if (!config.url || 
-		    config.url == "http://:80" ||
+			config.url == "http://:80" ||
 			config.url == 'https://:80') {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
@@ -92,11 +92,11 @@ function JeedomPlatform(logger, config, api) {
 		this.settingFan = false;
 		
 		this.pollerPeriod = config.pollerperiod;
-		if ( typeof this.pollerPeriod == 'string')
+		if ( typeof this.pollerPeriod == 'string') {
 			this.pollerPeriod = parseInt(this.pollerPeriod);
-		else if (!this.pollerPeriod)
+		} else if (!this.pollerPeriod) {
 			this.pollerPeriod = 0.05; // 0.05 is Nice between 2 calls
-
+		}
 		if (api) {
 			this.api = api;
 			this.api.on('didFinishLaunching',function(){
@@ -149,7 +149,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 				}
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
-				if(err) console.error(err.stack);
+				if(err) {console.error(err.stack);}
 			});
 	}
 	catch(e){
@@ -177,18 +177,18 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 
 			scenarios.map(function(scenario) {
 				if (scenario.isActive == '1' &&
-				    scenario.object_id != null && 
-				    scenario.sendToHomebridge == '1') {
+					scenario.object_id != null && 
+					scenario.sendToHomebridge == '1') {
 
 					that.log('debug','Scenario > '+JSON.stringify(scenario).replace("\n",''));
 					that.log('┌──── ' + that.rooms[scenario.object_id] + ' > ' +scenario.name+' ('+scenario.id+')');
 					
 
-					let HBservice = {
+					const HBservice = {
 						controlService : new Service.Switch(scenario.name),
-						characteristics : [Characteristic.On]
+						characteristics : [Characteristic.On],
 					};
-					let Serv = HBservice.controlService;
+					const Serv = HBservice.controlService;
 					Serv.eqLogic=scenario;
 					Serv.actions={};
 					Serv.infos={};
@@ -201,9 +201,9 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 					Serv.subtype = scenario.id + '-' + Serv.subtype;
 
 					if(that.fakegato && !scenario.hasLogging) {
-						//HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+						// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 
-						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						scenario.loggingService = {type:"switch", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 
 						scenario.hasLogging=true;
@@ -212,7 +212,7 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 					scenario.eqType_name = "Scenario";
 					scenario.logicalId = "";
 					
-					let createdAccessory = that.createAccessory([HBservice], scenario);
+					const createdAccessory = that.createAccessory([HBservice], scenario);
 					that.addAccessory(createdAccessory);
 					that.log('└─────────');
 					
@@ -222,10 +222,10 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 					that.log('debug','Scenario > '+JSON.stringify(scenario).replace("\n",''));
 					that.log('┌──── ' + that.rooms[scenario.object_id] + ' > ' +scenario.name+' ('+scenario.id+')');
 					var Messg= '│ Scenario ';
-					Messg   += scenario.isVisible == '1' ? 'visible' : 'invisible';
-					Messg   += scenario.isActive == '1' ? ', activé' : ', désactivé';
-					Messg   += scenario.object_id != null ? '' : ', pas dans une pièce';
-					Messg   += scenario.sendToHomebridge == '1' ? '' : ', pas coché pour Homebridge';
+					Messg += scenario.isVisible == '1' ? 'visible' : 'invisible';
+					Messg += scenario.isActive == '1' ? ', activé' : ', désactivé';
+					Messg += scenario.object_id != null ? '' : ', pas dans une pièce';
+					Messg += scenario.sendToHomebridge == '1' ? '' : ', pas coché pour Homebridge';
 					that.log(Messg);
 
 					scenario.eqType_name = "Scenario";
@@ -270,10 +270,10 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			});
 			
 			devices.map(function(device) {
-				if (//device.isVisible == '1' && 
+				if (// device.isVisible == '1' && 
 					device.isEnable == '1' &&
-				    device.object_id != null && 
-				    device.sendToHomebridge != '0') {
+					device.object_id != null && 
+					device.sendToHomebridge != '0') {
 
 					that.AccessoireCreateHomebridge(
 						that.jeedomClient.ParseGenericType(
@@ -287,10 +287,10 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					that.log('debug','eqLogic > '+JSON.stringify(device).replace("\n",''));
 					that.log('┌──── ' + that.rooms[device.object_id] + ' > ' +device.name+((device.pseudo)?' > pseudo: '+device.pseudo:'')+' ('+device.id+')');
 					var Messg= '│ Accessoire ';
-					Messg   += device.isVisible == '1' ? 'visible' : 'invisible';
-					Messg   += device.isEnable == '1' ? ', activé' : ', désactivé';
-					Messg   += device.object_id != null ? '' : ', pas dans une pièce';
-					Messg   += device.sendToHomebridge != '0' ? '' : ', pas coché pour Homebridge';
+					Messg += device.isVisible == '1' ? 'visible' : 'invisible';
+					Messg += device.isEnable == '1' ? ', activé' : ', désactivé';
+					Messg += device.object_id != null ? '' : ', pas dans une pièce';
+					Messg += device.sendToHomebridge != '0' ? '' : ', pas coché pour Homebridge';
 					that.log(Messg);
 
 					that.delAccessory(
@@ -311,17 +311,17 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			{
 				if (that.accessories.hasOwnProperty(a)) {
 					if(!that.accessories[a].reviewed && 
-					   that.accessories[a].displayName) {
+						that.accessories[a].displayName) {
 						that.log('│ ┌──── Trouvé: '+that.accessories[a].displayName);
 						that.delAccessory(that.accessories[a],true);
 						that.log('│ │ Supprimé du cache !');
 						that.log('│ └─────────');
 						hasDeleted=true;
 					}else if(that.accessories[a].reviewed && 
-						 that.accessories[a].displayName) countA++;
+						that.accessories[a].displayName) {countA++;}
 				}
 			}
-			if(!hasDeleted) that.log('│ Rien à supprimer');
+			if(!hasDeleted) {that.log('│ Rien à supprimer');}
 			that.log('└────────────────────────');
 		}
 		else
@@ -331,8 +331,8 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		}
 		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
 		that.log(endLog);
-		if(countA >= 150) that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');
-		else if(countA >= 140) that.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');
+		if(countA >= 150) {that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');}
+		else if(countA >= 140) {that.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');}
 		
 		that.log('debug','==START POLLING==');		
 		that.startPollingUpdate();
@@ -358,24 +358,24 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		that.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
 		that.log('┌──── ' + that.rooms[eqLogic.object_id] + ' > ' + eqLogic.name +((eqLogic.pseudo)?' > pseudo: '+eqLogic.pseudo:'')+ ' (' + eqLogic.id + ')');
 		eqLogic.origName=eqLogic.name;
-		if(eqLogic.pseudo)
+		if(eqLogic.pseudo) {
 			eqLogic.name = eqLogic.pseudo;
-		
+		}
 		if (eqLogic.services.light) {
 			eqLogic.services.light.forEach(function(cmd) {
 				if (cmd.state) {
 					let LightType="Switch";
 					HBservice = {
 						controlService : new Service.Lightbulb(eqLogic.name),
-						characteristics : [Characteristic.On]
+						characteristics : [Characteristic.On],
 					};
-					let Serv = HBservice.controlService;
+					const Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
-					if(eqLogic.OnAfterBrightness) Serv.OnAfterBrightness=true;
-					if(eqLogic.ignoreOnCommandOnBrightnessChange) Serv.ignoreOnCommandOnBrightnessChange=true;
+					if(eqLogic.OnAfterBrightness) {Serv.OnAfterBrightness=true;}
+					if(eqLogic.ignoreOnCommandOnBrightnessChange) {Serv.ignoreOnCommandOnBrightnessChange=true;}
 
 					eqServicesCopy.light.forEach(function(cmd2) {
 						if (cmd2.on) {
@@ -396,20 +396,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.state_bool=cmd2.state_bool;
 						}
 					});
-					if (Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière OFF"'); 
-					if (!Serv.actions.on && Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON"');
-					if (!Serv.actions.on && !Serv.actions.off) that.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');
-					if (Serv.infos.color && !Serv.actions.setcolor) that.log('warn','Pas de type générique "Action/Lumière Couleur"');
-					if (!Serv.infos.color && Serv.actions.setcolor) that.log('warn','Pas de type générique "Info/Lumière Couleur"');
-					if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) that.log('warn','Pas de type générique "Action/Lumière Température Couleur"');
-					if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) that.log('warn','Pas de type générique "Info/Lumière Température Couleur"');
+					if (Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique "Action/Lumière OFF"');}
+					if (!Serv.actions.on && Serv.actions.off) {that.log('warn','Pas de type générique "Action/Lumière ON"');}
+					if (!Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
+					if (Serv.infos.color && !Serv.actions.setcolor) {that.log('warn','Pas de type générique "Action/Lumière Couleur"');}
+					if (!Serv.infos.color && Serv.actions.setcolor) {that.log('warn','Pas de type générique "Info/Lumière Couleur"');}
+					if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {that.log('warn','Pas de type générique "Action/Lumière Température Couleur"');}
+					if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) {that.log('warn','Pas de type générique "Info/Lumière Température Couleur"');}
 					
 					if(Serv.actions.slider) {
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 							Serv.maxBright = parseInt(Serv.actions.slider.configuration.maxValue);
-						else
+						} else {
 							Serv.maxBright = 100; // if not set in Jeedom it's 100
-						LightType += "_Slider"+','+Serv.maxBright;
+						}
+						LightType += '_Slider,'+Serv.maxBright;
 						HBservice.characteristics.push(Characteristic.Brightness);
 						Serv.addCharacteristic(Characteristic.Brightness);
 					} else {
@@ -424,14 +425,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.HSBValue = {
 							hue : 0,
 							saturation : 0,
-							brightness : 0
+							brightness : 0,
 						};
 						Serv.RGBValue = {
 							red : 0,
 							green : 0,
-							blue : 0
+							blue : 0,
 						};
-						//Serv.countColorCharacteristics = 0;
+						// Serv.countColorCharacteristics = 0;
 						Serv.timeoutIdColorCharacteristics = 0;
 					}
 					if(Serv.infos.color_temp) {
@@ -457,7 +458,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							props.maxValue = 20000; // if not set in Jeedom it's 100
 						}
 						var unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
-						if(unite) props.unit=unite;
+						if(unite) {props.unit=unite;}
 						HBservice.characteristics.push(Characteristic.ColorTemperature);
 						Serv.addCharacteristic(Characteristic.ColorTemperature);
 						Serv.getCharacteristic(Characteristic.ColorTemperature).setProps(props);
@@ -494,9 +495,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state || cmd.stateClosing) {
 					HBservice = {
 						controlService : new Service.WindowCovering(eqLogic.name),
-						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
+						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState],
 					};
-					let Serv = HBservice.controlService;
+					const Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
