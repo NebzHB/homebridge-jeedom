@@ -26,3 +26,6 @@ jobs:
         uses: icrawl/action-eslint@v1
         with:
           custom-glob: .
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm test
