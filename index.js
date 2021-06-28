@@ -17,8 +17,8 @@
 'use strict';
 
 var Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
-import { inherits } from 'util';
-import { myLogger } from './lib/myLogger';
+import {inherits} from 'util';
+import {myLogger} from './lib/myLogger';
 var debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
@@ -40,7 +40,7 @@ export default function(homebridge) {
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
 	RegisterCustomCharacteristics();
 	homebridge.registerPlatform('homebridge-jeedom', 'Jeedom', JeedomPlatform, true);
-};
+}
 
 // -- JeedomPlatform
 // -- Desc : Main Class, used by Homebridge to construct the platform object
@@ -927,9 +927,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						//HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+						// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 
-						//eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.loggingService = {type:"switch", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 
 						eqLogic.hasLogging=true;
@@ -1800,7 +1800,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(cmd.Double) {Label = "Double";}
 					if(cmd.Long) {Label = "Long";}
 					
-					let cmdType = cmd.Single || cmd.Double || cmd.Long;
+					const cmdType = cmd.Single || cmd.Double || cmd.Long;
 					if(buttonList[cmdType.customValues.BUTTON] === undefined) {buttonList[cmdType.customValues.BUTTON] = [];}
 					buttonList[cmdType.customValues.BUTTON][Label] = cmdType;
 				}		
@@ -1860,7 +1860,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 											characteristics : [Characteristic.ServiceLabelNamespace],
 										};
 										const Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
-										//let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
+										// let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
 										tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
 										tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
 										eqLogic.LabelService = tmpHBservice.controlService;
@@ -2210,7 +2210,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.minValue && parseInt(Serv.actions.set_setpointH.configuration.minValue)) {
 						props.minValue = parseInt(Serv.actions.set_setpointH.configuration.minValue);
 					}
-					if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.maxValue && parseInt(Serv.actions.set_setpointH.configuration.maxValue)) {7
+					if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.maxValue && parseInt(Serv.actions.set_setpointH.configuration.maxValue)) {
 						props.maxValue = parseInt(Serv.actions.set_setpointH.configuration.maxValue);
 					}
 					if(props.minValue && props.maxValue) {
@@ -2311,7 +2311,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							}
 							HBservice = {
 								controlService : new Service.Switch(ModeName),
-								characteristics : [Characteristic.On]
+								characteristics : [Characteristic.On],
 							};
 							const Serv = HBservice.controlService;
 							Serv.modeSwitch=set_action.name;
@@ -2476,7 +2476,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 };
 
 JeedomPlatform.prototype.adaptiveLightingSupport = function() {
-	return (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'))
+	return (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'));
 };
 
 // -- createStatusCharact
@@ -2485,22 +2485,23 @@ JeedomPlatform.prototype.adaptiveLightingSupport = function() {
 // -- HBservice : translated homebridge service
 // -- eqLogic : the jeedom eqLogic
 JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
-	let Serv = HBservice.controlService;
+	const Serv = HBservice.controlService;
 	Serv.statusArr = {};
 	var sabotage,defect,status_active;
 	if(services.sabotage) {
-		for(let s in services.sabotage) { if(services.sabotage[s] !== null) {sabotage=services.sabotage[s];break;} }
+		for(const s in services.sabotage) { if(services.sabotage[s] !== null) {sabotage=services.sabotage[s];break;} }
 		if(sabotage) {
 			HBservice.characteristics.push(Characteristic.StatusTampered);
 			Serv.addCharacteristic(Characteristic.StatusTampered);
 			Serv.statusArr.sabotage =sabotage.sabotage;
 			Serv.sabotageInverted = 0;
-			if(sabotage.sabotage.display)
+			if(sabotage.sabotage.display) {
 				Serv.sabotageInverted = sabotage.sabotage.display.invertBinary;
+			}
 		}
 	}
 	if(services.defect) {
-		for(let s in services.defect) { if(services.defect[s] !== null) {defect=services.defect[s]; break;} }
+		for(const s in services.defect) { if(services.defect[s] !== null) {defect=services.defect[s]; break;} }
 		if(defect) {
 			HBservice.characteristics.push(Characteristic.StatusFault);
 			Serv.addCharacteristic(Characteristic.StatusFault);
@@ -2508,7 +2509,7 @@ JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
 		}
 	}
 	if(services.status_active) {
-		for(let s in services.status_active) { if(services.status_active[s] !== null) {status_active=services.status_active[s]; break;} }
+		for(const s in services.status_active) { if(services.status_active[s] !== null) {status_active=services.status_active[s]; break;} }
 		if(status_active) {
 			HBservice.characteristics.push(Characteristic.StatusActive);
 			Serv.addCharacteristic(Characteristic.StatusActive);
@@ -2563,18 +2564,17 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 			return;
 		}
 
-		if(!silence) this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
+		if(!silence) {this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');}
 		existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
 		if(existingAccessory)
 		{
-			if(!silence) this.log('│ Suppression de l\'accessoire (' + jeedomAccessory.name + ')');
+			if(!silence) {this.log('│ Suppression de l\'accessoire (' + jeedomAccessory.name + ')');}
 			this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
 			delete this.accessories[jeedomAccessory.UUID];
 			existingAccessory.reviewed=true;
 		}
-		else
-		{
-			if(!silence) this.log('│ KO : Accessoire Ignoré');
+		else if(!silence) {
+			this.log('│ KO : Accessoire Ignoré');
 		}
 	}
 	catch(e){
@@ -2598,7 +2598,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			return;
 		}
 		let isNewAccessory = false;
-		let services2Add = jeedomAccessory.services_add;
+		const services2Add = jeedomAccessory.services_add;
 		this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
 		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
@@ -2619,31 +2619,31 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		} else {
 			HBAccessory.context.eqLogic.numberOpened=undefined;
 			HBAccessory.context.eqLogic.lastAct=undefined;
-			let exec = require('child_process').exec;
+			const exec = require('child_process').exec;
 			exec('sudo rm -f '+this.pathHomebridgeConf+'*_persist.json');
 		}
 
-		//No more supported by HAP-NodeJS
-		//HBAccessory.reachable = true;
-		//HBAccessory.updateReachability(true);
+		// No more supported by HAP-NodeJS
+		// HBAccessory.reachable = true;
+		// HBAccessory.updateReachability(true);
 		
 		if(!isNewAccessory) {
-			let cachedValues=jeedomAccessory.delServices(HBAccessory);
+			const cachedValues=jeedomAccessory.delServices(HBAccessory);
 			jeedomAccessory.addServices(HBAccessory,services2Add,cachedValues);
 		}
 
 		if(this.fakegato && HBAccessory.context.eqLogic.hasLogging && HBAccessory.context.eqLogic.loggingService) {
-			let loggingServiceParams = HBAccessory.context.eqLogic.loggingService;
+			const loggingServiceParams = HBAccessory.context.eqLogic.loggingService;
 			HBAccessory.log = {};
-			HBAccessory.log.debug = function ()	{
-													var args = [].slice.call(arguments, 0);
-													args.unshift('debug');
-													return this.log.apply(this,args);
-												}.bind(this);
+			HBAccessory.log.debug = function()	{
+				var args = [].slice.call(arguments, 0);
+				args.unshift('debug');
+				return this.log.apply(this,args);
+			}.bind(this);
 			HBAccessory.context.eqLogic.loggingService = new FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
 			HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
 			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
-			//HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
+			// HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
 			this.log('debug',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
 		}
 										
@@ -2662,7 +2662,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		HBAccessory.on('identify', function(paired, callback) {
 			this.log(HBAccessory.displayName, "->Identifié!!!");
-			if(typeof callback == 'function') callback();
+			if(typeof callback == 'function') {callback();}
 		}.bind(this));
 		HBAccessory.reviewed = true;
 	}
@@ -2687,12 +2687,12 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 		for (var a in this.accessories) {
 			if (this.accessories.hasOwnProperty(a)) {
 				if (this.accessories[a].UUID == UUID) {
-					if(!silence) this.log('debug',' Accessoire déjà existant dans le cache Homebridge');
+					if(!silence) {this.log('debug',' Accessoire déjà existant dans le cache Homebridge');}
 					return this.accessories[a];
 				}
 			}
 		}
-		if(!silence) this.log('debug',' Accessoire non existant dans le cache Homebridge');
+		if(!silence) {this.log('debug',' Accessoire non existant dans le cache Homebridge');}
 		return null;
 	}
 	catch(e){
@@ -2709,7 +2709,7 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 // -- Return : nothing
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
-		//this.log('debug',JSON.stringify(accessory).replace("\n",""));
+		// this.log('debug',JSON.stringify(accessory).replace("\n",""));
 		if(!accessory.context)// || !accessory.context.eqLogic)
 		{
 			// Remove this invalid device from the cache.
@@ -2733,7 +2733,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 		}
 		this.log('debug','Accessoire en cache: ' + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
-		//accessory.reachable = true;
+		// accessory.reachable = true;
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction configureAccessory :',e);
@@ -2751,18 +2751,20 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
 		var readOnly = true;
-		for (var i = 0; i < characteristic.props.perms.length; i++)
-			if (characteristic.props.perms[i] == 'pw')
+		for (var i = 0; i < characteristic.props.perms.length; i++) {
+			if (characteristic.props.perms[i] == 'pw') {
 				readOnly = false;
-
+			}
+		}
 		this.subscribeUpdate(service, characteristic);
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
 					this.log('info','[Commande d\'Homekit]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 					this.setAccessoryValue(value,characteristic,service);
-				} else
+				} else {
 					this.log('info','[Commande de Jeedom]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
+				}
 				callback();
 			}.bind(this));
 		}
@@ -2778,7 +2780,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 		}.bind(this));
 		
 		if (this.fakegato) {
-			characteristic.on('change', function(callback) {
+			characteristic.on('change', function(_callback) {
 				this.changeAccessoryValue(characteristic, service);
 			}.bind(this));
 		}
@@ -2812,7 +2814,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					if(value == 0) {
 						// off
 						action = 'stop';
-						cmdId  = service.cmd_id;
+						cmdId = service.cmd_id;
 						
 						that.jeedomClient.executeScenarioAction(cmdId, action).then(function(response) {
 							that.log('info','[Commande Scenario envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'response:'+JSON.stringify(response));
@@ -2823,7 +2825,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					} else {
 						// on
 						action = 'run';
-						cmdId  = service.cmd_id;
+						cmdId = service.cmd_id;
 						
 						that.jeedomClient.executeScenarioAction(cmdId, action).then(function(response) {
 							that.log('info','[Commande Scenario envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'response:'+JSON.stringify(response));
@@ -2841,7 +2843,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					}	
 				} else if (service.modeSwitch) { // modes plugin
 					if(value == 0) {// turnOff
-						//execute set mode Previous
+						// execute set mode Previous
 						that.log('debug','info about previous mode',service);
 						this.command('modeSetPrevious', null, service);
 					} else {// turnOn
@@ -2850,11 +2852,11 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					}
 				} else {
 					if(service.eqLogic.hasAdaptive) {
-						//if(!service.infos.state_bool) {
+						// if(!service.infos.state_bool) {
 							if(value == 0) {
 								this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
 							}
-						//}
+						// }
 					}
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
@@ -2918,14 +2920,15 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 			break;
 			case Characteristic.LockTargetState.UUID :
-				if (DEV_DEBUG) this.log('debug','LockTargetState value :',value);
+				if (DEV_DEBUG) {this.log('debug','LockTargetState value :',value);}
 				service.target=value;
 				action = value === Characteristic.LockTargetState.UNSECURED ? 'unsecure' : 'secure';
 				this.command(action, 0, service);
 			break;
 			case Characteristic.SecuritySystemTargetState.UUID:
-				if(service.alarm)
-				this.command('SetAlarmMode', value, service);
+				if(service.alarm) {
+					this.command('SetAlarmMode', value, service);
+				}
 			break;
 			case Characteristic.CurrentPosition.UUID:
 			case Characteristic.TargetPosition.UUID:
@@ -2934,28 +2937,27 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					if(service.FlapType=="Closing") { // flap in percent Closing (100% = closed / 0% = open)
 						if(service.actions.down && service.actions.up) {
 							if (service.actions.slider) {
-								if (parseInt(value) === service.minValue)
+								if (parseInt(value) === service.minValue) {
 									action = 'flapUp';
-								else if (parseInt(value) === service.maxValue)
+								} else if (parseInt(value) === service.maxValue) {
 									action = 'flapDown';
-								else {
+								} else {
 									action = 'setValue';
-									let oldValue = value;
+									const oldValue = value;
 									value = 100 - parseInt(value);// invert percentage
 									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
 									this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
 								}
 							}
-							else {
-								if (parseInt(value) < ((service.maxValue-service.minValue)/2))
-									action = 'flapUp';
-								else
-									action = 'flapDown';
+							else if (parseInt(value) < ((service.maxValue-service.minValue)/2)) {
+								action = 'flapUp';
+							} else {
+								action = 'flapDown';
 							}
-						}
-						else if (service.actions.slider) {
+							
+						} else if (service.actions.slider) {
 							action = 'setValue';
-							let oldValue = value;
+							const oldValue = value;
 							value = 100 - parseInt(value);// invert percentage
 							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
 							this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
@@ -2963,29 +2965,28 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					} else if (service.FlapType=="Opening") { // flap in percent Opening (100% = open / 0% = closed)
 						if(service.actions.down && service.actions.up) {
 							if (service.actions.slider) {
-								if (parseInt(value) === service.minValue)
+								if (parseInt(value) === service.minValue) {
 									action = 'flapDown';
-								else if (parseInt(value) === service.maxValue)
+								} else if (parseInt(value) === service.maxValue) {
 									action = 'flapUp';
-								else {
+								} else {
 									action = 'setValue';
 									value = parseInt(value);
-									let oldValue = value;
+									const oldValue = value;
 									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
 									this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
 								}
 							}
-							else {
-								if (parseInt(value) < ((service.maxValue-service.minValue)/2))
-									action = 'flapDown';
-								else
-									action = 'flapUp';
+							else if (parseInt(value) < ((service.maxValue-service.minValue)/2)) {
+								action = 'flapDown';
+							} else {
+								action = 'flapUp';
 							}
 						}
 						else if (service.actions.slider) {
 							action = 'setValue';
 							value = parseInt(value);
-							let oldValue = value;
+							const oldValue = value;
 							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
 							this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
 						}
@@ -2997,29 +2998,28 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				if (service.UUID == Service.Window.UUID) {
 					if(service.actions.down && service.actions.up) {
 						if (service.actions.slider) {
-							if (parseInt(value) === service.minValue)
+							if (parseInt(value) === service.minValue) {
 								action = 'windowDown';
-							else if (parseInt(value) === service.maxValue)
+							} else if (parseInt(value) === service.maxValue) {
 								action = 'windowUp';
-							else {
+							} else {
 								action = 'setValue';
 								value = parseInt(value);
-								let oldValue = value;
+								const oldValue = value;
 								value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
 								this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue);
 							}
 						}
-						else {
-							if (parseInt(value) < ((service.maxValue-service.minValue)/2))
-								action = 'windowDown';
-							else
-								action = 'windowUp';
+						else if (parseInt(value) < ((service.maxValue-service.minValue)/2)) {
+							action = 'windowDown';
+						} else {
+							action = 'windowUp';
 						}
 					}
 					else if (service.actions.slider) {
 						action = 'setValue';
 						value = parseInt(value);
-						let oldValue = value;
+						const oldValue = value;
 						value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
 						this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue);
 					}
@@ -3035,11 +3035,11 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				this.log('debug',"ColorTemperature set : ",value);
-				/*if(service.eqLogic.hasAdaptive) {
+				/* if(service.eqLogic.hasAdaptive) {
 					if(this.findAccessoryByService(service).adaptiveLightingController.isAdaptiveLightingActive) {
 						this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
 					} 
-				}*/
+				} */
 				if(service.colorTempType=="kelvin")	{
 						value = parseInt(1000000/value);
 						this.log('debug',"Conversion en mired : ",value);
@@ -3048,31 +3048,31 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.Hue.UUID :
 				this.log('debug',"Hue set : ",value);
-				//this.command("setValue",value,service);
-				/*if(service.eqLogic.hasAdaptive) {
+				// this.command("setValue",value,service);
+				/* if(service.eqLogic.hasAdaptive) {
 					if(this.findAccessoryByService(service).adaptiveLightingController.isAdaptiveLightingActive) {
 						this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
 					} 
-				}*/
+				} */
 				rgb = this.updateJeedomColorFromHomeKit(value, null, null, service);
 				this.syncColorCharacteristics(rgb, service);
 			break;
 			case Characteristic.Saturation.UUID :
 				this.log('debug',"Sat set : ",value);
-				//this.command("setValue",value,service);
-				/*if(service.eqLogic.hasAdaptive) {
+				// this.command("setValue",value,service);
+				/* if(service.eqLogic.hasAdaptive) {
 					if(this.findAccessoryByService(service).adaptiveLightingController.isAdaptiveLightingActive) {
 						this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
 					} 
-				}*/
+				} */
 				rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
 				this.syncColorCharacteristics(rgb, service);
 			break;
 			case Characteristic.Brightness.UUID :
 				this.settingLight=true;
-				let maxJeedom = parseInt(service.maxBright) || 100;
+				const maxJeedom = parseInt(service.maxBright) || 100;
 				value = parseInt(value);
-				let oldValue=value;
+				const oldValue=value;
 				if(maxJeedom) {
 					value = Math.round((value / 100)*maxJeedom);
 				}
@@ -3081,9 +3081,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.RotationSpeed.UUID :
 				this.settingFan=true;
-				let maxJeedomP = parseInt(service.maxPower) || 100;
+				const maxJeedomP = parseInt(service.maxPower) || 100;
 				value = parseInt(value);
-				let oldValueP=value;
+				const oldValueP=value;
 				if(maxJeedomP) {
 					value = Math.round((value / 100)*maxJeedomP);
 				}
@@ -3103,9 +3103,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 };
 
 JeedomPlatform.prototype.findAccessoryByService = function(service) {
-	for (let acc in this.accessories) {
+	for (const acc in this.accessories) {
 		if (this.accessories.hasOwnProperty(acc)) {
-			for(let ser in this.accessories[acc].services) {
+			for(const ser in this.accessories[acc].services) {
 				if (this.accessories[acc].services.hasOwnProperty(ser)) {
 					if(this.accessories[acc].services[ser].cmd_id && this.accessories[acc].services[ser].cmd_id.toString() == service.cmd_id.toString()) {
 						return this.accessories[acc];
@@ -3126,7 +3126,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == service.cmd_id) {
 						
 						if(that.fakegato) {
-							let realValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
+							const realValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
 							if(realValue === false) {
 								service.eqLogic.numberOpened++;
 							}
@@ -3176,7 +3176,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			// Switch or Light
 			case Characteristic.On.UUID :
 				if(service.infos.scenario) {
-					let scenario = that.jeedomClient.getScenarioPropertiesFromCache(service.infos.scenario.id);
+					const scenario = that.jeedomClient.getScenarioPropertiesFromCache(service.infos.scenario.id);
 					switch(scenario.state) {
 						case 'stop':
 							returnValue = false;
@@ -3187,8 +3187,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 					if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 						service.eqLogic.loggingService.addEntry({
-						  time: Math.round(new Date().valueOf() / 1000),
-						  status: ((returnValue)?1:0)
+							time: Math.round(new Date().valueOf() / 1000),
+							status: ((returnValue)?1:0),
 						});
 					}
 					
@@ -3201,23 +3201,23 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								returnValue = false;
 							}
 							
-							//returnValue=toBool(cmd.currentValue);
+							// returnValue=toBool(cmd.currentValue);
 							break;
 						} 
 					}
 				} else {
 					for (const cmd of cmdList) {
 						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool) {
-							if(parseInt(cmd.currentValue) == 0) returnValue=false;
-							else returnValue=true;
+							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
+							else {returnValue=true;}
 							break;
 						} else if ((cmd.generic_type == 'FAN_STATE' || cmd.generic_type == 'FAN_SPEED_STATE') && cmd.id == service.cmd_id) {
-							if(parseInt(cmd.currentValue) == 0) returnValue=false;
-							else returnValue=true;
+							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
+							else {returnValue=true;}
 							break;
 						} else if (cmd.generic_type == 'LIGHT_STATE_BOOL' && service.infos.state_bool && cmd.id == service.infos.state_bool.id) {
-							if(parseInt(cmd.currentValue) == 0) returnValue=false;
-							else returnValue=true;
+							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
+							else {returnValue=true;}
 							break;
 						} else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
@@ -3226,8 +3226,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							returnValue = cmd.currentValue;
 							if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 								service.eqLogic.loggingService.addEntry({
-								  time: Math.round(new Date().valueOf() / 1000),
-								  status: ((returnValue)?1:0)
+									time: Math.round(new Date().valueOf() / 1000),
+									status: ((returnValue)?1:0),
 								});
 							}
 							break;
@@ -3340,8 +3340,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						returnValue = parseInt(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: Math.round(new Date().valueOf() / 1000),
-							  ppm: returnValue
+								time: Math.round(new Date().valueOf() / 1000),
+								ppm: returnValue,
 							});
 						}
 						break;
@@ -3359,10 +3359,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CarbonDioxideDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
-						if(parseInt(cmd.currentValue)>=1400)
+						if(parseInt(cmd.currentValue)>=1400) {
 							returnValue = Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL;
-						else
+						} else {
 							returnValue = Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
+						}
 						break;
 					}
 				}
@@ -3370,10 +3371,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CarbonMonoxideDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO' && cmd.id == service.cmd_id) {
-						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						returnValue = toBool(cmd.currentValue);
-						if(returnValue === false) returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
-						else returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;						
+						if(returnValue === false) {
+							returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+						} else {
+							returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+						}					
 						break;
 					}
 				}
@@ -3401,16 +3405,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'OPENING' || cmd.generic_type == 'OPENING_WINDOW') && cmd.id == service.cmd_id) {
 						returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
-						if(returnValue === false) returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
-						else returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
-						
+						if(returnValue === false) {
+							returnValue = Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+						} else {
+							returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
+						}
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
-							/*if(returnValue === Characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
+							/* if(returnValue === Characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
 								service.eqLogic.numberOpened++;
-							}*/
+							} */
 							service.eqLogic.loggingService.addEntry({
-							  time: Math.round(new Date().valueOf() / 1000),
-							  status: returnValue
+								time: Math.round(new Date().valueOf() / 1000),
+								status: returnValue,
 							});
 						}
 						
@@ -3429,15 +3435,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentTemperature.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'TEMPERATURE' && cmd.id == service.cmd_id) || 
-					    (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id) ||
+						(cmd.generic_type == 'THERMOSTAT_TEMPERATURE' && cmd.id == service.infos.temperature.id) ||
 						(cmd.generic_type == 'THERMOSTAT_HC_TEMPERATURE' && cmd.id == service.infos.temperature.id) ||
 						(cmd.generic_type == 'WEATHER_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE')) {
 							service.eqLogic.loggingService.addEntry({
-							  time: Math.round(new Date().valueOf() / 1000),
-							  temp: returnValue
+								time: Math.round(new Date().valueOf() / 1000),
+								temp: returnValue,
 							});
 						}
 						break;
@@ -3447,13 +3453,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentRelativeHumidity.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'HUMIDITY' && cmd.id == service.cmd_id) ||
-					    (cmd.generic_type == 'WEATHER_HUMIDITY' && cmd.id == service.infos.humidity.id)) {
+						(cmd.generic_type == 'WEATHER_HUMIDITY' && cmd.id == service.infos.humidity.id)) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: Math.round(new Date().valueOf() / 1000),
-							  humidity: returnValue
+								time: Math.round(new Date().valueOf() / 1000),
+								humidity: returnValue,
 							});
 						}
 						break;
@@ -3463,13 +3469,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.AirPressure.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'PRESSURE' && cmd.id == service.cmd_id) ||
-					    (cmd.generic_type == 'WEATHER_PRESSURE' && cmd.id == service.infos.pressure.id)) {
+						(cmd.generic_type == 'WEATHER_PRESSURE' && cmd.id == service.infos.pressure.id)) {
 						
 						returnValue = cmd.currentValue;
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: Math.round(new Date().valueOf() / 1000),
-							  pressure: returnValue
+								time: Math.round(new Date().valueOf() / 1000),
+								pressure: returnValue,
 							});
 						}
 						break;
@@ -3489,8 +3495,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'WEATHER_WIND_DIRECTION' && cmd.id == service.infos.wind_direction.id) {
 						returnValue = cmd.currentValue;
 						if(!isNaN(returnValue)) { // if numeric
-							let key=parseInt((returnValue/22.5)+0.5) % 16;
-							let arr=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+							const key=parseInt((returnValue/22.5)+0.5) % 16;
+							const arr=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
 							returnValue=arr[key];
 						}
 						break;
@@ -3508,10 +3514,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.LeakDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLOOD' && cmd.id == service.cmd_id) {
-						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						returnValue = toBool(cmd.currentValue);
-						if(returnValue === false) returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
-						else returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
+						if(returnValue === false) {
+							returnValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+						} else {
+							returnValue = Characteristic.LeakDetected.LEAK_DETECTED;
+						}	
 						break;
 					}
 				}
@@ -3519,12 +3528,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.MotionDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
-						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert ?
+						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert ?
 						returnValue = toBool(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: Math.round(new Date().valueOf() / 1000),
-							  status: returnValue?1:0
+								time: Math.round(new Date().valueOf() / 1000),
+								status: returnValue?1:0,
 							});
 						}
 						break;
@@ -3534,10 +3543,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.OccupancyDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'OCCUPANCY' && cmd.id == service.cmd_id) {
-						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert ?
+						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert ?
 						returnValue = toBool(cmd.currentValue);
-						if(returnValue === false) returnValue = Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
-						else returnValue = Characteristic.OccupancyDetected.OCCUPANCY_DETECTED;
+						if(returnValue === false) {
+							returnValue = Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
+						} else {
+							returnValue = Characteristic.OccupancyDetected.OCCUPANCY_DETECTED;
+						}
 						break;
 					}
 				}
@@ -3545,10 +3557,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.SmokeDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SMOKE' && cmd.id == service.cmd_id) {
-						//returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
+						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						returnValue = toBool(cmd.currentValue);
-						if(returnValue === false) returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
-						else returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;						
+						if(returnValue === false) {
+							returnValue = Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+						} else {
+							returnValue = Characteristic.SmokeDetected.SMOKE_DETECTED;	
+						}					
 						break;
 					}
 				}
@@ -3556,7 +3571,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.UVIndex.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'UV' && cmd.id == service.cmd_id) ||
-					    (cmd.generic_type == 'WEATHER_UVINDEX' && cmd.id == service.infos.UVIndex.id)) {
+						(cmd.generic_type == 'WEATHER_UVINDEX' && cmd.id == service.infos.UVIndex.id)) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -3574,13 +3589,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				returnValue = 0;
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'FAN_STATE' || cmd.generic_type == 'FAN_SPEED_STATE') && cmd.subType != 'binary' && cmd.id == service.cmd_id) {
-						let maxJeedom = parseInt(service.maxPower) || 100;
+						const maxJeedom = parseInt(service.maxPower) || 100;
 						returnValue = parseInt(cmd.currentValue);
 						if(maxJeedom) {
 							returnValue = Math.round((returnValue / maxJeedom)*100);
 						}
-						if (DEV_DEBUG) that.log('debug','---------update Power(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
-						//that.log('debug','------------PowerVentilo jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
+						if (DEV_DEBUG) {that.log('debug','---------update Power(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);}
+						// that.log('debug','------------PowerVentilo jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
 						break;
 					}
 				}
@@ -3603,7 +3618,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;			
-			//Generic_info
+			// Generic_info
 			case Characteristic.GenericFLOAT.UUID :
 			case Characteristic.GenericINT.UUID :
 			case Characteristic.GenericBOOL.UUID :
@@ -3615,7 +3630,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				}
 			break;
 			case Characteristic.GenericSTRING.UUID :
-				let maxSize = 64;
+				const maxSize = 64;
 				for (const cmd of cmdList) {
 					if (GenericAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue.toString().substring(0,maxSize);
@@ -3647,8 +3662,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR_TEMP') {
-						if(service.colorTempType=="kelvin") returnValue = parseInt(1000000/cmd.currentValue);
-						else returnValue = cmd.currentValue;
+						if(service.colorTempType=="kelvin") {
+							returnValue = parseInt(1000000/cmd.currentValue);
+						} else {
+							returnValue = cmd.currentValue;
+						}
 						break;
 					}
 				}
@@ -3657,13 +3675,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				returnValue = 0;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType != 'binary' && cmd.id == service.cmd_id) {
-						let maxJeedom = parseInt(service.maxBright) || 100;
+						const maxJeedom = parseInt(service.maxBright) || 100;
 						returnValue = parseInt(cmd.currentValue);
 						if(maxJeedom) {
 							returnValue = Math.round((returnValue / maxJeedom)*100);
 						}
-						if (DEV_DEBUG) that.log('debug','---------update Bright(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);
-						//that.log('debug','------------Brightness jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
+						if (DEV_DEBUG) {that.log('debug','---------update Bright(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);}
+						// that.log('debug','------------Brightness jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
 						break;
 					}
 				}
@@ -3671,42 +3689,44 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			// Alarm
 			case Characteristic.SecuritySystemTargetState.UUID :
 				for (const cmd of cmdList) {
-					let currentValue = cmd.currentValue;
+					const currentValue = cmd.currentValue;
 					
 					if ((cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) || (cmd.generic_type == 'SIREN_STATE')) {
-						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
+						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
 						
-						if(service.alarm.present && service.alarm.present.mode_label != undefined)
+						if(service.alarm.present && service.alarm.present.mode_label != undefined) {
 							mode_PRESENT=service.alarm.present.mode_label;
-						if(service.alarm.away && service.alarm.away.mode_label != undefined)
+						}
+						if(service.alarm.away && service.alarm.away.mode_label != undefined) {
 							mode_AWAY=service.alarm.away.mode_label;
-						if(service.alarm.night && service.alarm.night.mode_label != undefined)
+						}
+						if(service.alarm.night && service.alarm.night.mode_label != undefined) {
 							mode_NIGHT=service.alarm.night.mode_label;
-						
+						}
 						switch (currentValue) {
 							case undefined:
-								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
 								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;
 							default: // back compatibility
-								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
 								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;							
 							case mode_PRESENT:
-								if (DEV_DEBUG) that.log('debug',"renvoie present",Characteristic.SecuritySystemTargetState.STAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie present",Characteristic.SecuritySystemTargetState.STAY_ARM);}
 								returnValue = Characteristic.SecuritySystemTargetState.STAY_ARM;
 							break;
 							case mode_AWAY:
-								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
 								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;
 							case mode_NIGHT:
-								if (DEV_DEBUG) that.log('debug',"renvoie nuit",Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie nuit",Characteristic.SecuritySystemTargetState.NIGHT_ARM);}
 								returnValue = Characteristic.SecuritySystemTargetState.NIGHT_ARM;
 							break;
 						}
@@ -3715,47 +3735,49 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.SecuritySystemCurrentState.UUID :
 				for (const cmd of cmdList) {
-					let currentValue = cmd.currentValue;
+					const currentValue = cmd.currentValue;
 					if(cmd.generic_type == 'SIREN_STATE') that.log('debug',"SIREN_STATE=",currentValue);
 					if ((cmd.generic_type == 'ALARM_STATE' && currentValue == 1) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 1)) {
-						if (DEV_DEBUG) that.log('debug',"Alarm_State=",currentValue);
+						if (DEV_DEBUG) {that.log('debug',"Alarm_State=",currentValue);}
 						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 						break;
 					}
 					if ((cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 0)) {
-						if (DEV_DEBUG) that.log('debug',"Alarm_enable_state=",currentValue);
+						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
 						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
-						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
+						if (DEV_DEBUG) {that.log('debug',"alarm_mode=",currentValue);}
 						
-						if(service.alarm.present && service.alarm.present.mode_label != undefined)
+						if(service.alarm.present && service.alarm.present.mode_label != undefined) {
 							mode_PRESENT=service.alarm.present.mode_label;
-						if(service.alarm.away && service.alarm.away.mode_label != undefined)
+						}
+						if(service.alarm.away && service.alarm.away.mode_label != undefined) {
 							mode_AWAY=service.alarm.away.mode_label;
-						if(service.alarm.night && service.alarm.night.mode_label != undefined)
+						}
+						if(service.alarm.night && service.alarm.night.mode_label != undefined) {
 							mode_NIGHT=service.alarm.night.mode_label;
-						
+						}
 						switch (currentValue) {
 							case undefined:
-								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
 								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 							break;
 							default: // back compatibility
-								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
 								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 							break;							
 							case mode_PRESENT:
-								if (DEV_DEBUG) that.log('debug',"renvoie present",Characteristic.SecuritySystemCurrentState.STAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie present",Characteristic.SecuritySystemCurrentState.STAY_ARM);}
 								returnValue = Characteristic.SecuritySystemCurrentState.STAY_ARM;
 							break;
 							case mode_AWAY:
-								if (DEV_DEBUG) that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
 								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 							break;
 							case mode_NIGHT:
-								if (DEV_DEBUG) that.log('debug',"renvoie nuit",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);
+								if (DEV_DEBUG) {that.log('debug',"renvoie nuit",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);}
 								returnValue = Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
 							break;
 						}
@@ -3764,7 +3786,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			// Thermostats
 			case Characteristic.CurrentHeatingCoolingState.UUID :
-				var stateNameFound=false;
+				// var stateNameFound=false;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME' || cmd.generic_type == 'THERMOSTAT_HC_STATE_NAME') {
 						if(cmd.currentValue != undefined && cmd.currentValue != null) {
@@ -3787,15 +3809,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							}
 							break;
 							
-						}
-						else
+						} else {
 							returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
-						
-						stateNameFound=true;
+						}
+						// stateNameFound=true;
 					}
 				}
 				// idea for managing only setpoint + temperature generic types, display Heat if the setpoint > temperature+1 and display cool if setpoint < temperature-1 : to test
-				/*if(!stateNameFound) {
+				/* if(!stateNameFound) {
 					for (const cmd of cmdList) {
 						if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
 							if(cmd.currentValue > service.infos.temperature.currentValue+1)
@@ -3806,18 +3827,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
 						}
 					}
-				}*/
+				} */
 			break;
 			case Characteristic.TargetHeatingCoolingState.UUID :
 				returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
 						
-						if(service.thermo.clim && service.thermo.clim.mode_label !== undefined)
+						if(service.thermo.clim && service.thermo.clim.mode_label !== undefined) {
 							mode_CLIM=service.thermo.clim.mode_label;
-						if(service.thermo.chauf && service.thermo.chauf.mode_label !== undefined)
+						}
+						if(service.thermo.chauf && service.thermo.chauf.mode_label !== undefined) {
 							mode_CHAUF=service.thermo.chauf.mode_label;
-						
+						}
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
 							case 'Off':
@@ -3839,11 +3861,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					} else if (cmd.generic_type == 'THERMOSTAT_HC_MODE') {
 						
-						if(service.thermoHC.clim && service.thermoHC.clim.mode_label !== undefined)
+						if(service.thermoHC.clim && service.thermoHC.clim.mode_label !== undefined) {
 							mode_CLIM=service.thermoHC.clim.mode_label;
-						if(service.thermoHC.chauf && service.thermoHC.chauf.mode_label !== undefined)
+						}
+						if(service.thermoHC.chauf && service.thermoHC.chauf.mode_label !== undefined) {
 							mode_CHAUF=service.thermoHC.chauf.mode_label;
-						
+						}
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
 						switch(cmd.currentValue) {
 							case 'Off':
@@ -3896,10 +3919,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				returnValue=Characteristic.TargetDoorState.CLOSED; // if don't know -> CLOSED
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
-					    cmd.generic_type == 'BARRIER_STATE') {
+						cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
 								case customValues.OPEN :
-									returnValue=Characteristic.TargetDoorState.OPEN; //0
+									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";	
 								break;
 								case customValues.CLOSED :
@@ -3919,7 +3942,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="CLOSED";
 								break;
 						}
-						if (DEV_DEBUG) that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						if (DEV_DEBUG) {that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");}
 						break;
 					}
 				}	
@@ -3929,10 +3952,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				returnValue=Characteristic.CurrentDoorState.CLOSED; // if don't know -> CLOSED
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
-					    cmd.generic_type == 'BARRIER_STATE') {
+						cmd.generic_type == 'BARRIER_STATE') {
 						switch(parseInt(cmd.currentValue)) {
 								case customValues.OPEN :
-									returnValue=Characteristic.CurrentDoorState.OPEN; //0
+									returnValue=Characteristic.CurrentDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
 								case customValues.CLOSED :
@@ -3952,7 +3975,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="STOPPED";
 								break;
 						}
-						if (DEV_DEBUG) that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						if (DEV_DEBUG) {that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");}
 						break;
 					}
 				}
@@ -3977,7 +4000,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if(service.maxValue == 100) {
 							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						}
-						returnValue = 100-returnValue; //invert percentage
+						returnValue = 100-returnValue; // invert percentage
 						that.log('debug','---------update Inverted Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue);
 						break;
 					}
@@ -4034,11 +4057,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									returnValue=Characteristic.LockCurrentState.UNKNOWN;
 									break;
 							}
-						//} else if(cmd.eqType == 'thekeys'  || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'thekeys')) {
+						// } else if(cmd.eqType == 'thekeys'  || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'thekeys')) {
 						//	if (DEV_DEBUG) that.log('debug','LockCurrentState (thekeys) : ',cmd.currentValue);
 						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 						} else {
-							if (DEV_DEBUG) that.log('debug','LockCurrentState : ',cmd.currentValue);
+							if (DEV_DEBUG) {that.log('debug','LockCurrentState : ',cmd.currentValue);}
 							returnValue = toBool(cmd.currentValue) === true ? Characteristic.LockCurrentState.SECURED : Characteristic.LockCurrentState.UNSECURED;
 						}
 					}
@@ -4048,17 +4071,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						let targetVal = cmd.currentValue;
-						if(service.target !== undefined) targetVal=service.target;
-						else service.target=targetVal;
+						if(service.target !== undefined) {targetVal=service.target;}
+						else {service.target=targetVal;}
 
 						if(cmd.eqType == 'nuki' || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'nuki')) {
-							if (DEV_DEBUG) that.log('debug','LockTargetState (nuki) : ',cmd.currentValue,'service.target : ',service.target);
+							if (DEV_DEBUG) {that.log('debug','LockTargetState (nuki) : ',cmd.currentValue,'service.target : ',service.target);}
 							returnValue = toBool(targetVal) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
-						//} else if(cmd.eqType == 'thekeys' || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'thekeys')) {
-						//	if (DEV_DEBUG) that.log('debug','LockTargetState (thekeys) : ',cmd.currentValue);
+						// } else if(cmd.eqType == 'thekeys' || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'thekeys')) {
+						//	if (DEV_DEBUG) {that.log('debug','LockTargetState (thekeys) : ',cmd.currentValue);}
 						//	returnValue = toBool(cmd.currentValue) === false ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						} else {
-							if (DEV_DEBUG) that.log('debug','LockTargetState : ',cmd.currentValue,'service.target : ',service.target);
+							if (DEV_DEBUG) {that.log('debug','LockTargetState : ',cmd.currentValue,'service.target : ',service.target);}
 							returnValue = toBool(targetVal) === true ? Characteristic.LockTargetState.SECURED : Characteristic.LockTargetState.UNSECURED;
 						}
 					}
@@ -4098,8 +4121,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.BatteryLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY' && cmd.id == service.cmd_id) {
-						if(cmd.currentValue==="") returnValue=100; // Jeedom Cache not yet up to date
-						else returnValue = cmd.currentValue;
+						if(cmd.currentValue==="") {
+							returnValue=100; // Jeedom Cache not yet up to date
+						} else {
+							returnValue = cmd.currentValue;
+						}
 						break;
 					}
 				}
@@ -4109,21 +4135,27 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY_CHARGING' && cmd.id == service.infos.batteryCharging.id) {
 						returnValue = cmd.currentValue;
-						if(returnValue == 0) returnValue = Characteristic.ChargingState.NOT_CHARGING;
-						else returnValue = Characteristic.ChargingState.CHARGING;
+						if(returnValue == 0) {
+							returnValue = Characteristic.ChargingState.NOT_CHARGING;
+						} else {
+							returnValue = Characteristic.ChargingState.CHARGING;
+						}
 						hasFound = true;
 						break;
 					}
 				}
-				if(!hasFound) returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;
+				if(!hasFound) {returnValue = Characteristic.ChargingState.NOT_CHARGEABLE;}
 			break;
 			// Status
 			case Characteristic.StatusLowBattery.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BATTERY' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
-						if(cmd.currentValue==="" || returnValue > 20) returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-						else returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
+						if(cmd.currentValue==="" || returnValue > 20) {
+							returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+						} else {
+							returnValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
+						}
 						break;
 					}
 				}
@@ -4131,11 +4163,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.StatusTampered.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'SABOTAGE' && findMyID(service.statusArr,cmd.id) != -1) {
-						let eqLogicSabotageInverted=service.sabotageInverted || 0;
+						const eqLogicSabotageInverted=service.sabotageInverted || 0;
 						returnValue = eqLogicSabotageInverted==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ?
-						//returnValue = cmd.currentValue;
-						if(cmd.currentValue!=="" && returnValue === false) returnValue=Characteristic.StatusTampered.TAMPERED;
-						else returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
+						// returnValue = cmd.currentValue;
+						if(cmd.currentValue!=="" && returnValue === false) {
+							returnValue=Characteristic.StatusTampered.TAMPERED;
+						} else {
+							returnValue=Characteristic.StatusTampered.NOT_TAMPERED;
+						}
 						break;
 					}
 				}
@@ -4144,8 +4179,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'DEFECT' && findMyID(service.statusArr,cmd.id) != -1) {
 						returnValue = toBool(cmd.currentValue);
-						if(!returnValue) returnValue = Characteristic.StatusFault.NO_FAULT;
-						else returnValue = Characteristic.StatusFault.GENERAL_FAULT;
+						if(!returnValue) {
+							returnValue = Characteristic.StatusFault.NO_FAULT;
+						}else {
+							returnValue = Characteristic.StatusFault.GENERAL_FAULT;
+						}
 						break;
 					}
 				}
@@ -4170,8 +4208,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						}
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
-							  time: Math.round(new Date().valueOf() / 1000),
-							  power: returnValue
+								time: Math.round(new Date().valueOf() / 1000),
+								power: returnValue,
 							});
 						}
 						break;
@@ -4194,32 +4232,32 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TimeInterval.UUID :
 				returnValue = Date.now();
 				returnValue = parseInt(cmdList.timestamp) - returnValue;
-				if (returnValue < 0) returnValue = 0;
+				if (returnValue < 0) {returnValue = 0;}
 			break;
 			case Characteristic.ProgrammableSwitchEvent.UUID :
 				if(service.type == 'Multi') {
 					for (const cmd of cmdList) {
 						if (cmd.generic_type == 'SWITCH_STATELESS_ALLINONE' && cmd.id == service.infos.eventType.id) {
-							let numButton = service.ServiceLabelIndex;
-							let indexButton = numButton-1;
+							const numButton = service.ServiceLabelIndex;
+							const indexButton = numButton-1;
 							
 							let buttonSingle,buttonDouble,buttonLong;
 					
-							if(customValues.SINGLE)
+							if(customValues.SINGLE) {
 								buttonSingle = customValues.SINGLE.split(';');
-							else
+							} else {
 								buttonSingle = [""];
-							
-							if(customValues.DOUBLE)
+							}
+							if(customValues.DOUBLE) {
 								buttonDouble = customValues.DOUBLE.split(';');
-							else
+							} else {
 								buttonDouble = [""];
-							
-							if(customValues.LONG)
+							}
+							if(customValues.LONG) {
 								buttonLong = customValues.LONG.split(';');
-							else
+							} else {
 								buttonLong = [""];
-							
+							}
 							switch(cmd.currentValue.toString()) {
 								case undefined:
 									returnValue = undefined;
@@ -4279,7 +4317,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		// IF Online is 0 -> send no_response
 		for (const cmd of cmdList) {
 			if (cmd.generic_type == 'ONLINE') {
-				if(parseInt(cmd.currentValue) === 0) returnValue='no_response';
+				if(parseInt(cmd.currentValue) === 0) {returnValue='no_response';}
 				break;
 			}
 		}
@@ -4300,15 +4338,17 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 // -- Return : prepared value
 function sanitizeValue(currentValue,characteristic) {
 	let val=0;
-	if(!characteristic) // just return the value if no characteristic
+	if(!characteristic) {// just return the value if no characteristic
 		return val;
-	else
-		if(!characteristic.props) 
+	} else {
+		if(!characteristic.props) {
 			return val;
-		else 
-			if(!characteristic.props.format) 
+		} else {
+			if(!characteristic.props.format) {
 				return val;
-
+			}
+		}
+	}
 	switch(characteristic.props.format) {
 			case Characteristic.Formats.UINT8 :
 			case Characteristic.Formats.UINT16:
@@ -4316,31 +4356,32 @@ function sanitizeValue(currentValue,characteristic) {
 			case Characteristic.Formats.UINT64 :
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
-				if(!val) val = 0;
-				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);		
+				if(!val) {val = 0;}
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) {val = parseInt(characteristic.props.minValue);}
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) {val = parseInt(characteristic.props.maxValue);}		
 			break;
 			case Characteristic.Formats.INT :
 				val = parseInt(currentValue);
-				if(!val) val = 0;
-				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) val = parseInt(characteristic.props.minValue);
-				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) val = parseInt(characteristic.props.maxValue);	
+				if(!val) {val = 0;}
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) {val = parseInt(characteristic.props.minValue);}
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) {val = parseInt(characteristic.props.maxValue);}	
 			break;
 			case Characteristic.Formats.FLOAT :
 				val = minStepRound(parseFloat(currentValue),characteristic);
-				if(!val) val = 0.0;
-				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) val = parseFloat(characteristic.props.minValue);
-				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) val = parseFloat(characteristic.props.maxValue);	
+				if(!val) {val = 0.0;}
+				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) {val = parseFloat(characteristic.props.minValue);}
+				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) {val = parseFloat(characteristic.props.maxValue);}	
 			break;
 			case Characteristic.Formats.BOOL :
 				val = toBool(currentValue);
-				if(!val) val = false;
+				if(!val) {val = false;}
 			break;
 			case Characteristic.Formats.STRING :
 			case Characteristic.Formats.TLV8 :
-				if(currentValue !== undefined)
+				if(currentValue !== undefined) {
 					val = currentValue.toString();
-				if(!val) val = '';
+				}
+				if(!val) {val = '';}
 			break;
 			default :
 				val = currentValue;
@@ -4359,7 +4400,7 @@ function minStepRound(val,characteristic) {
 	if(characteristic.props.minStep == null || characteristic.props.minStep == undefined) {
 		characteristic.props.minStep = 1;
 	}
-	let prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
+	const prec = (characteristic.props.minStep.toString().split('.')[1] || []).length;
 	if(val) {
 		val = val * Math.pow(10, prec);
 		val = Math.round(val); // round to the minStep precision
@@ -4399,32 +4440,41 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		// ALARM
 		var id_PRESENT,id_AWAY,id_NIGHT;
 		if(action == 'SetAlarmMode') {
-			if(service.alarm.present && service.alarm.present.mode_id != undefined)
+			if(service.alarm.present && service.alarm.present.mode_id != undefined) {
 				id_PRESENT = service.alarm.present.mode_id;
-			if(service.alarm.away && service.alarm.away.mode_id != undefined)
+			}
+			if(service.alarm.away && service.alarm.away.mode_id != undefined) {
 				id_AWAY = 	 service.alarm.away.mode_id;
-			if(service.alarm.night && service.alarm.night.mode_id != undefined)
+			}
+			if(service.alarm.night && service.alarm.night.mode_id != undefined) {
 				id_NIGHT = 	 service.alarm.night.mode_id;
+			}
 		}
 		// /ALARM	
 		// THERMOSTAT
 		var id_CHAUF,id_CLIM,id_OFF,id_CHAUF_HC,id_CLIM_HC,id_OFF_HC;
 		if(action == 'TargetHeatingCoolingState') {
 			if(service.thermo) {
-				if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined)
+				if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined) {
 					id_CHAUF = 	service.thermo.chauf.mode_id;
-				if(service.thermo.clim && service.thermo.clim.mode_id != undefined)
+				}
+				if(service.thermo.clim && service.thermo.clim.mode_id != undefined) {
 					id_CLIM = 	service.thermo.clim.mode_id;
-				if(service.thermo.off && service.thermo.off.mode_id != undefined)
+				}
+				if(service.thermo.off && service.thermo.off.mode_id != undefined) {
 					id_OFF = 	service.thermo.off.mode_id;
+				}
 			}
 			if(service.thermoHC) {
-				if(service.thermoHC.chauf && service.thermoHC.chauf.mode_id != undefined)
+				if(service.thermoHC.chauf && service.thermoHC.chauf.mode_id != undefined) {
 					id_CHAUF_HC = 	service.thermoHC.chauf.mode_id;
-				if(service.thermoHC.clim && service.thermoHC.clim.mode_id != undefined)
+				}
+				if(service.thermoHC.clim && service.thermoHC.clim.mode_id != undefined) {
 					id_CLIM_HC = 	service.thermoHC.clim.mode_id;
-				if(service.thermoHC.off && service.thermoHC.off.mode_id != undefined)
+				}
+				if(service.thermoHC.off && service.thermoHC.off.mode_id != undefined) {
 					id_OFF_HC = 	service.thermoHC.off.mode_id;
+				}
 			}
 		}		
 		// /THERMOSTAT
@@ -4670,7 +4720,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;					
 							cmdFound=cmd.generic_type;
 							found = true;
-							if(service.OnAfterBrightness) needToTemporizeSec=20;
+							if(service.OnAfterBrightness) {needToTemporizeSec=20;}
 						}
 					break;
 					case 'ENERGY_ON' :
@@ -4721,7 +4771,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;					
 							cmdFound=cmd.generic_type;
 							found = true;
-							if(service.OnAfterBrightness) needToTemporizeSec=20;
+							if(service.OnAfterBrightness) {needToTemporizeSec=20;}
 						}
 					break;
 					case 'ENERGY_OFF' :
@@ -4755,7 +4805,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_SET_UNLOCK' :
 						if((action == 'turnOff') && service.actions.set_unlock && cmd.id == service.actions.set_unlock.id) {
-							cmdId = cmd.id;					
+							cmdId = cmd.id;	
 							cmdFound=cmd.generic_type;
 							found = true;
 						}
@@ -4765,7 +4815,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
-							//needToTemporize=500;
+							// needToTemporize=500;
 						}
 					break;
 					case 'LIGHT_SET_COLOR_TEMP' :
