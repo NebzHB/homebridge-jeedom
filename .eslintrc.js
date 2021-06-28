@@ -197,6 +197,10 @@ module.exports = {
       'error',
       'last'
     ],
+	'spaced-comment': [
+	  'error',
+	  'never'
+	],
     'space-before-blocks': [
       'off',
       'always'
