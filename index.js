@@ -3068,7 +3068,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				rgb = this.updateJeedomColorFromHomeKit(null, value, null, service);
 				this.syncColorCharacteristics(rgb, service);
 			break;
-			case Characteristic.Brightness.UUID :
+			case Characteristic.Brightness.UUID : {
 				this.settingLight=true;
 				const maxJeedom = parseInt(service.maxBright) || 100;
 				value = parseInt(value);
@@ -3078,8 +3078,8 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 				this.log('debug','---------set Bright:',oldValue,'% soit',value,' / ',maxJeedom);
 				this.command('setValue', value, service);
-			break;
-			case Characteristic.RotationSpeed.UUID :
+			break;}
+			case Characteristic.RotationSpeed.UUID : {
 				this.settingFan=true;
 				const maxJeedomP = parseInt(service.maxPower) || 100;
 				value = parseInt(value);
@@ -3089,7 +3089,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 				this.log('debug','---------set Power:',oldValueP,'% soit',value,' / ',maxJeedomP);
 				this.command('setValue', value, service);
-			break;
+			break;}
 			default :
 				this.command('setValue', value, service);
 			break;
@@ -3629,7 +3629,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					}
 				}
 			break;
-			case Characteristic.GenericSTRING.UUID :
+			case Characteristic.GenericSTRING.UUID : {
 				const maxSize = 64;
 				for (const cmd of cmdList) {
 					if (GenericAssociated.indexOf(cmd.generic_type) != -1 && cmd.id == service.cmd_id) {
@@ -3637,7 +3637,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 				}
-			break;
+			break;}
 			// Lights
 			case Characteristic.Hue.UUID :
 				for (const cmd of cmdList) {
@@ -3697,7 +3697,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
-						if (DEV_DEBUG) that.log('debug',"alarm_mode=",currentValue);
+						if (DEV_DEBUG) {that.log('debug',"alarm_mode=",currentValue);}
 						
 						if(service.alarm.present && service.alarm.present.mode_label != undefined) {
 							mode_PRESENT=service.alarm.present.mode_label;
@@ -3736,7 +3736,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.SecuritySystemCurrentState.UUID :
 				for (const cmd of cmdList) {
 					const currentValue = cmd.currentValue;
-					if(cmd.generic_type == 'SIREN_STATE') that.log('debug',"SIREN_STATE=",currentValue);
+					if(cmd.generic_type == 'SIREN_STATE') {that.log('debug',"SIREN_STATE=",currentValue);}
 					if ((cmd.generic_type == 'ALARM_STATE' && currentValue == 1) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 1)) {
 						if (DEV_DEBUG) {that.log('debug',"Alarm_State=",currentValue);}
 						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
@@ -4042,7 +4042,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'LOCK_STATE') {
 						service.target=cmd.currentValue;
 						if(cmd.eqType == 'nuki' || (cmd.eqType == 'jeelink' && cmd.real_eqType && cmd.real_eqType == 'nuki')) {
-							if (DEV_DEBUG) that.log('debug','LockCurrentState (nuki) : ',cmd.currentValue);
+							if (DEV_DEBUG) {that.log('debug','LockCurrentState (nuki) : ',cmd.currentValue);}
 							switch(parseInt(cmd.currentValue)) {
 								case 0 :
 									returnValue=Characteristic.LockCurrentState.SECURED;
@@ -4338,17 +4338,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 // -- Return : prepared value
 function sanitizeValue(currentValue,characteristic) {
 	let val=0;
-	if(!characteristic) {// just return the value if no characteristic
+	if(!characteristic || !characteristic.props || !characteristic.props.format) {// just return the value if no characteristic
 		return val;
-	} else {
-		if(!characteristic.props) {
-			return val;
-		} else {
-			if(!characteristic.props.format) {
-				return val;
-			}
-		}
 	}
+	
 	switch(characteristic.props.format) {
 			case Characteristic.Formats.UINT8 :
 			case Characteristic.Formats.UINT16:
@@ -4852,7 +4845,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								found = true;
 							}
 						}
- 					break;					
+ 					break;
 					case 'THERMOSTAT_SET_SETPOINT' :
 						if(action == 'setTargetLevel') {
 							if(value > 0) {
@@ -4935,7 +4928,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 			if(cmdFound=="LIGHT_ON") {
 				if(that.settingLight) {
 					if(service.ignoreOnCommandOnBrightnessChange) {
-						return
+						return;
 					}
 				}
 			}
@@ -4946,10 +4939,10 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				console.error(err.stack);
 			});
 		} else if(needToTemporize) {
-			if(service.temporizator) clearTimeout(service.temporizator);
+			if(service.temporizator) {clearTimeout(service.temporizator);}
 			service.temporizator = setTimeout(function(){
-				if(cmdFound=="LIGHT_SLIDER") that.settingLight=false;
-				if(cmdFound=="FAN_SLIDER" || cmdFound=="FAN_SPEED") that.settingFan=false;
+				if(cmdFound=="LIGHT_SLIDER") {that.settingLight=false;}
+				if(cmdFound=="FAN_SLIDER" || cmdFound=="FAN_SPEED") {that.settingFan=false;}
 				
 				that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
@@ -4959,12 +4952,12 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				});
 			},needToTemporize);
 		} else if(needToTemporizeSec) {
-			if(service.temporizatorSec) clearTimeout(service.temporizatorSec);
+			if(service.temporizatorSec) {clearTimeout(service.temporizatorSec);}
 			service.temporizatorSec = setTimeout(function(){
 				if(cmdFound=="LIGHT_ON") {
 					if(that.settingLight) {
 						if(!service.ignoreOnCommandOnBrightnessChange) {
-							//if(cmdFound=="LIGHT_ON" && service.infos && service.infos.state_bool && service.infos.state_bool.id) that.jeedomClient.updateModelInfo(service.infos.state_bool.id,true);
+							// if(cmdFound=="LIGHT_ON" && service.infos && service.infos.state_bool && service.infos.state_bool.id) that.jeedomClient.updateModelInfo(service.infos.state_bool.id,true);
 							setTimeout(function(){
 								that.jeedomClient.executeDeviceAction(cmdId, action, value).then(function(response) {
 									that.log('info','[Commande ON LATE envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
@@ -4974,7 +4967,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								});
 							},1000);
 						}
-						return
+						return;
 					}
 				}
 				
@@ -5002,13 +4995,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 // -- Return : nothing
 JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic) {
 	try{
-		if (characteristic.UUID == Characteristic.PositionState.UUID)
+		if (characteristic.UUID == Characteristic.PositionState.UUID) {
 			return;
-
+		}
 		this.updateSubscriptions.push({
 			'service' : service,
-			'characteristic' : characteristic
-			});
+			'characteristic' : characteristic,
+		});
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction subscribeUpdate :',e);
@@ -5030,21 +5023,21 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		if (updates.result) {
 			updates.result.map(function(update) {
 				if (update.name == 'cmd::update' && 
-				    update.option.value != undefined && 
-				    update.option.cmd_id) {
+					update.option.value != undefined && 
+					update.option.cmd_id) {
 					
 					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
 					that.updateSubscribers(update);// Update subscribers
 
 				} else if(update.name == 'scenario::update' &&
-						  update.option.state != undefined && 
-						  update.option.scenario_id) {
-						   
+					update.option.state != undefined && 
+					update.option.scenario_id) {
+					
 					that.jeedomClient.updateModelScenario(update.option.scenario_id,update.option.state); // Update cachedModel
 					that.updateSubscribers(update);// Update subscribers
 					
 				} else if(DEV_DEBUG && update.name == 'eqLogic::update' &&
-				   update.option.eqLogic_id) {
+					update.option.eqLogic_id) {
 				
 					var cacheState = that.jeedomClient.getDevicePropertiesFromCache(update.option.eqLogic_id);
 					that.jeedomClient.getDeviceProperties(update.option.eqLogic_id).then(function(eqLogic){
@@ -5061,7 +5054,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		}
 	}).then(function(){
 		that.pollingUpdateRunning = false;
-		that.pollingID = setTimeout(function(){ /*that.log('debug','==RESTART POLLING==');*/that.startPollingUpdate(); }, that.pollerPeriod * 1000);
+		that.pollingID = setTimeout(function(){ /* that.log('debug','==RESTART POLLING=='); */that.startPollingUpdate(); }, that.pollerPeriod * 1000);
 	}).catch(function(err) {
 		that.log('error','Erreur de récupération des évènements de mise à jour: ', err);
 		console.error(err.stack);
@@ -5088,9 +5081,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			updateID = update.option.cmd_id;
 		}
 		
-		//that.log('debug',"update :",updateID,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
-		let infoFound = findMyID(subService.infos,updateID);
-		let statusFound = findMyID(subService.statusArr,updateID);
+		// that.log('debug',"update :",updateID,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
+		const infoFound = findMyID(subService.infos,updateID);
+		const statusFound = findMyID(subService.statusArr,updateID);
 		if(infoFound != -1 || statusFound != -1) {
 			let returnValue = that.getAccessoryValue(subCharact, subService);
 			if(returnValue !== undefined && returnValue !== 'no_response') {
@@ -5099,16 +5092,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					if(!that.settingLight) { // and it's not currently being modified
 						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					} else {
-						if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
-					}
+					} else if(DEV_DEBUG) {that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);}
 				} else if(infoFound != -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
 					if(!that.settingFan) { // and it's not currently being modified
 						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					} else {
-						if(DEV_DEBUG) that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
-					}
+					} else if(DEV_DEBUG) {that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);}
 				}
 				else {
 					that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
@@ -5130,12 +5119,15 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 // -- service : service containing the color
 // -- Return : rgb object
 JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, service) {
-	if (h != null)
+	if (h != null) {
 		service.HSBValue.hue = h;
-	if (s != null)
+	}
+	if (s != null) {
 		service.HSBValue.saturation = s;
-	if (v != null)
+	}
+	if (v != null) {
 		service.HSBValue.brightness = v;
+	}
 	var rgb = HSVtoRGB(service.HSBValue.hue, service.HSBValue.saturation, service.HSBValue.brightness);
 	service.RGBValue.red = rgb.r;
 	service.RGBValue.green = rgb.g;
@@ -5150,10 +5142,11 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 // -- service : service containing the color
 // -- Return : hsv object
 JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service) {
-	if (!color)
+	if (!color) {
 		color = '0,0,0';
-	//this.log('debug',"couleur :" + color);
-	//var colors = color.split(',');
+	}
+	// this.log('debug',"couleur :" + color);
+	// var colors = color.split(',');
 	var r = hexToR(color);
 	var g = hexToG(color);
 	var b = hexToB(color);
@@ -5174,22 +5167,22 @@ JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service)
 // -- service : service to set color to
 // -- Return : nothing
 JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
-	/*switch (--service.countColorCharacteristics) {
+	/* switch (--service.countColorCharacteristics) {
 	case -1:
-		service.countColorCharacteristics = 2;*/
+		service.countColorCharacteristics = 2; */
 		var that = this;
 
 		clearTimeout(service.timeoutIdColorCharacteristics);
 		service.timeoutIdColorCharacteristics = setTimeout(function() {
-			//if (service.countColorCharacteristics < 2)
+			// if (service.countColorCharacteristics < 2)
 			//	return;
 			var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
-			if (DEV_DEBUG) that.log('debug',"---------setRGB : ",rgbColor);
+			if (DEV_DEBUG) {that.log('debug',"---------setRGB : ",rgbColor);}
 			that.command('setRGB', rgbColor, service);
-			//service.countColorCharacteristics = 0;
-			//service.timeoutIdColorCharacteristics = 0;
+			// service.countColorCharacteristics = 0;
+			// service.timeoutIdColorCharacteristics = 0;
 		}, 500);
-		/*break;
+		/* break;
 	case 0:
 		var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
 		this.command('setRGB', rgbColor, service);
@@ -5198,7 +5191,7 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
 		break;
 	default:
 		break;
-	}*/
+	} */
 };
 
 // -- RegisterCustomCharacteristics
@@ -5215,7 +5208,7 @@ function RegisterCustomCharacteristics() {
 			maxValue : 21600, // 12 hours
 			minValue : 0,
 			minStep : 900, // 15 min
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+			perms : [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5230,7 +5223,7 @@ function RegisterCustomCharacteristics() {
 			maxValue : 100000,
 			minValue : 0,
 			minStep : 1,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5245,7 +5238,7 @@ function RegisterCustomCharacteristics() {
 			maxValue : 100000000000,
 			minValue : 0,
 			minStep : 0.001,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5259,7 +5252,7 @@ function RegisterCustomCharacteristics() {
 			maxValue: 10,
 			minValue: 0,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5274,7 +5267,7 @@ function RegisterCustomCharacteristics() {
 			maxValue: 1100,
 			minValue: 700,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5285,8 +5278,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.TimesOpened = function() {
 		Characteristic.call(this, 'TimesOpened', 'E863F129-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-		  format:   Characteristic.Formats.UINT32,
-		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.UINT32,
+			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5296,8 +5289,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Char118 = function() {
 		Characteristic.call(this, 'Char118', 'E863F118-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-		  format:   Characteristic.Formats.UINT32,
-		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.UINT32,
+			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5307,8 +5300,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Char119 = function() {
 		Characteristic.call(this, 'Char119', 'E863F119-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-		  format:   Characteristic.Formats.UINT32,
-		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.UINT32,
+			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5318,8 +5311,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.LastActivation = function() {
 		Characteristic.call(this, 'LastActivation', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-		  format:   Characteristic.Formats.UINT32,
-		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.UINT32,
+			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5329,8 +5322,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.ResetTotal = function() {
 		Characteristic.call(this, 'ResetTotal', 'E863F112-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-		  format:   Characteristic.Formats.UINT32,
-		  perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.UINT32,
+			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5346,7 +5339,7 @@ function RegisterCustomCharacteristics() {
 			maxValue: 7,
 			minValue: 0,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE]
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5360,7 +5353,7 @@ function RegisterCustomCharacteristics() {
 			maxValue: 3600,
 			minValue: 0,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE]
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5373,9 +5366,9 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericINT = function() {
 		Characteristic.call(this, 'ValueINT', '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263');
 		this.setProps({
-		  format:   Characteristic.Formats.INT,
-		  minStep: 1,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.INT,
+			minStep: 1,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5385,9 +5378,9 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericFLOAT = function() {
 		Characteristic.call(this, 'ValueFLOAT', '0168A695-70A7-4AF7-A800-417D30055719');
 		this.setProps({
-		  format:   Characteristic.Formats.FLOAT,
-		  minStep: 0.01,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.FLOAT,
+			minStep: 0.01,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5397,8 +5390,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericBOOL = function() {
 		Characteristic.call(this, 'ValueBOOL', 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB');
 		this.setProps({
-		  format:   Characteristic.Formats.BOOL,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.BOOL,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5408,8 +5401,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericSTRING = function() {
 		Characteristic.call(this, 'ValueSTRING', 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1');
 		this.setProps({
-		  format:   Characteristic.Formats.STRING,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.STRING,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5419,10 +5412,10 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AQI = function() {
 		Characteristic.call(this, 'Index', '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263');
 		this.setProps({
-		  format:   Characteristic.Formats.INT,
-		  unit: '',
-		  minStep: 1,
-		  perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY ]
+			format: Characteristic.Formats.INT,
+			unit: '',
+			minStep: 1,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5433,7 +5426,7 @@ function RegisterCustomCharacteristics() {
 		Characteristic.call(this, 'PPM', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 			format: Characteristic.Formats.UINT16,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN	]
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN],
 		});
 		this.value = this.getDefaultValue();
     };
@@ -5444,7 +5437,7 @@ function RegisterCustomCharacteristics() {
 		Characteristic.call(this, 'AQX2', 'E863F132-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
 			format: Characteristic.Formats.DATA,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN	]
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN],
 		});
         this.value = this.getDefaultValue();
 	};	
@@ -5459,7 +5452,7 @@ function RegisterCustomCharacteristics() {
 			maxValue: 100,
 			minValue: 0,
 			minStep: 0.1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5470,7 +5463,7 @@ function RegisterCustomCharacteristics() {
 		Characteristic.call(this, 'Wind direction', '46f1284c-1912-421b-82f5-eb75008b167e');
 		this.setProps({
 			format: Characteristic.Formats.STRING,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5481,7 +5474,7 @@ function RegisterCustomCharacteristics() {
 		Characteristic.call(this, 'Condition', 'cd65a9ab-85ad-494a-b2bd-2f380084134d');
 		this.setProps({
 			format: Characteristic.Formats.STRING,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5496,7 +5489,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 200,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -5511,7 +5504,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 1000,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -5525,7 +5518,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 5,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -5547,7 +5540,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -5558,10 +5551,10 @@ function RegisterCustomCharacteristics() {
 			Characteristic.call(this, 'Remaining Duration', '000000D4-0000-1000-8000-0026BB765291');
 			this.setProps({
 				format: Characteristic.Formats.UINT32,
-			      	maxValue: 3600,
-			      	minValue: 0,
-			      	minStep: 1,
-			      	perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+				maxValue: 3600,
+				minValue: 0,
+				minStep: 1,
+				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -5571,8 +5564,8 @@ function RegisterCustomCharacteristics() {
 	/**
 	 * FakeGato History Service
 	 */
-	//Service.FakeGatoHistoryService=FakeGatoHistoryService;
-	//inherits(Service.FakeGatoHistoryService, Service);
+	// Service.FakeGatoHistoryService=FakeGatoHistoryService;
+	// inherits(Service.FakeGatoHistoryService, Service);
 	
 	/**
 	 * Custom Service 'Power Monitor'
@@ -5631,15 +5624,15 @@ function RegisterCustomCharacteristics() {
 		Service.call(this, displayName, 'E863F001-079E-48FF-8F27-9C2605A29F52', subtype);
 
 		// Required Characteristics
-		//this.addCharacteristic(Characteristic.CurrentTemperature);
-		//this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
-		//this.addCharacteristic(Characteristic.AirPressure);
+		// this.addCharacteristic(Characteristic.CurrentTemperature);
+		// this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
+		// this.addCharacteristic(Characteristic.AirPressure);
 		this.addCharacteristic(Characteristic.WeatherCondition);
 
 		// Optional Characteristics
 		this.addOptionalCharacteristic(Characteristic.WindDirection);
 		this.addOptionalCharacteristic(Characteristic.WindSpeed);
-		//this.addOptionalCharacteristic(Characteristic.WeatherCondition);
+		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
 		this.addOptionalCharacteristic(Characteristic.UVIndex);
 	};
 	inherits(Service.WeatherService, Service);
@@ -5653,13 +5646,13 @@ function RegisterCustomCharacteristics() {
 		Service.call(this, displayName, '0000008D-0000-1000-8000-0026BB765291', subtype);
 
 		// Required Characteristics
-		//this.addCharacteristic(Characteristic.CurrentTemperature);
-		//this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
-		//this.addCharacteristic(Characteristic.AirPressure);
+		// this.addCharacteristic(Characteristic.CurrentTemperature);
+		// this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
+		// this.addCharacteristic(Characteristic.AirPressure);
 		this.addCharacteristic(Characteristic.AirQuality);
 
 		// Optional Characteristics
-		//this.addOptionalCharacteristic(Characteristic.WeatherCondition);
+		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
 
 	};
 	inherits(Service.EveRoomService, Service);
@@ -5669,7 +5662,7 @@ function RegisterCustomCharacteristics() {
 	 * Custom Service 'Custom Service'
 	 */
 	 
-	Service.CustomService = function (displayName, subtype) {
+	Service.CustomService = function(displayName, subtype) {
 		Service.call(this, displayName, 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7', subtype);
 
 		this.addOptionalCharacteristic(Characteristic.Name);
@@ -5696,7 +5689,7 @@ function JeedomBridgedAccessory(services) {
 // -- Return : nothing
 JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 	newAccessory
-	   .getService(Service.AccessoryInformation)
+		.getService(Service.AccessoryInformation)
 		.setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
 		.setCharacteristic(Characteristic.Model, this.model)
 		.setCharacteristic(Characteristic.SerialNumber, this.serialNumber);
@@ -5740,9 +5733,9 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 					this.platform.bindCharacteristicEvents(characteristic, service.controlService);
 					this.log('debug','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 				}
-			}
-			else
+			} else {
 				this.log('debug','On essaye d\'ajouter un service mais il existe déjà : ',service.controlService);
+			}
 		}
 	}
 	catch(e){
@@ -5765,8 +5758,9 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 			var cachedValues=[];
 			for(var t=0; t< accessory.services.length;t++) { 
 				if(accessory.services[t].UUID != Service.AccessoryInformation.UUID && 
-				   accessory.services[t].UUID != Service.BridgingState.UUID)
+					accessory.services[t].UUID != Service.BridgingState.UUID) {
 					serviceList.push(accessory.services[t]);
+				}
 			}		
 			for(service of serviceList){ // dont work in one loop or with temp object :(
 				this.log('debug',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
@@ -5840,8 +5834,9 @@ function rgbToHex(R, G, B) {
 // -- Return : hex value
 function toHex(n) {
 	n = parseInt(n, 10);
-	if (isNaN(n))
+	if (isNaN(n)) {
 		return '00';
+	}
 	n = Math.max(0, Math.min(n, 255));
 	return '0123456789ABCDEF'.charAt((n - n % 16) / 16) + '0123456789ABCDEF'.charAt(n % 16);
 }
@@ -5853,7 +5848,7 @@ function toHex(n) {
 // -- saturation : Saturation value
 // -- value : value (brightness) value
 // -- Return : RGB object
-function HSVtoRGB(hue, saturation, value) {
+function HSVtoRGB(hue, saturation, _value) {
 	var h = hue / 360.0;
 	var s = saturation / 100.0;
 	var v = 1.0;
@@ -5903,7 +5898,7 @@ function HSVtoRGB(hue, saturation, value) {
 	return {
 		r : Math.round(r * 255),
 		g : Math.round(g * 255),
-		b : Math.round(b * 255)
+		b : Math.round(b * 255),
 	};
 }
 
@@ -5948,7 +5943,7 @@ function RGBtoHSV(r, g, b) {
 	return {
 		h : h * 360.0,
 		s : s * 100.0,
-		v : v * 100.0
+		v : v * 100.0,
 	};
 }
 
@@ -5959,7 +5954,7 @@ function RGBtoHSV(r, g, b) {
 // -- Return : Object found
 function findMyID(obj,id) {
 	for(var o in obj) {
-        //if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && parseInt(obj[o].id) && parseInt(id) && parseInt(obj[o].id)==parseInt(id)) {
+        // if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && parseInt(obj[o].id) && parseInt(id) && parseInt(obj[o].id)==parseInt(id)) {
         if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && obj[o].id==id) {
 			return obj[o];
         }
