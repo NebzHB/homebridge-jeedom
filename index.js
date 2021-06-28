@@ -526,14 +526,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.VerTiltState = cmd2.VerTiltState;
 						}
 					});
-					if(Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre"'); 
-					if(!Serv.actions.up && Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Monter"');
-					if(!Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');
-					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');
-					if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) that.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');
-					if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) that.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');
-					if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');
-					if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');
+					if(Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Volet Bouton Descendre"');}
+					if(!Serv.actions.up && Serv.actions.down) {that.log('warn','Pas de type générique "Action/Volet Bouton Monter"');}
+					if(!Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');}
+					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {that.log('warn','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');}
+					if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) {that.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');}
+					if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) {that.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');}
+					if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
+					if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
 					Serv.minValue=0;
 					Serv.maxValue=100;
 					if(Serv.actions.slider) {
@@ -545,16 +545,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					}
 					if(Serv.actions.HorTiltSlider) {
-						let props = {};
-						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.maxValue && parseInt(Serv.actions.HorTiltSlider.configuration.maxValue))
+						const props = {};
+						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.maxValue && parseInt(Serv.actions.HorTiltSlider.configuration.maxValue)) {
 							props.maxValue = parseInt(Serv.actions.HorTiltSlider.configuration.maxValue);
-						else
+						} else {
 							props.maxValue = 90;
-						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.minValue && parseInt(Serv.actions.HorTiltSlider.configuration.minValue))
+						}
+						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.minValue && parseInt(Serv.actions.HorTiltSlider.configuration.minValue)) {
 							props.minValue = parseInt(Serv.actions.HorTiltSlider.configuration.minValue);
-						else
+						} else {
 							props.minValue = 0;
-							
+						}
 						HBservice.characteristics.push(Characteristic.CurrentHorizontalTiltAngle);
 						Serv.addCharacteristic(Characteristic.CurrentHorizontalTiltAngle);
 						Serv.getCharacteristic(Characteristic.CurrentHorizontalTiltAngle).setProps(props);
@@ -566,16 +567,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					
 					if(Serv.actions.VerTiltSlider) {
-						let props = {};
-						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.maxValue && parseInt(Serv.actions.VerTiltSlider.configuration.maxValue))
+						const props = {};
+						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.maxValue && parseInt(Serv.actions.VerTiltSlider.configuration.maxValue)) {
 							props.maxValue = parseInt(Serv.actions.VerTiltSlider.configuration.maxValue);
-						else
+						} else {
 							props.maxValue = 90;
-						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.minValue && parseInt(Serv.actions.VerTiltSlider.configuration.minValue))
+						}
+						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.minValue && parseInt(Serv.actions.VerTiltSlider.configuration.minValue)) {
 							props.minValue = parseInt(Serv.actions.VerTiltSlider.configuration.minValue);
-						else
+						} else {
 							props.minValue = 0;
-							
+						}	
 						HBservice.characteristics.push(Characteristic.CurrentVerticalTiltAngle);
 						Serv.addCharacteristic(Characteristic.CurrentVerticalTiltAngle);
 						Serv.getCharacteristic(Characteristic.CurrentVerticalTiltAngle).setProps(props);
@@ -608,9 +610,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.state) {
 					HBservice = {
 						controlService : new Service.Window(eqLogic.name),
-						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState]
+						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState],
 					};
-					let Serv = HBservice.controlService;
+					const Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
@@ -625,19 +627,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.slider = cmd2.slider;
 						}
 					});
-					if(Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre"'); 
-					if(!Serv.actions.up && Serv.actions.down) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Monter"');
-					if(!Serv.actions.up && !Serv.actions.down) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');
-					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');
+					if(Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
+					if(!Serv.actions.up && Serv.actions.down) {that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
+					if(!Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
+					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');}
 					if(Serv.actions.slider) {
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue))
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
-						else
+						} else {
 							Serv.maxValue = 100; // if not set in Jeedom it's 100
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue))
+						}
+						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue)) {
 							Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
-						else
+						} else {
 							Serv.minValue = 0; // if not set in Jeedom it's 0
+						}
 					}
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
