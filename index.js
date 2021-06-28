@@ -4845,7 +4845,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								found = true;
 							}
 						}
- 					break;
+					break;
 					case 'THERMOSTAT_SET_SETPOINT' :
 						if(action == 'setTargetLevel') {
 							if(value > 0) {
@@ -5661,7 +5661,7 @@ function RegisterCustomCharacteristics() {
 	/**
 	 * Custom Service 'Custom Service'
 	 */
-	 
+
 	Service.CustomService = function(displayName, subtype) {
 		Service.call(this, displayName, 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7', subtype);
 
