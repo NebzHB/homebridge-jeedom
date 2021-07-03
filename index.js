@@ -17,8 +17,8 @@
 'use strict';
 
 var Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
-import {inherits} from 'util';
-import {myLogger} from './lib/myLogger';
+var inherits = require('util').inherits;
+var myLogger = require('./lib/myLogger').myLogger;
 var debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
