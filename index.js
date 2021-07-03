@@ -40,7 +40,7 @@ module.exports = function(homebridge) {
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
 	RegisterCustomCharacteristics();
 	homebridge.registerPlatform('homebridge-jeedom', 'Jeedom', JeedomPlatform, true);
-}
+};
 
 // -- JeedomPlatform
 // -- Desc : Main Class, used by Homebridge to construct the platform object
