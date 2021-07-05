@@ -74,10 +74,10 @@ function JeedomPlatform(logger, config, api) {
 			config.url == 'https://:80') {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
-		}else if(config.url.indexOf('https') !== -1) {
+		} else if(config.url.indexOf('https') !== -1) {
 			this.log('error',"Adresse Jeedom utilise https en interne, non supporté :"+config.url);	
 			process.exit(1);
-		}else {
+		} else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
 		this.DEV_DEBUG = DEV_DEBUG; // for passing by
