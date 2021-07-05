@@ -26,5 +26,5 @@ jobs:
         uses: icrawl/action-eslint@v1
         with:
           custom-glob: .
-      - name: JSHint
-        uses: moneyforward/jshint-action@v0.0.1
+      - name: Run scan with JSHint
+        run: script/jshint-script.sh
