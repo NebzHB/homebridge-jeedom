@@ -26,6 +26,3 @@ jobs:
         uses: icrawl/action-eslint@v1
         with:
           custom-glob: .
-      - name: Run scan with JSHint
-        run: |
-          jshint --exclude="node_modules/" --reporter=unix .
