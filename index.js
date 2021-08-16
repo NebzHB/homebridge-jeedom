@@ -2476,7 +2476,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 };
 
 JeedomPlatform.prototype.adaptiveLightingSupport = function() {
-	return false; //(this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'));
+	return false; // (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'));
 };
 
 // -- createStatusCharact
