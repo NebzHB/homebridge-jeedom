@@ -1,7 +1,7 @@
 {
-  "name": "homebridge-jeedom",
+  "name": "@nebz/homebridge-jeedom",
   "version": "v1.5.0",
-  "cust_serial": "0004",
+  "cust_serial": "0007",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "private":true,
@@ -10,7 +10,7 @@
     "start": "echo \"Error: configure and run homebridge to start\" && exit 1"
   },
   "engines": {
-    "node": ">4.0.0",
+    "node": ">=10.17.0",
     "homebridge": ">=0.4.38"
   },
   "repository": {
@@ -25,17 +25,15 @@
     "Siri"
   ],
   "dependencies": {
-    "request": ">=2.81.0",
+    "request": ">=2.88.2",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
-  "author": "Benjamin RENARD <nebz@nebz.be>",
-  "contributors": [
-      "Nechry",
-      "bphoque",
-      "claude69",
-      "mamatdv",
-      "rocket13011"
-  ],
+  "devDependencies": {
+    "@babel/core": ">=7.15.0",
+    "@babel/eslint-parser": "^7.15.0",
+    "eslint": "^7.32.0"
+  },
+  "author": "Nebz <nebz@nebz.be>",
   "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/NebzHB/homebridge-jeedom/issues"
