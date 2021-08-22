@@ -2440,6 +2440,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					}
 					else if(that.myPlugin == "homebridge") {
+							props.validValues.push(0);
 							that.log('warn','Pas de config des modes de l\'alarme');
 					}
 					props.validValues.push(3);
