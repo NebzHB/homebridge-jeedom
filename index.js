@@ -3695,7 +3695,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
-					} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1)) {
+					} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1) {
 						returnValue = undefined;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
