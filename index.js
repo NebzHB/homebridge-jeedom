@@ -2440,9 +2440,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					}
 					else if(that.myPlugin == "homebridge") {
-							props.validValues.push(0);
-							props.validValues.push(1);
-							props.validValues.push(2);
 							that.log('warn','Pas de config des modes de l\'alarme');
 					}
 					props.validValues.push(3);
@@ -3698,6 +3695,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
+					} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1)) {
+						returnValue = undefined;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) {that.log('debug',"alarm_mode=",currentValue);}
