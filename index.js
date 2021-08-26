@@ -29,7 +29,7 @@ var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
-const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET'];
+const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -600,7 +600,80 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 			if(!HBservice) {
-				that.log('warn','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture');
+				that.log('warn','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture" on regarde s\'il y a uniquement les boutons...');
+				eqLogic.services.flap.forEach(function(cmd) {
+					if (cmd.up) {
+						const SwitchName=cmd.up.name;
+						HBservice = {
+							controlService : new Service.Switch(SwitchName),
+							characteristics : [Characteristic.On],
+						};
+						const Serv = HBservice.controlService;
+						Serv.eqLogic=eqLogic;
+						Serv.actions={};
+						Serv.infos={};
+						Serv.actions.Push = cmd.up;
+						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+						
+						// add Active, Tampered and Defect Characteristics if needed
+						HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+						
+						Serv.cmd_id = cmd.up.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = Serv.subtype || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+						HBservices.push(HBservice);
+					}
+					if (cmd.down) {
+						const SwitchName=cmd.down.name;
+						HBservice = {
+							controlService : new Service.Switch(SwitchName),
+							characteristics : [Characteristic.On],
+						};
+						const Serv = HBservice.controlService;
+						Serv.eqLogic=eqLogic;
+						Serv.actions={};
+						Serv.infos={};
+						Serv.actions.Push = cmd.down;
+						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+						
+						// add Active, Tampered and Defect Characteristics if needed
+						HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+						
+						Serv.cmd_id = cmd.down.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = Serv.subtype || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+						HBservices.push(HBservice);
+					}
+					if (cmd.stop) {
+						const SwitchName=cmd.stop.name;
+						HBservice = {
+							controlService : new Service.Switch(SwitchName),
+							characteristics : [Characteristic.On],
+						};
+						const Serv = HBservice.controlService;
+						Serv.eqLogic=eqLogic;
+						Serv.actions={};
+						Serv.infos={};
+						Serv.actions.Push = cmd.stop;
+						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+						
+						// add Active, Tampered and Defect Characteristics if needed
+						HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+						
+						Serv.cmd_id = cmd.stop.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = Serv.subtype || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+						HBservices.push(HBservice);
+					}
+				});
+				if(!HBservice) {
+					that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou "Action/Volet Bouton Descendre" ou "Action/Volet Bouton Stop"');
+				} else {
+					HBservice = null;
+				}
 			} else {
 				HBservice = null;
 			}
