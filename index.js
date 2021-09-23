@@ -16,7 +16,7 @@
 /* jshint esversion: 6,node: true,-W041: false */
 'use strict';
 
-var Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
+var Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
 var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
 var debug = {};
@@ -35,6 +35,7 @@ module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
+	Access = homebridge.hap.Access;
 	AdaptiveLightingController = homebridge.hap.AdaptiveLightingController;
 	UUIDGen = homebridge.hap.uuid;
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
@@ -756,7 +757,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 					if(!Serv.actions.on) {that.log('warn','Pas de type générique "Action/Prise Bouton On"');}
 					if(!Serv.actions.off) {that.log('warn','Pas de type générique "Action/Prise Bouton Off"');}
-					
+					Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
