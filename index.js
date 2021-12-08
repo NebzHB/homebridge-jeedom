@@ -757,7 +757,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 					if(!Serv.actions.on) {that.log('warn','Pas de type générique "Action/Prise Bouton On"');}
 					if(!Serv.actions.off) {that.log('warn','Pas de type générique "Action/Prise Bouton Off"');}
-					// Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});
+					// Test for AdminOnlyAccess, state need to have OwnerOnly attribute to True ou 1
+					if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
