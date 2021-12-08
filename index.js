@@ -62,6 +62,7 @@ function JeedomPlatform(logger, config, api) {
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
+		this.adaptiveEnabled = config.adaptiveEnabled;
 		
 		this.pathHomebridgeConf = api.user.storagePath()+'/';
 		
@@ -2551,7 +2552,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 };
 
 JeedomPlatform.prototype.adaptiveLightingSupport = function() {
-	return (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'));
+	if(this.adaptiveEnabled) {
+		return (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'));
+	} else {
+		return false;	
+	}
 };
 
 // -- createStatusCharact
