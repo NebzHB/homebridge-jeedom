@@ -537,7 +537,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
 					if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
 					Serv.minValue=0;
-					Serv.maxValue=100;
+					if(Serv.infos.state.subType == 'binary') {
+						Serv.maxValue=1;
+					} else {
+						Serv.maxValue=100;	
+					}
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
