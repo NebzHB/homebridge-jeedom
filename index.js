@@ -505,10 +505,26 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					if(cmd.stateClosing) {
 						Serv.infos.state=cmd.stateClosing;
-						Serv.FlapType="Closing";
+						if(Serv.infos.state.subType == 'binary') {
+							if(Serv.infos.state.display.invertBinary) {
+								Serv.FlapType="Opening";
+							} else {
+								Serv.FlapType="Closing";
+							}
+						} else {
+							Serv.FlapType="Closing";
+						}
 					} else if(cmd.state) {
 						Serv.infos.state=cmd.state;
-						Serv.FlapType="Opening";
+						if(Serv.infos.state.subType == 'binary') {
+							if(Serv.infos.state.display.invertBinary) {
+								Serv.FlapType="Closing";
+							} else {
+								Serv.FlapType="Opening";
+							}
+						} else {
+							Serv.FlapType="Opening";
+						}
 					}
 
 					eqServicesCopy.flap.forEach(function(cmd2) {
