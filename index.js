@@ -555,6 +555,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.minValue=0;
 					if(Serv.infos.state.subType == 'binary') {
 						Serv.maxValue=1;
+						Serv.getCharacteristic(Characteristic.TargetPosition).setProps({minStep:100});
 					} else {
 						Serv.maxValue=100;	
 					}
