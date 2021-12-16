@@ -16,7 +16,7 @@
 /* jshint esversion: 6,node: true,-W041: false */
 'use strict';
 
-var Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
+var Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
 var inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
 var debug = {};
@@ -29,12 +29,13 @@ var hasError = false;
 var FakeGatoHistoryService;
 var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
-const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET'];
+const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
+	Access = homebridge.hap.Access;
 	AdaptiveLightingController = homebridge.hap.AdaptiveLightingController;
 	UUIDGen = homebridge.hap.uuid;
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
@@ -61,6 +62,7 @@ function JeedomPlatform(logger, config, api) {
 		this.log = myLogger.createMyLogger(this.debugLevel,logger);
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
+		this.adaptiveEnabled = config.adaptiveEnabled;
 		
 		this.pathHomebridgeConf = api.user.storagePath()+'/';
 		
@@ -503,10 +505,26 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					if(cmd.stateClosing) {
 						Serv.infos.state=cmd.stateClosing;
-						Serv.FlapType="Closing";
+						if(Serv.infos.state.subType == 'binary') {
+							if(Serv.infos.state.display.invertBinary) {
+								Serv.FlapType="Opening";
+							} else {
+								Serv.FlapType="Closing";
+							}
+						} else {
+							Serv.FlapType="Closing";
+						}
 					} else if(cmd.state) {
 						Serv.infos.state=cmd.state;
-						Serv.FlapType="Opening";
+						if(Serv.infos.state.subType == 'binary') {
+							if(Serv.infos.state.display.invertBinary) {
+								Serv.FlapType="Closing";
+							} else {
+								Serv.FlapType="Opening";
+							}
+						} else {
+							Serv.FlapType="Opening";
+						}
 					}
 
 					eqServicesCopy.flap.forEach(function(cmd2) {
@@ -535,7 +553,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
 					if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {that.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
 					Serv.minValue=0;
-					Serv.maxValue=100;
+					if(Serv.infos.state.subType == 'binary') {
+						Serv.maxValue=1;
+						Serv.getCharacteristic(Characteristic.TargetPosition).setProps({minStep:100});
+					} else {
+						Serv.maxValue=100;	
+					}
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
@@ -600,7 +623,80 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				}
 			});
 			if(!HBservice) {
-				that.log('warn','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture');
+				that.log('warn','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture" on regarde s\'il y a uniquement les boutons...');
+				eqLogic.services.flap.forEach(function(cmd) {
+					if (cmd.up) {
+						const SwitchName=cmd.up.name;
+						HBservice = {
+							controlService : new Service.Switch(SwitchName),
+							characteristics : [Characteristic.On],
+						};
+						const Serv = HBservice.controlService;
+						Serv.eqLogic=eqLogic;
+						Serv.actions={};
+						Serv.infos={};
+						Serv.actions.Push = cmd.up;
+						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+						
+						// add Active, Tampered and Defect Characteristics if needed
+						HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+						
+						Serv.cmd_id = cmd.up.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = Serv.subtype || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+						HBservices.push(HBservice);
+					}
+					if (cmd.down) {
+						const SwitchName=cmd.down.name;
+						HBservice = {
+							controlService : new Service.Switch(SwitchName),
+							characteristics : [Characteristic.On],
+						};
+						const Serv = HBservice.controlService;
+						Serv.eqLogic=eqLogic;
+						Serv.actions={};
+						Serv.infos={};
+						Serv.actions.Push = cmd.down;
+						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+						
+						// add Active, Tampered and Defect Characteristics if needed
+						HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+						
+						Serv.cmd_id = cmd.down.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = Serv.subtype || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+						HBservices.push(HBservice);
+					}
+					if (cmd.stop) {
+						const SwitchName=cmd.stop.name;
+						HBservice = {
+							controlService : new Service.Switch(SwitchName),
+							characteristics : [Characteristic.On],
+						};
+						const Serv = HBservice.controlService;
+						Serv.eqLogic=eqLogic;
+						Serv.actions={};
+						Serv.infos={};
+						Serv.actions.Push = cmd.stop;
+						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+						
+						// add Active, Tampered and Defect Characteristics if needed
+						HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
+						
+						Serv.cmd_id = cmd.stop.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = Serv.subtype || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+						HBservices.push(HBservice);
+					}
+				});
+				if(!HBservice) {
+					that.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou "Action/Volet Bouton Descendre" ou "Action/Volet Bouton Stop"');
+				} else {
+					HBservice = null;
+				}
 			} else {
 				HBservice = null;
 			}
@@ -683,7 +779,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 					if(!Serv.actions.on) {that.log('warn','Pas de type générique "Action/Prise Bouton On"');}
 					if(!Serv.actions.off) {that.log('warn','Pas de type générique "Action/Prise Bouton Off"');}
-					
+					// Test for AdminOnlyAccess, state need to have OwnerOnly attribute to True ou 1
+					if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
 					
@@ -2476,7 +2573,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 };
 
 JeedomPlatform.prototype.adaptiveLightingSupport = function() {
-	return false; // (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'));
+	if(this.adaptiveEnabled) {
+		return (this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual('v1.3.0-beta.23'));
+	} else {
+		return false;	
+	}
 };
 
 // -- createStatusCharact
@@ -3695,6 +3796,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
+					} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1) {
+						returnValue = undefined;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) {that.log('debug',"alarm_mode=",currentValue);}
