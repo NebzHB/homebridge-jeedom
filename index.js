@@ -4020,10 +4020,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TargetDoorState.UUID :
 				HRreturnValue="CLOSEDDef";
 				returnValue=Characteristic.TargetDoorState.CLOSED; // if don't know -> CLOSED
+				let valueToTest=null;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 						cmd.generic_type == 'BARRIER_STATE') {
-						switch(parseInt(cmd.currentValue)) {
+						valueToTest=parseInt(cmd.currentValue);
+						if(isNaN(valueToTest)) { valueToTest=cmd.currentValue; }
+						switch(valueToTest) {
 								case customValues.OPEN :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";	
@@ -4053,10 +4056,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentDoorState.UUID :
 				HRreturnValue="STOPPEDDef";
 				returnValue=Characteristic.CurrentDoorState.STOPPED; // if don't know -> STOPPED
+				let valueToTest=null;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 						cmd.generic_type == 'BARRIER_STATE') {
-						switch(parseInt(cmd.currentValue)) {
+						valueToTest=parseInt(cmd.currentValue);
+						if(isNaN(valueToTest)) { valueToTest=cmd.currentValue; }
+						switch(valueToTest) {
 								case customValues.OPEN :
 									returnValue=Characteristic.CurrentDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
