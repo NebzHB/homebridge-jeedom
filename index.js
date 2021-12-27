@@ -4052,7 +4052,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;
 			case Characteristic.CurrentDoorState.UUID :
 				HRreturnValue="OPENDef";
-				returnValue=Characteristic.CurrentDoorState.CLOSED; // if don't know -> CLOSED
+				returnValue=Characteristic.CurrentDoorState.STOPPED; // if don't know -> STOPPED
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 						cmd.generic_type == 'BARRIER_STATE') {
