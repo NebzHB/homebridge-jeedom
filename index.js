@@ -4024,8 +4024,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 						cmd.generic_type == 'BARRIER_STATE') {
-						targetValueToTest=parseInt(cmd.currentValue);
-						if(isNaN(targetValueToTest)) { targetValueToTest=cmd.currentValue; }
+						targetValueToTest=cmd.currentValue.toString();
 						switch(targetValueToTest) {
 								case customValues.OPEN :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
@@ -4048,7 +4047,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="CLOSED";
 								break;
 						}
-						if (DEV_DEBUG) {that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");}
+						if (DEV_DEBUG) {
+							console.log(customValues);
+							that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						}
 						break;
 					}
 				}	
@@ -4059,8 +4061,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 						cmd.generic_type == 'BARRIER_STATE') {
-						currentValueToTest=parseInt(cmd.currentValue);
-						if(isNaN(currentValueToTest)) { currentValueToTest=cmd.currentValue; }
+						currentValueToTest=cmd.currentValue.toString();
 						switch(currentValueToTest) {
 								case customValues.OPEN :
 									returnValue=Characteristic.CurrentDoorState.OPEN; // 0
@@ -4083,7 +4084,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 									HRreturnValue="STOPPED";
 								break;
 						}
-						if (DEV_DEBUG) {that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");}
+						if (DEV_DEBUG) {
+							console.log(customValues);
+							that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
+						}
 						break;
 					}
 				}
@@ -5149,7 +5153,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 				
 					var cacheState = that.jeedomClient.getDevicePropertiesFromCache(update.option.eqLogic_id);
 					that.jeedomClient.getDeviceProperties(update.option.eqLogic_id).then(function(eqLogic){
-						if(cacheState.isEnable != eqLogic.isEnable) {
+						if(cacheState && eqLogic && cacheState.isEnable != eqLogic.isEnable) {
 							that.log('debug',"Changing Enable in",update.option.eqLogic_id,'from',cacheState.isEnable,'to',eqLogic.isEnable);
 							that.jeedomClient.updateModelEq(update.option.eqLogic_id,eqLogic);
 						}
