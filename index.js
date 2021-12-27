@@ -3272,6 +3272,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		var returnValue = 0;
 		var HRreturnValue;
 		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
+		var targetValueToTest,currentValueToTest;
 		var hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
 		switch (characteristic.UUID) {
 			// Switch or Light
@@ -4020,7 +4021,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.TargetDoorState.UUID :
 				HRreturnValue="CLOSEDDef";
 				returnValue=Characteristic.TargetDoorState.CLOSED; // if don't know -> CLOSED
-				let targetValueToTest=null;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 						cmd.generic_type == 'BARRIER_STATE') {
@@ -4056,7 +4056,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			case Characteristic.CurrentDoorState.UUID :
 				HRreturnValue="STOPPEDDef";
 				returnValue=Characteristic.CurrentDoorState.STOPPED; // if don't know -> STOPPED
-				let currentValueToTest=null;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'GARAGE_STATE' || 
 						cmd.generic_type == 'BARRIER_STATE') {
