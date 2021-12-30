@@ -2535,7 +2535,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.alarm.night.mode_label = splitted[1];
 							Serv.alarm.night.mode_id = splitted[0];
 							props.validValues.push(2);
-							Serv.hasAlarmModes=true
+							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode Nuit');
 						}
