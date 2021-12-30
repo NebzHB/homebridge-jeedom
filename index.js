@@ -2507,6 +2507,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					var props = {};
 					props.validValues=[];
+					Serv.hasAlarmModes=false;
 					if(eqLogic.alarmModes) {
 						if(eqLogic.alarmModes.SetModePresent && eqLogic.alarmModes.SetModePresent != "NOT") {
 							Serv.alarm.present = {};
@@ -2514,6 +2515,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.alarm.present.mode_label = splitted[1];
 							Serv.alarm.present.mode_id = splitted[0];
 							props.validValues.push(0);
+							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode Domicile/Présence');
 						}
@@ -2523,6 +2525,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.alarm.away.mode_label = splitted[1];
 							Serv.alarm.away.mode_id = splitted[0];
 							props.validValues.push(1);
+							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode À distance/Absence');
 						}
@@ -2532,12 +2535,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.alarm.night.mode_label = splitted[1];
 							Serv.alarm.night.mode_id = splitted[0];
 							props.validValues.push(2);
+							Serv.hasAlarmModes=true
 						} else {
 							that.log('warn','Pas de config du mode Nuit');
 						}
 					}
-					else if(that.myPlugin == "homebridge") {
-							that.log('warn','Pas de config des modes de l\'alarme');
+					if(that.myPlugin == "homebridge" && !Serv.hasAlarmModes) {
+						props.validValues.push(1);
+						that.log('warn','Pas de config des modes de l\'alarme');
 					}
 					props.validValues.push(3);
 					Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
@@ -3797,8 +3802,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
-					} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1) {
-						returnValue = undefined;
+					} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1 && !service.hasAlarmModes) {
+						returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
 						if (DEV_DEBUG) {that.log('debug',"alarm_mode=",currentValue);}
@@ -3849,6 +3854,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if ((cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 0)) {
 						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
 						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
+						break;
+					}
+					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1 && !service.hasAlarmModes) {
+						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue,"NO MODES");}
+						returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
 						break;
 					}
 					if (cmd.generic_type == 'ALARM_MODE') {
@@ -4933,14 +4943,14 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'ALARM_RELEASED' :
 						if(action == 'SetAlarmMode' && value == Characteristic.SecuritySystemTargetState.DISARM) {
-							that.log('debug',"setAlarmMode",value,cmd.id);
+							that.log('debug',"ALARM_RELEASED","setAlarmMode=",value,cmd.id);
 							cmdId = cmd.id;
 							cmdFound=cmd.generic_type;
 							found = true;
 						}
 					break;
 					case 'ALARM_SET_MODE' :
-						if(action == 'SetAlarmMode') {
+						if(action == 'SetAlarmMode' && service.hasAlarmModes) {
 							that.log('debug',"ALARM_SET_MODE","SetAlarmMode=",action,value);
 							cmdFound=cmd.generic_type;
 							if(value == Characteristic.SecuritySystemTargetState.NIGHT_ARM && id_NIGHT != undefined) {
@@ -4956,6 +4966,14 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								that.log('debug',"set present");
 								found = true;
 							}
+						}
+					break;
+					case 'ALARM_ARMED' :
+						if(action == 'SetAlarmMode' && value != Characteristic.SecuritySystemTargetState.DISARM && !service.hasAlarmModes) {
+							that.log('debug',"ALARM_ARMED","SetAlarmMode=",action,cmd.id);
+							cmdFound=cmd.generic_type;
+							cmdId = cmd.id;
+							found = true;
 						}
 					break;
 					case 'THERMOSTAT_SET_SETPOINT' :
