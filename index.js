@@ -465,12 +465,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.addCharacteristic(Characteristic.ColorTemperature);
 						Serv.getCharacteristic(Characteristic.ColorTemperature).setProps(props);
 					}
-					if(Serv.infos.color_temp && Serv.actions.slider) {
-						if(!eqLogic.hasAdaptive) {
-							if (that.adaptiveLightingSupport()) {
-								LightType+='_Adaptive';
-								eqLogic.hasAdaptive=true;
-							}
+
+					if(eqLogic.hasAdaptive) {
+						if (that.adaptiveLightingSupport()) {
+							LightType+='_Adaptive';
+						} else {
+							eqLogic.hasAdaptive=false;
 						}
 					}
 					
@@ -2757,6 +2757,8 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			var adaptiveLightingController = new AdaptiveLightingController(HBAccessory.getService(Service.Lightbulb));
 			HBAccessory.configureController(adaptiveLightingController);
 			HBAccessory.adaptiveLightingController = adaptiveLightingController;
+		} else {
+			HBAccessory.adaptiveLightingController = null;
 		}
 		
 		if (isNewAccessory) {
@@ -2958,11 +2960,11 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					}
 				} else {
 					if(service.eqLogic.hasAdaptive) {
-						// if(!service.infos.state_bool) {
+						if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
 							if(value == 0) {
 								this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
 							}
-						// }
+						}
 					}
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
@@ -3183,7 +3185,13 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					value = Math.round((value / 100)*maxJeedom);
 				}
 				this.log('debug','---------set Bright:',oldValue,'% soit',value,' / ',maxJeedom);
-				this.command('setValue', value, service);
+				// pre-change cache !!
+				if(service.eqLogic.hasAdaptive) {
+					this.log('debug','***Pre-Change Cache !');
+					this.jeedomClient.updateModelInfo(service.cmd_id,value,true); // Update cachedModel
+				}
+				// end !
+				this.command('setValueBright', value, service);
 			break;}
 			case Characteristic.RotationSpeed.UUID : {
 				this.settingFan=true;
@@ -4596,6 +4604,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		var needToTemporize=0;
 		var needToTemporizeSec=0;
 		var cmdFound;
+		cmdLoop:
 		for (const cmd of cmdList) {
 			if(!found) {
 				switch (cmd.generic_type) {
@@ -4759,18 +4768,13 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'LIGHT_SLIDER' :
-						if(action == 'setValue' && service.actions.slider && cmd.id == service.actions.slider.id) {
-							cmdId = cmd.id;
-							if (action == 'turnOn' && service.actions.on) {
-								this.log('info','???????? should never go here ON');
-								cmdId=service.actions.on.id;
-							} else if (action == 'turnOff' && service.actions.off) {
-								this.log('info','???????? should never go here OFF');
-								cmdId=service.actions.off.id;
-							}		
+						if(action == 'setValueBright' && service.actions.slider && cmd.id == service.actions.slider.id) {
+							this.log('debug',action+' : '+cmd.id);
+							cmdId = cmd.id;	
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=900;
+							if(!service.eqLogic.hasAdaptive) needToTemporize=900;
+							break cmdLoop;
 						}
 					break;
 					case 'FAN_SLIDER' :
@@ -4939,6 +4943,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdFound=cmd.generic_type;
 							found = true;
 							needToTemporize=900;
+							break cmdLoop;
 						}
 					break;
 					case 'ALARM_RELEASED' :
@@ -5156,8 +5161,9 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 					update.option.value != undefined && 
 					update.option.cmd_id) {
 					
-					that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value); // Update cachedModel
-					that.updateSubscribers(update);// Update subscribers
+					if(that.jeedomClient.updateModelInfo(update.option.cmd_id,update.option.value)){ // Update cachedModel
+						that.updateSubscribers(update);// Update subscribers
+					}
 
 				} else if(update.name == 'scenario::update' &&
 					update.option.state != undefined && 
