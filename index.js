@@ -4604,7 +4604,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		var needToTemporize=0;
 		var needToTemporizeSec=0;
 		var cmdFound;
-		cmdLoop:
+
 		for (const cmd of cmdList) {
 			if(!found) {
 				switch (cmd.generic_type) {
@@ -4773,8 +4773,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdId = cmd.id;	
 							found = true;
 							cmdFound=cmd.generic_type;
-							if(!service.eqLogic.hasAdaptive) needToTemporize=900;
-							break cmdLoop;
+							if(!service.eqLogic.hasAdaptive) { needToTemporize=900; }
 						}
 					break;
 					case 'FAN_SLIDER' :
@@ -4943,7 +4942,6 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							cmdFound=cmd.generic_type;
 							found = true;
 							needToTemporize=900;
-							break cmdLoop;
 						}
 					break;
 					case 'ALARM_RELEASED' :
