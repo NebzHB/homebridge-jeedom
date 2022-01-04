@@ -2959,13 +2959,13 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						this.command('modeSet', null, service);
 					}
 				} else {
-					/*if(service.eqLogic.hasAdaptive) {
+					if(service.eqLogic.hasAdaptive) {
 						if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
 							if(value == 0) {
 								this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
 							}
 						}
-					}*/
+					}
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
 			break;	
