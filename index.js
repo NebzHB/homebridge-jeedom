@@ -2959,13 +2959,13 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						this.command('modeSet', null, service);
 					}
 				} else {
-					if(service.eqLogic.hasAdaptive) {
+					/*if(service.eqLogic.hasAdaptive) {
 						if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
 							if(value == 0) {
 								this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
 							}
 						}
-					}
+					}*/
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
 			break;	
@@ -3325,6 +3325,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool) {
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
 							else {returnValue=true;}
+							if(service.eqLogic.hasAdaptive) {
+								if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
+									if(returnValue == false) {
+										this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
+									}
+								}
+							}
 							break;
 						} else if ((cmd.generic_type == 'FAN_STATE' || cmd.generic_type == 'FAN_SPEED_STATE') && cmd.id == service.cmd_id) {
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
@@ -3333,6 +3340,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						} else if (cmd.generic_type == 'LIGHT_STATE_BOOL' && service.infos.state_bool && cmd.id == service.infos.state_bool.id) {
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
 							else {returnValue=true;}
+							if(service.eqLogic.hasAdaptive) {
+								if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
+									if(returnValue == false) {
+										this.findAccessoryByService(service).adaptiveLightingController.disableAdaptiveLighting();
+									}
+								}
+							}
 							break;
 						} else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
