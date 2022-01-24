@@ -3932,34 +3932,34 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 								case 'off' :
 								case 'arrêté' :
 								case 'arret' :
-								//ES
+
 								case 'detenido' :
 								case 'apagado' :
-								//DE
+
 								case 'verhaftet' :
 								case 'aus' :
-								//PT
+
 								case 'preso' :
 								case 'fora' :
 									returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
 								break;
 								case 'heat':
 								case 'chauffage' :
-								//ES
+
 								case 'calefacción' :
-								//DE
+
 								case 'heizung' :
-								//PT
+
 								case 'aquecimento' :
 									returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
 								break;
 								case 'cool':
 								case 'climatisation' :
-								//ES
+
 								case 'climatización' :
-								//DE
+
 								case 'klimaanlage' :
-								//PT
+
 								case 'ar condicionado' :
 									returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
 								break;
