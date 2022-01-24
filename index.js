@@ -3929,38 +3929,29 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							that.log('debug','----Current State Thermo :',cmd.currentValue.toString().toLowerCase());
 							switch(cmd.currentValue.toString().toLowerCase()) {
 								default:
-								case 'off' :
-								case 'arrêté' :
-								case 'arret' :
-
-								case 'detenido' :
-								case 'apagado' :
-
-								case 'verhaftet' :
-								case 'aus' :
-
-								case 'preso' :
-								case 'fora' :
+								case 'off' : // EN
+								case 'arrêté' : // FR
+								case 'arret' : // FR
+								case 'detenido' : // ES
+								case 'apagado' : // ES
+								case 'verhaftet' : // DE
+								case 'aus' : // DE
+								case 'preso' : // PT
+								case 'fora' : // PT
 									returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
 								break;
-								case 'heat':
-								case 'chauffage' :
-
-								case 'calefacción' :
-
-								case 'heizung' :
-
-								case 'aquecimento' :
+								case 'heat': // EN
+								case 'chauffage' : // FR
+								case 'calefacción' : // ES
+								case 'heizung' : // DE
+								case 'aquecimento' : // PT
 									returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
 								break;
-								case 'cool':
-								case 'climatisation' :
-
-								case 'climatización' :
-
-								case 'klimaanlage' :
-
-								case 'ar condicionado' :
+								case 'cool': // EN
+								case 'climatisation' : // FR
+								case 'climatización' : // ES
+								case 'klimaanlage' : // DE
+								case 'ar condicionado' : // PT
 									returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
 								break;
 							}
