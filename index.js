@@ -3988,21 +3988,32 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if(service.thermo.chauf && service.thermo.chauf.mode_label !== undefined) {
 							mode_CHAUF=service.thermo.chauf.mode_label;
 						}
-						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
-						switch(cmd.currentValue) {
-							case 'Off':
-							case 'Arret':
+						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
+						switch(cmd.currentValue.toString().toLowerCase()) {
+							case 'off' : // EN
+							case 'arrêté' : // FR
+							case 'arret' : // FR
+							case 'detenido' : // ES
+							case 'apagado' : // ES
+							case 'verhaftet' : // DE
+							case 'aus' : // DE
+							case 'preso' : // PT
+							case 'fora' : // PT
 							case undefined:
 								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
 							break;							
-							case mode_CLIM:
+							case mode_CLIM.toString().toLowerCase():
 								returnValue = Characteristic.TargetHeatingCoolingState.COOL;
 							break;
-							case mode_CHAUF:
+							case mode_CHAUF.toString().toLowerCase():
 								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
 							break;
-							case 'Aucun':
-							case 'Thermostat':
+							case 'none': // EN
+							case 'aucun': // FR
+							case 'thermostat':
+							case 'ninguna': // ES
+							case 'ohne': // DE
+							case 'nemhum': // PT
 								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 							break;
 						}
@@ -4015,21 +4026,32 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						if(service.thermoHC.chauf && service.thermoHC.chauf.mode_label !== undefined) {
 							mode_CHAUF=service.thermoHC.chauf.mode_label;
 						}
-						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue);
-						switch(cmd.currentValue) {
-							case 'Off':
-							case 'Arret':
+						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
+						switch(cmd.currentValue.toString().toLowerCase()) {
+							case 'off' : // EN
+							case 'arrêté' : // FR
+							case 'arret' : // FR
+							case 'detenido' : // ES
+							case 'apagado' : // ES
+							case 'verhaftet' : // DE
+							case 'aus' : // DE
+							case 'preso' : // PT
+							case 'fora' : // PT
 							case undefined:
 								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
 							break;							
-							case mode_CLIM:
+							case mode_CLIM.toString().toLowerCase():
 								returnValue = Characteristic.TargetHeatingCoolingState.COOL;
 							break;
-							case mode_CHAUF:
+							case mode_CHAUF.toString().toLowerCase():
 								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
 							break;
-							case 'Aucun':
-							case 'Thermostat':
+							case 'none': // EN
+							case 'aucun': // FR
+							case 'thermostat':
+							case 'ninguna': // ES
+							case 'ohne': // DE
+							case 'nemhum': // PT
 								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 							break;
 						}
