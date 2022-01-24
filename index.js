@@ -3930,6 +3930,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							switch(cmd.currentValue.toString().toLowerCase()) {
 								default:
 								case 'off' : // EN
+								case 'stopped' : // EN
 								case 'arrêté' : // FR
 								case 'arret' : // FR
 								case 'detenido' : // ES
@@ -3991,6 +3992,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
 						switch(cmd.currentValue.toString().toLowerCase()) {
 							case 'off' : // EN
+							case 'stopped' : // EN
 							case 'arrêté' : // FR
 							case 'arret' : // FR
 							case 'detenido' : // ES
@@ -4029,6 +4031,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
 						switch(cmd.currentValue.toString().toLowerCase()) {
 							case 'off' : // EN
+							case 'stopped' : // EN
 							case 'arrêté' : // FR
 							case 'arret' : // FR
 							case 'detenido' : // ES
