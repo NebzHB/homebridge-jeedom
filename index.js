@@ -3984,10 +3984,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
 						
 						if(service.thermo.clim && service.thermo.clim.mode_label !== undefined) {
-							mode_CLIM=service.thermo.clim.mode_label;
+							mode_CLIM=service.thermo.clim.mode_label.toString().toLowerCase();
 						}
 						if(service.thermo.chauf && service.thermo.chauf.mode_label !== undefined) {
-							mode_CHAUF=service.thermo.chauf.mode_label;
+							mode_CHAUF=service.thermo.chauf.mode_label.toString().toLowerCase();
 						}
 						that.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
 						switch(cmd.currentValue.toString().toLowerCase()) {
@@ -4004,10 +4004,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 							case undefined:
 								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
 							break;							
-							case mode_CLIM.toString().toLowerCase():
+							case mode_CLIM:
 								returnValue = Characteristic.TargetHeatingCoolingState.COOL;
 							break;
-							case mode_CHAUF.toString().toLowerCase():
+							case mode_CHAUF:
 								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
 							break;
 							case 'none': // EN
