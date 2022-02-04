@@ -1794,7 +1794,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					});
 					if(!Serv.actions.on) {that.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir"');}
-					if(!Serv.actions.off) {that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer"');}
+					//if(!Serv.actions.off) {that.log('warn','Pas de type générique "Action/Serrure Bouton Fermer"');}
 					
 					// add Active, Tampered and Defect Characteristics if needed
 					HBservice=that.createStatusCharact(HBservice,eqServicesCopy);
