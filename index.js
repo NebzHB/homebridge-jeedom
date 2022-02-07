@@ -994,22 +994,34 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.Switch.forEach(function(cmd) {
 				if (cmd.state) {
 					let SwitchName = eqLogic.name;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE') {SwitchName=cmd.state.name;}
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {SwitchName=cmd.state.name;}
 					HBservice = {
 						controlService : new Service.Switch(SwitchName),
 						characteristics : [Characteristic.On],
 					};
 					const Serv = HBservice.controlService;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE') {Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;}
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' && cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;}
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
 					eqServicesCopy.Switch.forEach(function(cmd2) {
 						if (cmd2.on) {
-							Serv.actions.on = cmd2.on;
+							if(Serv.infos.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
+								if(cmd2.on.value == cmd.state.id) {
+									Serv.actions.on = cmd2.on;
+								}
+							} else {
+								Serv.actions.on = cmd2.on;
+							}
 						} else if (cmd2.off) {
-							Serv.actions.off = cmd2.off;
+							if(Serv.infos.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
+								if(cmd2.off.value == cmd.state.id) {
+									Serv.actions.off = cmd2.off;
+								}
+							} else {
+								Serv.actions.off = cmd2.off;
+							}
 						}
 					});
 					if(!Serv.actions.on) {that.log('warn','Pas de type générique "Action/Interrupteur Bouton On"');}
@@ -2557,6 +2569,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 
 		if (HBservices.length != 0) {
+			if (DEV_DEBUG) {that.log('debug','HBservices : '+JSON.stringify(HBservices));}
 			createdAccessory = that.createAccessory(HBservices, eqLogic);
 			that.addAccessory(createdAccessory);
 			HBservices = [];
