@@ -3303,7 +3303,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 		var targetValueToTest,currentValueToTest;
 		var hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
 		
-		masterSwitch :
+		// masterSwitch :
 		switch (characteristic.UUID) {
 			// Switch or Light
 			case Characteristic.On.UUID :
@@ -3834,9 +3834,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;			
 			// Alarm
 			case Characteristic.SecuritySystemTargetState.UUID :
-				/*if(info) {
+				/* if(info) {
 					cmdList = [info];
-				}*/
+				} */
 				if(DEV_DEBUG) { 
 					console.log('cmdList Target',JSON.stringify(info),JSON.stringify(cmdList)); 
 				}
@@ -3904,9 +3904,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			case Characteristic.SecuritySystemCurrentState.UUID :
-				/*if(info) {
+				/* if(info) {
 					cmdList = [info];
-				}*/
+				} */
 				if(DEV_DEBUG) { 
 					console.log('cmdList Current',cmdList);
 					console.log('info Current',info); 
@@ -3917,7 +3917,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							if (DEV_DEBUG) {that.log('debug',"Siren_State C=",cmd.currentValue);}
 							returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 							break;
-						} else if (cmd.currentValue == 1) {
+						} else if (cmd.currentValue == 0) {
 							if (DEV_DEBUG) {that.log('debug',"Siren_state C=",cmd.currentValue);}
 							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 							break;
