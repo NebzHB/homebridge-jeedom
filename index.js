@@ -2897,6 +2897,8 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 				callback(undefined, returnValue);
 			} else if(returnValue === 'no_response') {
 				callback('no_response');
+			} else {
+				callback();
 			}
 		}.bind(this));
 		
@@ -3284,7 +3286,7 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 // -- characteristic : characteristic to get the value from
 // -- service : service in which the characteristic is
 // -- Return : nothing
-JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
+JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, info=null) {
 	try{
 		var that = this;
 		
@@ -3300,6 +3302,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
 		var targetValueToTest,currentValueToTest;
 		var hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
+		
+		masterSwitch :
 		switch (characteristic.UUID) {
 			// Switch or Light
 			case Characteristic.On.UUID :
@@ -3830,104 +3834,164 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service) {
 			break;			
 			// Alarm
 			case Characteristic.SecuritySystemTargetState.UUID :
+				/*if(info) {
+					cmdList = [info];
+				}*/
+				if(DEV_DEBUG) { 
+					console.log('cmdList Target',JSON.stringify(info),JSON.stringify(cmdList)); 
+				}
 				for (const cmd of cmdList) {
-					const currentValue = cmd.currentValue;
-					
-					if ((cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) || (cmd.generic_type == 'SIREN_STATE')) {
-						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
+					if (cmd.generic_type == 'SIREN_STATE') {
+						if (DEV_DEBUG) {that.log('debug',"Siren_state T=",cmd.currentValue);}
 						returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 						break;
-					} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1 && !service.hasAlarmModes) {
-						returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 					}
-					if (cmd.generic_type == 'ALARM_MODE') {
-						if (DEV_DEBUG) {that.log('debug',"alarm_mode=",currentValue);}
-						
-						if(service.alarm.present && service.alarm.present.mode_label != undefined) {
-							mode_PRESENT=service.alarm.present.mode_label;
-						}
-						if(service.alarm.away && service.alarm.away.mode_label != undefined) {
-							mode_AWAY=service.alarm.away.mode_label;
-						}
-						if(service.alarm.night && service.alarm.night.mode_label != undefined) {
-							mode_NIGHT=service.alarm.night.mode_label;
-						}
-						switch (currentValue) {
-							case undefined:
-								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
-								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+					if(!service.hasAlarmModes) {
+						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 1) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state T=",cmd.currentValue,"NO MODES");}
+							returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;
-							default: // back compatibility
-								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
-								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
-							break;							
-							case mode_PRESENT:
-								if (DEV_DEBUG) {that.log('debug',"renvoie present",Characteristic.SecuritySystemTargetState.STAY_ARM);}
-								returnValue = Characteristic.SecuritySystemTargetState.STAY_ARM;
+						}
+					} else {
+						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state T=",cmd.currentValue);}
+							returnValue = Characteristic.SecuritySystemTargetState.DISARM;
 							break;
-							case mode_AWAY:
-								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
-								returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
-							break;
-							case mode_NIGHT:
-								if (DEV_DEBUG) {that.log('debug',"renvoie nuit",Characteristic.SecuritySystemTargetState.NIGHT_ARM);}
-								returnValue = Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+						}
+						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 1) {
+							// if there is mode and alarm is enabled, will continue the search for mode instead !
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state T=",cmd.currentValue,'return undefined');}
+							returnValue = undefined;
+							continue;
+						}
+						if (cmd.generic_type == 'ALARM_MODE') {
+							if (DEV_DEBUG) {that.log('debug',"alarm_mode T=",cmd.currentValue);}
+							
+							if(service.alarm.present && service.alarm.present.mode_label != undefined) {
+								mode_PRESENT=service.alarm.present.mode_label;
+							}
+							if(service.alarm.away && service.alarm.away.mode_label != undefined) {
+								mode_AWAY=service.alarm.away.mode_label;
+							}
+							if(service.alarm.night && service.alarm.night.mode_label != undefined) {
+								mode_NIGHT=service.alarm.night.mode_label;
+							}
+							switch (cmd.currentValue) {
+								case undefined:
+									if (DEV_DEBUG) {that.log('debug',"renvoie absent T via undefined",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
+									returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+								break;
+								default: // back compatibility
+									if (DEV_DEBUG) {that.log('debug',"renvoie absent T via default",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
+									returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+								break;							
+								case mode_PRESENT:
+									if (DEV_DEBUG) {that.log('debug',"renvoie present T",Characteristic.SecuritySystemTargetState.STAY_ARM);}
+									returnValue = Characteristic.SecuritySystemTargetState.STAY_ARM;
+								break;
+								case mode_AWAY:
+									if (DEV_DEBUG) {that.log('debug',"renvoie absent T",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
+									returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
+								break;
+								case mode_NIGHT:
+									if (DEV_DEBUG) {that.log('debug',"renvoie nuit T",Characteristic.SecuritySystemTargetState.NIGHT_ARM);}
+									returnValue = Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+								break;
+							}
 							break;
 						}
 					}
 				}
 			break;
 			case Characteristic.SecuritySystemCurrentState.UUID :
+				/*if(info) {
+					cmdList = [info];
+				}*/
+				if(DEV_DEBUG) { 
+					console.log('cmdList Current',cmdList);
+					console.log('info Current',info); 
+				}
 				for (const cmd of cmdList) {
-					const currentValue = cmd.currentValue;
-					if(cmd.generic_type == 'SIREN_STATE') {that.log('debug',"SIREN_STATE=",currentValue);}
-					if ((cmd.generic_type == 'ALARM_STATE' && currentValue == 1) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 1)) {
-						if (DEV_DEBUG) {that.log('debug',"Alarm_State=",currentValue);}
-						returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
-						break;
-					}
-					if ((cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 0) || (cmd.generic_type == 'SIREN_STATE' && currentValue == 0)) {
-						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue);}
-						returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
-						break;
-					}
-					if (cmd.generic_type == 'ALARM_ENABLE_STATE' && currentValue == 1 && !service.hasAlarmModes) {
-						if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state=",currentValue,"NO MODES");}
-						returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-						break;
-					}
-					if (cmd.generic_type == 'ALARM_MODE') {
-						if (DEV_DEBUG) {that.log('debug',"alarm_mode=",currentValue);}
-						
-						if(service.alarm.present && service.alarm.present.mode_label != undefined) {
-							mode_PRESENT=service.alarm.present.mode_label;
-						}
-						if(service.alarm.away && service.alarm.away.mode_label != undefined) {
-							mode_AWAY=service.alarm.away.mode_label;
-						}
-						if(service.alarm.night && service.alarm.night.mode_label != undefined) {
-							mode_NIGHT=service.alarm.night.mode_label;
-						}
-						switch (currentValue) {
-							case undefined:
-								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
-								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+					if (cmd.generic_type == 'SIREN_STATE') {
+						if (cmd.currentValue == 1) {
+							if (DEV_DEBUG) {that.log('debug',"Siren_State C=",cmd.currentValue);}
+							returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 							break;
-							default: // back compatibility
-								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
-								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-							break;							
-							case mode_PRESENT:
-								if (DEV_DEBUG) {that.log('debug',"renvoie present",Characteristic.SecuritySystemCurrentState.STAY_ARM);}
-								returnValue = Characteristic.SecuritySystemCurrentState.STAY_ARM;
+						} else if (cmd.currentValue == 1) {
+							if (DEV_DEBUG) {that.log('debug',"Siren_state C=",cmd.currentValue);}
+							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 							break;
-							case mode_AWAY:
-								if (DEV_DEBUG) {that.log('debug',"renvoie absent",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
-								returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+						} else {
+							if (DEV_DEBUG) {that.log('debug',"Siren_state C IMPOSSIBLE =",cmd.currentValue);}
+							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 							break;
-							case mode_NIGHT:
-								if (DEV_DEBUG) {that.log('debug',"renvoie nuit",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);}
-								returnValue = Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+						}
+					}
+					if (cmd.generic_type == 'ALARM_STATE') {
+						if(cmd.currentValue == 1) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_State C=",cmd.currentValue);}
+							returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+							break;
+						} else { continue; }
+					}
+					if (!service.hasAlarmModes) {
+						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 1) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state C=",cmd.currentValue,"NO MODES");}
+							returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+							break;
+						}
+					} else {
+						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state C=",cmd.currentValue);}
+							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
+							break;
+						}
+						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 1) {
+								// if there is mode and alarm is enabled, will continue the search for mode instead !
+								if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state C=",cmd.currentValue,'return undefined');}
+								returnValue = undefined;
+								if(info && info.generic_type == 'ALARM_ENABLE_STATE') {
+									if (DEV_DEBUG) {that.log('debug',"And break");}
+									break;
+								} else {
+									if (DEV_DEBUG) {that.log('debug',"And continue");}
+									continue;
+								}
+						}
+						if (cmd.generic_type == 'ALARM_MODE') {
+							if (DEV_DEBUG) {that.log('debug',"alarm_mode C=",cmd.currentValue);}
+							
+							if(service.alarm.present && service.alarm.present.mode_label != undefined) {
+								mode_PRESENT=service.alarm.present.mode_label;
+							}
+							if(service.alarm.away && service.alarm.away.mode_label != undefined) {
+								mode_AWAY=service.alarm.away.mode_label;
+							}
+							if(service.alarm.night && service.alarm.night.mode_label != undefined) {
+								mode_NIGHT=service.alarm.night.mode_label;
+							}
+							switch (cmd.currentValue) {
+								case undefined:
+									if (DEV_DEBUG) {that.log('debug',"renvoie absent C via undefined",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
+									returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+								break;
+								default: // back compatibility
+									if (DEV_DEBUG) {that.log('debug',"renvoie absent C via default",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
+									returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+								break;							
+								case mode_PRESENT:
+									if (DEV_DEBUG) {that.log('debug',"renvoie present C",Characteristic.SecuritySystemCurrentState.STAY_ARM);}
+									returnValue = Characteristic.SecuritySystemCurrentState.STAY_ARM;
+								break;
+								case mode_AWAY:
+									if (DEV_DEBUG) {that.log('debug',"renvoie absent C",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
+									returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+								break;
+								case mode_NIGHT:
+									if (DEV_DEBUG) {that.log('debug',"renvoie nuit C",Characteristic.SecuritySystemCurrentState.NIGHT_ARM);}
+									returnValue = Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+								break;
+							}
 							break;
 						}
 					}
@@ -5283,7 +5347,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 		const infoFound = findMyID(subService.infos,updateID);
 		const statusFound = findMyID(subService.statusArr,updateID);
 		if(infoFound != -1 || statusFound != -1) {
-			let returnValue = that.getAccessoryValue(subCharact, subService);
+			let returnValue = that.getAccessoryValue(subCharact, subService, ((infoFound!=-1)?infoFound:statusFound));
 			if(returnValue !== undefined && returnValue !== 'no_response') {
 				returnValue = sanitizeValue(returnValue,subCharact);
 				if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
@@ -5303,7 +5367,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				}
 			} else if (returnValue === 'no_response') {
 				subCharact.updateValue(new Error('no_response'), undefined, 'fromJeedom');
-			}
+			} else { return; }
 		} 
 	}
 };
