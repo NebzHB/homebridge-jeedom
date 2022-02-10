@@ -1112,7 +1112,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					if(that.fakegato && !eqLogic.hasLogging) {
-						//HBservice.characteristics.push(Characteristic.ResetTotal);
+						// HBservice.characteristics.push(Characteristic.ResetTotal);
 						eqLogic.loggingService = {type:"energy", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 
 						eqLogic.hasLogging=true;
@@ -1361,6 +1361,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
 						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+						Serv.addOptionalCharacteristic(Characteristic.Sensitivity);
+						Serv.addOptionalCharacteristic(Characteristic.Duration);
+						Serv.addOptionalCharacteristic(Characteristic.LastActivation);
 
 						// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.loggingService = {type:"motion", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
@@ -1550,6 +1553,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.temperature=cmd.temperature;
 					
+					HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
 					Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
 					Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
 					
@@ -1711,6 +1715,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(that.fakegato && !eqLogic.hasLogging) {
 						// Serv.eqLogic.numberOpened = 0;
 						HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
+						Serv.addOptionalCharacteristic(Characteristic.TimesOpened);
+						Serv.addOptionalCharacteristic(Characteristic.Char118);
+						Serv.addOptionalCharacteristic(Characteristic.Char119);
+						Serv.addOptionalCharacteristic(Characteristic.ResetTotal);
+						Serv.addOptionalCharacteristic(Characteristic.LastActivation);
 
 						eqLogic.loggingService = {type:"door", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.hasLogging=true;
@@ -2061,6 +2070,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.temperature=cmd.temperature;
 					Serv.isPrimaryService = true;
 
+					HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
 					Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
 					Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
 
@@ -2205,6 +2215,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.setpoint=cmd.setpoint;
 					Serv.thermo={};
 					
+					HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
 					Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
 					Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
 					
@@ -2300,6 +2311,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos.setpointH=cmd.setpointH;
 					Serv.thermoHC={};
 					
+					HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
 					Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
 					Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
 					
@@ -3854,7 +3866,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.SecuritySystemTargetState.UUID :
 				/* if(info) {
 					cmdList = [info];
-				}*/
+				} */
 				if(DEV_DEBUG) { 
 					console.log('cmdList Target',JSON.stringify(info),JSON.stringify(cmdList)); 
 				}
@@ -3924,7 +3936,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.SecuritySystemCurrentState.UUID :
 				/* if(info) {
 					cmdList = [info];
-				}*/
+				} */
 				if(DEV_DEBUG) { 
 					console.log('cmdList Current',cmdList);
 					console.log('info Current',info); 
@@ -3935,7 +3947,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							if (DEV_DEBUG) {that.log('debug',"Siren_State C=",cmd.currentValue);}
 							returnValue = Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
 							break;
-						} else if (cmd.currentValue == 1) {
+						} else if (cmd.currentValue == 0) {
 							if (DEV_DEBUG) {that.log('debug',"Siren_state C=",cmd.currentValue);}
 							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 							break;
