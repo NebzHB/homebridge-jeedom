@@ -2780,12 +2780,14 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 
 		if(this.fakegato && HBAccessory.context.eqLogic.hasLogging && HBAccessory.context.eqLogic.loggingService) {
 			const loggingServiceParams = HBAccessory.context.eqLogic.loggingService;
-			HBAccessory.log = {};
-			HBAccessory.log.debug = function()	{
-				var args = [].slice.call(arguments, 0);
-				args.unshift('debug');
-				return this.log.apply(this,args);
-			}.bind(this);
+			if(DEV_DEBUG) {
+				HBAccessory.log = {};
+				HBAccessory.log.debug = function()	{
+					var args = [].slice.call(arguments, 0);
+					args.unshift('debug');
+					return this.log.apply(this,args);
+				}.bind(this);
+			}
 			HBAccessory.context.eqLogic.loggingService = new FakeGatoHistoryService(loggingServiceParams.type,HBAccessory,loggingServiceParams.options);
 			HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
 			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
