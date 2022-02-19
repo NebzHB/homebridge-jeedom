@@ -1282,6 +1282,88 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice = null;
 				}
 			});
+		}
+		if (eqLogic.services.AirQualityCustom) {
+			eqLogic.services.AirQualityCustom.forEach(function(cmd) {
+				if (cmd.Index) {
+					HBservice = {
+						controlService : new Service.AirQualitySensor(eqLogic.name),
+						characteristics : [Characteristic.AirQuality,Characteristic.PPM],
+					};
+					const Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.Index=cmd.Index;
+					
+					if(eqLogic.qualityScale && cmd.Index.subType=='numeric') {
+						Serv.levelNum=[];	
+						if(eqLogic.qualityScale.EXCELLENT && eqLogic.qualityScale.EXCELLENT != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = eqLogic.qualityScale.EXCELLENT;
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
+							Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
+						}
+						if(eqLogic.qualityScale.GOOD && eqLogic.qualityScale.GOOD != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.GOOD] = eqLogic.qualityScale.GOOD;
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
+							Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
+						}
+						if(eqLogic.qualityScale.FAIR && eqLogic.qualityScale.FAIR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.FAIR] = eqLogic.qualityScale.FAIR;
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
+							Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
+						}
+						if(eqLogic.qualityScale.INFERIOR && eqLogic.qualityScale.INFERIOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = eqLogic.qualityScale.INFERIOR;
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
+							Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
+						}
+						if(eqLogic.qualityScale.POOR && eqLogic.qualityScale.POOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.POOR] = eqLogic.qualityScale.POOR;
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
+							Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
+						}
+					} else if(cmd.Index.subType!='numeric') {
+						Serv.levelTxt=[];		
+						Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
+						Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
+						Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
+						Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
+						Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
+					} else if(that.myPlugin == "homebridge") {
+						that.log('warn',"Pas de config des valeurs que qualité d'air");
+					}
+
+					
+					Serv.cmd_id = cmd.Index.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'AirQualityCustom';
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						const unite = Serv.infos.Index.unite ? Serv.infos.Index.unite : '';
+						if(unite) {
+							const props = {};
+							props.unit=unite;
+							Serv.getCharacteristic(Characteristic.PPM).setProps(props);
+						}
+						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
+						Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
+
+						eqLogic.loggingService ={type:"room", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
 		}	
 		if (eqLogic.services.AirQuality) {
 			eqLogic.services.AirQuality.forEach(function(cmd) {
@@ -3453,7 +3535,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.AirQuality.UUID :
 				for (const cmd of cmdList) {
-					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2') && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2' || cmd.generic_type == 'AIRQUALITY_CUSTOM') && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						if(Array.isArray(service.levelNum)) {
 							if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
@@ -3512,6 +3594,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.PPM.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+								time: Math.round(new Date().valueOf() / 1000),
+								ppm: returnValue,
+							});
+						}
+						break;
+					} else if (cmd.generic_type == 'AIRQUALITY_CUSTOM' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
