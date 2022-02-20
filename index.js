@@ -1288,7 +1288,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (cmd.Index) {
 					HBservice = {
 						controlService : new Service.AirQualitySensor(eqLogic.name),
-						characteristics : [Characteristic.AirQuality,Characteristic.PPM],
+						characteristics : [Characteristic.AirQuality],
 					};
 					const Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
@@ -1347,6 +1347,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
+						HBservice.characteristics.push(Characteristic.PPM);
+						Serv.addCharacteristic(Characteristic.PPM);
 						const unite = Serv.infos.Index.unite ? Serv.infos.Index.unite : '';
 						if(unite) {
 							const props = {};
