@@ -1347,18 +1347,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 					
 					if(that.fakegato && !eqLogic.hasLogging) {
-						HBservice.characteristics.push(Characteristic.PPM);
-						Serv.addCharacteristic(Characteristic.PPM);
+						HBservice.characteristics.push(Characteristic.VOCDensity);
+						Serv.addCharacteristic(Characteristic.VOCDensity);
 						const unite = Serv.infos.Index.unite ? Serv.infos.Index.unite : '';
 						if(unite) {
 							const props = {};
 							props.unit=unite;
-							Serv.getCharacteristic(Characteristic.PPM).setProps(props);
+							Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
 						}
 						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
 						Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
 
-						eqLogic.loggingService ={type:"room", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.loggingService ={type:"room2", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.hasLogging=true;
 					}
 					
@@ -3609,13 +3609,27 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
-								ppm: returnValue,
+								voc: returnValue,
 							});
 						}
 						break;
 					}
 				}
 			break;	
+			case Characteristic.VOCDensity.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'AIRQUALITY_CUSTOM' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+								time: Math.round(new Date().valueOf() / 1000),
+								voc: returnValue,
+							});
+						}
+						break;
+					}
+				}
+			break;
 			case Characteristic.CarbonDioxideLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
