@@ -1353,7 +1353,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(unite) {
 							const props = {};
 							props.unit=unite;
-							props.maxValue=Serv.levelNum[Characteristic.AirQuality.POOR];
+							props.maxValue=parseInt(parseInt(Serv.levelNum[Characteristic.AirQuality.POOR])*4.57);
 							Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
 						}
 						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
