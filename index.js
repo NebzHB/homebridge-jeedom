@@ -1299,44 +1299,37 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(eqLogic.qualityScale && cmd.Index.subType=='numeric') {
 						Serv.levelNum=[];	
 						if(eqLogic.qualityScale.EXCELLENT && eqLogic.qualityScale.EXCELLENT != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = eqLogic.qualityScale.EXCELLENT;
+							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.qualityScale.EXCELLENT);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
 							Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
 						}
 						if(eqLogic.qualityScale.GOOD && eqLogic.qualityScale.GOOD != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.GOOD] = eqLogic.qualityScale.GOOD;
+							Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.qualityScale.GOOD);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
 							Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
 						}
 						if(eqLogic.qualityScale.FAIR && eqLogic.qualityScale.FAIR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.FAIR] = eqLogic.qualityScale.FAIR;
+							Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.qualityScale.FAIR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
 							Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
 						}
 						if(eqLogic.qualityScale.INFERIOR && eqLogic.qualityScale.INFERIOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = eqLogic.qualityScale.INFERIOR;
+							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.qualityScale.INFERIOR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
 							Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
 						}
 						if(eqLogic.qualityScale.POOR && eqLogic.qualityScale.POOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.POOR] = eqLogic.qualityScale.POOR;
+							Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.qualityScale.POOR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
 							Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
 						}
-					} else if(cmd.Index.subType!='numeric') {
-						Serv.levelTxt=[];		
-						Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
-						Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
-						Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
-						Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
-						Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
 					} else if(that.myPlugin == "homebridge") {
-						that.log('warn',"Pas de config des valeurs que qualité d'air");
+						that.log('warn',"Pas de config numérique des valeurs que qualité d'air");
 					}
 
 					
@@ -1353,7 +1346,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(unite) {
 							const props = {};
 							props.unit=unite;
-							props.maxValue=parseInt(parseInt(Serv.levelNum[Characteristic.AirQuality.POOR])*4.57);
+							props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);
 							Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
 						}
 						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
