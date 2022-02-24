@@ -3611,11 +3611,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.VOCDensity.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'AIRQUALITY_CUSTOM' && cmd.id == service.cmd_id) {
-						returnValue = cmd.currentValue;
+						returnValue = parseInt(cmd.currentValue);
 						if(service.infos.Index && service.infos.Index.unite && service.infos.Index.unite.toLowerCase() == 'ppb') { // unit should be µg/m3 if it's ppb, multiply it by 4.57
-							returnValue *=4.57;
+							returnValue = parseInt(returnValue*4.57);
 						}
-						returnValue = parseInt(returnValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
