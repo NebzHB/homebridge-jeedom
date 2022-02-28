@@ -1282,6 +1282,84 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice = null;
 				}
 			});
+		}
+		if (eqLogic.services.AirQualityCustom) {
+			eqLogic.services.AirQualityCustom.forEach(function(cmd) {
+				if (cmd.Index) {
+					HBservice = {
+						controlService : new Service.AirQualitySensor(eqLogic.name),
+						characteristics : [Characteristic.AirQuality],
+					};
+					const Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.Index=cmd.Index;
+					
+					if(eqLogic.qualityScale && cmd.Index.subType=='numeric') {
+						Serv.levelNum=[];	
+						if(eqLogic.qualityScale.EXCELLENT && eqLogic.qualityScale.EXCELLENT != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.qualityScale.EXCELLENT);
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
+							Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
+						}
+						if(eqLogic.qualityScale.GOOD && eqLogic.qualityScale.GOOD != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.qualityScale.GOOD);
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
+							Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
+						}
+						if(eqLogic.qualityScale.FAIR && eqLogic.qualityScale.FAIR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.qualityScale.FAIR);
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
+							Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
+						}
+						if(eqLogic.qualityScale.INFERIOR && eqLogic.qualityScale.INFERIOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.qualityScale.INFERIOR);
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
+							Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
+						}
+						if(eqLogic.qualityScale.POOR && eqLogic.qualityScale.POOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.qualityScale.POOR);
+						} else {
+							that.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
+							Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
+						}
+					} else if(that.myPlugin == "homebridge") {
+						that.log('warn',"Pas de config numérique des valeurs que qualité d'air");
+					}
+
+					
+					Serv.cmd_id = cmd.Index.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = 'AirQualityCustom';
+					Serv.subtype = Serv.subtype || '';
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+					
+					if(that.fakegato && !eqLogic.hasLogging) {
+						HBservice.characteristics.push(Characteristic.VOCDensity);
+						Serv.addCharacteristic(Characteristic.VOCDensity);
+						const unite = Serv.infos.Index.unite ? Serv.infos.Index.unite : '';
+						if(unite) {
+							const props = {};
+							props.unit=unite;
+							props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);
+							Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
+						}
+						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
+						Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
+
+						eqLogic.loggingService ={type:"room2", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+						eqLogic.hasLogging=true;
+					}
+					
+					HBservices.push(HBservice);
+					HBservice = null;
+				}
+			});
 		}	
 		if (eqLogic.services.AirQuality) {
 			eqLogic.services.AirQuality.forEach(function(cmd) {
@@ -2553,7 +2631,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							const splitted = eqLogic.alarmModes.SetModePresent.split('|');
 							Serv.alarm.present.mode_label = splitted[1];
 							Serv.alarm.present.mode_id = splitted[0];
-							props.validValues.push(0);
+							props.validValues.push(Characteristic.SecuritySystemTargetState.STAY_ARM);
 							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode Domicile/Présence');
@@ -2563,7 +2641,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							const splitted = eqLogic.alarmModes.SetModeAbsent.split('|');
 							Serv.alarm.away.mode_label = splitted[1];
 							Serv.alarm.away.mode_id = splitted[0];
-							props.validValues.push(1);
+							props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
 							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode À distance/Absence');
@@ -2573,17 +2651,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							const splitted = eqLogic.alarmModes.SetModeNuit.split('|');
 							Serv.alarm.night.mode_label = splitted[1];
 							Serv.alarm.night.mode_id = splitted[0];
-							props.validValues.push(2);
+							props.validValues.push(Characteristic.SecuritySystemTargetState.NIGHT_ARM);
 							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode Nuit');
 						}
 					}
 					if(that.myPlugin == "homebridge" && !Serv.hasAlarmModes) {
-						props.validValues.push(1);
+						props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
 						that.log('warn','Pas de config des modes de l\'alarme');
 					}
-					props.validValues.push(3);
+					props.validValues.push(Characteristic.SecuritySystemTargetState.DISARM);
 					Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
 					Serv.cmd_id = cmd.enable_state.id;
 					Serv.eqID = eqLogic.id;
@@ -3453,7 +3531,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.AirQuality.UUID :
 				for (const cmd of cmdList) {
-					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2') && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2' || cmd.generic_type == 'AIRQUALITY_CUSTOM') && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						if(Array.isArray(service.levelNum)) {
 							if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
@@ -3523,6 +3601,23 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					}
 				}
 			break;	
+			case Characteristic.VOCDensity.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'AIRQUALITY_CUSTOM' && cmd.id == service.cmd_id) {
+						returnValue = parseInt(cmd.currentValue);
+						if(service.infos.Index && service.infos.Index.unite && service.infos.Index.unite.toLowerCase() == 'ppb') { // unit should be µg/m3 if it's ppb, multiply it by 4.57
+							returnValue = parseInt(returnValue*4.57);
+						}
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							service.eqLogic.loggingService.addEntry({
+								time: Math.round(new Date().valueOf() / 1000),
+								voc: returnValue,
+							});
+						}
+						break;
+					}
+				}
+			break;
 			case Characteristic.CarbonDioxideLevel.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
@@ -3883,6 +3978,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state T=",cmd.currentValue,"NO MODES");}
 							returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;
+						} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state T=",cmd.currentValue,"NO MODES");}
+							returnValue = Characteristic.SecuritySystemTargetState.DISARM;
+							break;
 						}
 					} else {
 						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
@@ -3970,6 +4069,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 1) {
 							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state C=",cmd.currentValue,"NO MODES");}
 							returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+							break;
+						} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state C=",cmd.currentValue,"NO MODES");}
+							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 							break;
 						}
 					} else {
