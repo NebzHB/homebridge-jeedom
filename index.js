@@ -2631,7 +2631,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							const splitted = eqLogic.alarmModes.SetModePresent.split('|');
 							Serv.alarm.present.mode_label = splitted[1];
 							Serv.alarm.present.mode_id = splitted[0];
-							props.validValues.push(0);
+							props.validValues.push(Characteristic.SecuritySystemTargetState.STAY_ARM);
 							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode Domicile/Présence');
@@ -2641,7 +2641,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							const splitted = eqLogic.alarmModes.SetModeAbsent.split('|');
 							Serv.alarm.away.mode_label = splitted[1];
 							Serv.alarm.away.mode_id = splitted[0];
-							props.validValues.push(1);
+							props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
 							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode À distance/Absence');
@@ -2651,17 +2651,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							const splitted = eqLogic.alarmModes.SetModeNuit.split('|');
 							Serv.alarm.night.mode_label = splitted[1];
 							Serv.alarm.night.mode_id = splitted[0];
-							props.validValues.push(2);
+							props.validValues.push(Characteristic.SecuritySystemTargetState.NIGHT_ARM);
 							Serv.hasAlarmModes=true;
 						} else {
 							that.log('warn','Pas de config du mode Nuit');
 						}
 					}
 					if(that.myPlugin == "homebridge" && !Serv.hasAlarmModes) {
-						props.validValues.push(1);
+						props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
 						that.log('warn','Pas de config des modes de l\'alarme');
 					}
-					props.validValues.push(3);
+					props.validValues.push(Characteristic.SecuritySystemTargetState.DISARM);
 					Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
 					Serv.cmd_id = cmd.enable_state.id;
 					Serv.eqID = eqLogic.id;
@@ -3978,6 +3978,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state T=",cmd.currentValue,"NO MODES");}
 							returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
 							break;
+						} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state T=",cmd.currentValue,"NO MODES");}
+							returnValue = Characteristic.SecuritySystemTargetState.DISARM;
+							break;
 						}
 					} else {
 						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
@@ -4065,6 +4069,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 1) {
 							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state C=",cmd.currentValue,"NO MODES");}
 							returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+							break;
+						} else if (cmd.generic_type == 'ALARM_ENABLE_STATE' && cmd.currentValue == 0) {
+							if (DEV_DEBUG) {that.log('debug',"Alarm_enable_state C=",cmd.currentValue,"NO MODES");}
+							returnValue = Characteristic.SecuritySystemCurrentState.DISARMED;
 							break;
 						}
 					} else {
