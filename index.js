@@ -31,7 +31,7 @@ var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
 
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
@@ -1298,34 +1298,34 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.Index=cmd.Index;
 					
-					if(eqLogic.qualityScale && cmd.Index.subType=='numeric') {
+					if(eqLogic.customizedValues && cmd.Index.subType=='numeric') {
 						Serv.levelNum=[];	
-						if(eqLogic.qualityScale.EXCELLENT && eqLogic.qualityScale.EXCELLENT != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.qualityScale.EXCELLENT);
+						if(eqLogic.customizedValues.EXCELLENT && eqLogic.customizedValues.EXCELLENT != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.customizedValues.EXCELLENT);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
 							Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
 						}
-						if(eqLogic.qualityScale.GOOD && eqLogic.qualityScale.GOOD != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.qualityScale.GOOD);
+						if(eqLogic.customizedValues.GOOD && eqLogic.customizedValues.GOOD != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.customizedValues.GOOD);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
 							Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
 						}
-						if(eqLogic.qualityScale.FAIR && eqLogic.qualityScale.FAIR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.qualityScale.FAIR);
+						if(eqLogic.customizedValues.FAIR && eqLogic.customizedValues.FAIR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.customizedValues.FAIR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
 							Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
 						}
-						if(eqLogic.qualityScale.INFERIOR && eqLogic.qualityScale.INFERIOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.qualityScale.INFERIOR);
+						if(eqLogic.customizedValues.INFERIOR && eqLogic.customizedValues.INFERIOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.customizedValues.INFERIOR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
 							Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
 						}
-						if(eqLogic.qualityScale.POOR && eqLogic.qualityScale.POOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.qualityScale.POOR);
+						if(eqLogic.customizedValues.POOR && eqLogic.customizedValues.POOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.customizedValues.POOR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
 							Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
@@ -1859,8 +1859,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
 					if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
 									
-					if(eqLogic.customValues) {
-						Serv.customValues = eqLogic.customValues;
+					if(eqLogic.customizedValues) {
+						Serv.customizedValues = eqLogic.customizedValues;
 					}
 					
 					// add Active, Tampered and Defect Characteristics if needed
@@ -1922,18 +1922,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if(cmd.eventType) {
 					var buttonSingle,buttonDouble,buttonLong;
 					
-					if(cmd.eventType.customValues.SINGLE) {
-						buttonSingle = cmd.eventType.customValues.SINGLE.split(';');
+					if(cmd.eventType.customizedValues.SINGLE) {
+						buttonSingle = cmd.eventType.customizedValues.SINGLE.split(';');
 					} else {
 						buttonSingle = [""];
 					}
-					if(cmd.eventType.customValues.DOUBLE) {
-						buttonDouble = cmd.eventType.customValues.DOUBLE.split(';');
+					if(cmd.eventType.customizedValues.DOUBLE) {
+						buttonDouble = cmd.eventType.customizedValues.DOUBLE.split(';');
 					} else {
 						buttonDouble = [""];
 					}
-					if(cmd.eventType.customValues.LONG) {
-						buttonLong = cmd.eventType.customValues.LONG.split(';');
+					if(cmd.eventType.customizedValues.LONG) {
+						buttonLong = cmd.eventType.customizedValues.LONG.split(';');
 					} else {
 						buttonLong = [""];
 					}
@@ -1953,7 +1953,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.ServiceLabelIndex = numButton;
 							Serv.type='Multi';
 							
-							Serv.customValues = cmd.eventType.customValues;
+							Serv.customizedValues = cmd.eventType.customizedValues;
 							const values = [];
 							if(buttonSingle[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);}
 							if(buttonDouble[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);}
@@ -2003,8 +2003,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(cmd.Long) {Label = "Long";}
 					
 					const cmdType = cmd.Single || cmd.Double || cmd.Long;
-					if(buttonList[cmdType.customValues.BUTTON] === undefined) {buttonList[cmdType.customValues.BUTTON] = [];}
-					buttonList[cmdType.customValues.BUTTON][Label] = cmdType;
+					if(buttonList[cmdType.customizedValues.BUTTON] === undefined) {buttonList[cmdType.customizedValues.BUTTON] = [];}
+					buttonList[cmdType.customizedValues.BUTTON][Label] = cmdType;
 				}		
 			});	
 
@@ -3399,11 +3399,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 	try{
 		var that = this;
 		
-		var customValues={};
-		if(service.customValues) {
-			customValues=service.customValues;
+		var customizedValues={};
+		if(service.customizedValues) {
+			customizedValues=service.customizedValues;
 		} else {
-			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0,'SINGLE':0,'DOUBLE':1,'LONG':2};
+			customizedValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0,'SINGLE':0,'DOUBLE':1,'LONG':2};
 		}
 		
 		var returnValue = 0;
@@ -4309,29 +4309,29 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						cmd.generic_type == 'BARRIER_STATE') {
 						targetValueToTest=cmd.currentValue.toString();
 						switch(targetValueToTest) {
-								case customValues.OPEN.toString() :
+								case customizedValues.OPEN.toString() :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";	
 								break;
-								case customValues.CLOSED.toString() :
+								case customizedValues.CLOSED.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case customValues.OPENING.toString() :
+								case customizedValues.OPENING.toString() :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
-								case customValues.CLOSING.toString() :
+								case customizedValues.CLOSING.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case customValues.STOPPED.toString() :
+								case customizedValues.STOPPED.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
 						}
 						if (DEV_DEBUG) {
-							console.log(customValues);
+							console.log(customizedValues);
 							that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						}
 						break;
@@ -4346,29 +4346,29 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						cmd.generic_type == 'BARRIER_STATE') {
 						currentValueToTest=cmd.currentValue.toString();
 						switch(currentValueToTest) {
-								case customValues.OPEN.toString() :
+								case customizedValues.OPEN.toString() :
 									returnValue=Characteristic.CurrentDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
-								case customValues.CLOSED.toString() :
+								case customizedValues.CLOSED.toString() :
 									returnValue=Characteristic.CurrentDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case customValues.OPENING.toString() :
+								case customizedValues.OPENING.toString() :
 									returnValue=Characteristic.CurrentDoorState.OPENING; // 2
 									HRreturnValue="OPENING";
 								break;
-								case customValues.CLOSING.toString() :
+								case customizedValues.CLOSING.toString() :
 									returnValue=Characteristic.CurrentDoorState.CLOSING; // 3
 									HRreturnValue="CLOSING";
 								break;
-								case customValues.STOPPED.toString() :
+								case customizedValues.STOPPED.toString() :
 									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 									HRreturnValue="STOPPED";
 								break;
 						}
 						if (DEV_DEBUG) {
-							console.log(customValues);
+							console.log(customizedValues);
 							that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						}
 						break;
@@ -4638,18 +4638,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							
 							let buttonSingle,buttonDouble,buttonLong;
 					
-							if(customValues.SINGLE) {
-								buttonSingle = customValues.SINGLE.split(';');
+							if(customizedValues.SINGLE) {
+								buttonSingle = customizedValues.SINGLE.split(';');
 							} else {
 								buttonSingle = [""];
 							}
-							if(customValues.DOUBLE) {
-								buttonDouble = customValues.DOUBLE.split(';');
+							if(customizedValues.DOUBLE) {
+								buttonDouble = customizedValues.DOUBLE.split(';');
 							} else {
 								buttonDouble = [""];
 							}
-							if(customValues.LONG) {
-								buttonLong = customValues.LONG.split(';');
+							if(customizedValues.LONG) {
+								buttonLong = customizedValues.LONG.split(';');
 							} else {
 								buttonLong = [""];
 							}
