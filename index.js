@@ -31,8 +31,6 @@ var DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
 
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
-
 module.exports = function(homebridge) {
 	Accessory = homebridge.platformAccessory;
 	Service = homebridge.hap.Service;
@@ -79,8 +77,9 @@ function JeedomPlatform(logger, config, api) {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
 		} else if(config.url.indexOf('https') !== -1) {
-			this.log('error',"Adresse Jeedom utilise https en interne, non supporté :"+config.url);	
-			process.exit(1);
+			process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+			this.log('error',"Adresse Jeedom utilise https en interne, non supporté mais on essaie :"+config.url);	
+			//process.exit(1);
 		} else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
