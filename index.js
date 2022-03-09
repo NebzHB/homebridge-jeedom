@@ -79,7 +79,7 @@ function JeedomPlatform(logger, config, api) {
 		} else if(config.url.indexOf('https') !== -1) {
 			process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 			this.log('error',"Adresse Jeedom utilise https en interne, non supporté mais on essaie :"+config.url);	
-			//process.exit(1);
+			// process.exit(1);
 		} else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
