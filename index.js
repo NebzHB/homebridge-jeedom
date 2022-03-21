@@ -2271,6 +2271,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							HBservice.characteristics.push(Characteristic.Rain);
 							Serv.addCharacteristic(Characteristic.Rain);
 							Serv.getCharacteristic(Characteristic.Rain).displayName = cmd2.rain.name;
+						} else if (cmd2.snow) {
+							Serv.infos.snow=cmd2.snow
+							HBservice.characteristics.push(Characteristic.Snow);
+							Serv.addCharacteristic(Characteristic.Snow);
+							Serv.getCharacteristic(Characteristic.Snow).displayName = cmd2.snow.name;
 						} else if (cmd2.temperature_min) {
 							Serv.infos.temperature_min=cmd2.temperature_min
 							HBservice.characteristics.push(Characteristic.MinimumTemperature);
@@ -3798,6 +3803,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.Rain.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'WEATHER_RAIN' && cmd.id == service.infos.rain.id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.Snow.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_SNOW' && cmd.id == service.infos.snow.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -5931,6 +5944,17 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Rain.UUID = 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7';
 	inherits(Characteristic.Rain, Characteristic);
 	
+	Characteristic.Snow = function() {
+		Characteristic.call(this, 'Snow', 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD');
+		this.setProps({
+			format: Characteristic.Formats.BOOL,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.Snow.UUID = 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD';
+	inherits(Characteristic.Snow, Characteristic);
+	
 	Characteristic.MinimumTemperature = function() {
 		Characteristic.call(this, 'MinimumTemperature', '707B78CA-51AB-4DC9-8630-80A58F07E419');
 		this.setProps({
@@ -6085,6 +6109,7 @@ function RegisterCustomCharacteristics() {
 		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
 		this.addOptionalCharacteristic(Characteristic.UVIndex);
 		this.addOptionalCharacteristic(Characteristic.Rain);
+		this.addOptionalCharacteristic(Characteristic.Snow);
 		this.addOptionalCharacteristic(Characteristic.MinimumTemperature);
 	};
 	inherits(Service.WeatherService, Service);
