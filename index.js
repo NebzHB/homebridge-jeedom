@@ -79,7 +79,7 @@ function JeedomPlatform(logger, config, api) {
 		} else if(config.url.indexOf('https') !== -1) {
 			process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 			this.log('error',"Adresse Jeedom utilise https en interne, non supporté mais on essaie :"+config.url);	
-			//process.exit(1);
+			// process.exit(1);
 		} else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
@@ -1347,7 +1347,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(unite) {
 							const props = {};
 							props.unit=unite;
-							if(Serv.levelNum) props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);
+							if(Serv.levelNum) {props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);}
 							Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
 						}
 						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
@@ -2267,17 +2267,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 								Serv.getCharacteristic(Characteristic.Visibility).setProps(props);
 							}
 						} else if (cmd2.rain) {
-							Serv.infos.rain=cmd2.rain
+							Serv.infos.rain=cmd2.rain;
 							HBservice.characteristics.push(Characteristic.Rain);
 							Serv.addCharacteristic(Characteristic.Rain);
 							Serv.getCharacteristic(Characteristic.Rain).displayName = cmd2.rain.name;
 						} else if (cmd2.snow) {
-							Serv.infos.snow=cmd2.snow
+							Serv.infos.snow=cmd2.snow;
 							HBservice.characteristics.push(Characteristic.Snow);
 							Serv.addCharacteristic(Characteristic.Snow);
 							Serv.getCharacteristic(Characteristic.Snow).displayName = cmd2.snow.name;
 						} else if (cmd2.temperature_min) {
-							Serv.infos.temperature_min=cmd2.temperature_min
+							Serv.infos.temperature_min=cmd2.temperature_min;
 							HBservice.characteristics.push(Characteristic.MinimumTemperature);
 							Serv.addCharacteristic(Characteristic.MinimumTemperature);
 							Serv.getCharacteristic(Characteristic.MinimumTemperature).displayName = cmd2.temperature_min.name;
