@@ -29,7 +29,7 @@
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
-    "@babel/core": ">=7.17.5",
+    "@babel/core": ">=7.17.8",
     "@babel/eslint-parser": "^7.17.0",
     "eslint": "^8.12.0"
   },
