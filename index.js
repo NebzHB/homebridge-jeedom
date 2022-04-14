@@ -77,8 +77,9 @@ function JeedomPlatform(logger, config, api) {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
 		} else if(config.url.indexOf('https') !== -1) {
-			this.log('error',"Adresse Jeedom utilise https en interne, non supporté :"+config.url);	
-			process.exit(1);
+			process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+			this.log('error',"Adresse Jeedom utilise https en interne, non supporté mais on essaie :"+config.url);	
+			// process.exit(1);
 		} else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
@@ -1296,34 +1297,34 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.infos={};
 					Serv.infos.Index=cmd.Index;
 					
-					if(eqLogic.qualityScale && cmd.Index.subType=='numeric') {
+					if(eqLogic.customizedValues && cmd.Index.subType=='numeric') {
 						Serv.levelNum=[];	
-						if(eqLogic.qualityScale.EXCELLENT && eqLogic.qualityScale.EXCELLENT != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.qualityScale.EXCELLENT);
+						if(eqLogic.customizedValues.EXCELLENT && eqLogic.customizedValues.EXCELLENT != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.customizedValues.EXCELLENT);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
 							Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
 						}
-						if(eqLogic.qualityScale.GOOD && eqLogic.qualityScale.GOOD != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.qualityScale.GOOD);
+						if(eqLogic.customizedValues.GOOD && eqLogic.customizedValues.GOOD != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.customizedValues.GOOD);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
 							Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
 						}
-						if(eqLogic.qualityScale.FAIR && eqLogic.qualityScale.FAIR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.qualityScale.FAIR);
+						if(eqLogic.customizedValues.FAIR && eqLogic.customizedValues.FAIR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.customizedValues.FAIR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
 							Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
 						}
-						if(eqLogic.qualityScale.INFERIOR && eqLogic.qualityScale.INFERIOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.qualityScale.INFERIOR);
+						if(eqLogic.customizedValues.INFERIOR && eqLogic.customizedValues.INFERIOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.customizedValues.INFERIOR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
 							Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
 						}
-						if(eqLogic.qualityScale.POOR && eqLogic.qualityScale.POOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.qualityScale.POOR);
+						if(eqLogic.customizedValues.POOR && eqLogic.customizedValues.POOR != "NOT") {
+							Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.customizedValues.POOR);
 						} else {
 							that.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
 							Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
@@ -1346,7 +1347,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(unite) {
 							const props = {};
 							props.unit=unite;
-							props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);
+							if(Serv.levelNum) {props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);}
 							Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
 						}
 						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
@@ -1857,8 +1858,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
 					if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
 									
-					if(eqLogic.customValues) {
-						Serv.customValues = eqLogic.customValues;
+					if(eqLogic.customizedValues) {
+						Serv.customizedValues = eqLogic.customizedValues;
 					}
 					
 					// add Active, Tampered and Defect Characteristics if needed
@@ -1920,18 +1921,18 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if(cmd.eventType) {
 					var buttonSingle,buttonDouble,buttonLong;
 					
-					if(cmd.eventType.customValues.SINGLE) {
-						buttonSingle = cmd.eventType.customValues.SINGLE.split(';');
+					if(cmd.eventType.customizedValues.SINGLE) {
+						buttonSingle = cmd.eventType.customizedValues.SINGLE.split(';');
 					} else {
 						buttonSingle = [""];
 					}
-					if(cmd.eventType.customValues.DOUBLE) {
-						buttonDouble = cmd.eventType.customValues.DOUBLE.split(';');
+					if(cmd.eventType.customizedValues.DOUBLE) {
+						buttonDouble = cmd.eventType.customizedValues.DOUBLE.split(';');
 					} else {
 						buttonDouble = [""];
 					}
-					if(cmd.eventType.customValues.LONG) {
-						buttonLong = cmd.eventType.customValues.LONG.split(';');
+					if(cmd.eventType.customizedValues.LONG) {
+						buttonLong = cmd.eventType.customizedValues.LONG.split(';');
 					} else {
 						buttonLong = [""];
 					}
@@ -1951,7 +1952,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.ServiceLabelIndex = numButton;
 							Serv.type='Multi';
 							
-							Serv.customValues = cmd.eventType.customValues;
+							Serv.customizedValues = cmd.eventType.customizedValues;
 							const values = [];
 							if(buttonSingle[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);}
 							if(buttonDouble[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);}
@@ -2001,8 +2002,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(cmd.Long) {Label = "Long";}
 					
 					const cmdType = cmd.Single || cmd.Double || cmd.Long;
-					if(buttonList[cmdType.customValues.BUTTON] === undefined) {buttonList[cmdType.customValues.BUTTON] = [];}
-					buttonList[cmdType.customValues.BUTTON][Label] = cmdType;
+					if(buttonList[cmdType.customizedValues.BUTTON] === undefined) {buttonList[cmdType.customizedValues.BUTTON] = [];}
+					buttonList[cmdType.customizedValues.BUTTON][Label] = cmdType;
 				}		
 			});	
 
@@ -2265,6 +2266,21 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 								props.unit=unite;
 								Serv.getCharacteristic(Characteristic.Visibility).setProps(props);
 							}
+						} else if (cmd2.rain) {
+							Serv.infos.rain=cmd2.rain;
+							HBservice.characteristics.push(Characteristic.Rain);
+							Serv.addCharacteristic(Characteristic.Rain);
+							Serv.getCharacteristic(Characteristic.Rain).displayName = cmd2.rain.name;
+						} else if (cmd2.snow) {
+							Serv.infos.snow=cmd2.snow;
+							HBservice.characteristics.push(Characteristic.Snow);
+							Serv.addCharacteristic(Characteristic.Snow);
+							Serv.getCharacteristic(Characteristic.Snow).displayName = cmd2.snow.name;
+						} else if (cmd2.temperature_min) {
+							Serv.infos.temperature_min=cmd2.temperature_min;
+							HBservice.characteristics.push(Characteristic.MinimumTemperature);
+							Serv.addCharacteristic(Characteristic.MinimumTemperature);
+							Serv.getCharacteristic(Characteristic.MinimumTemperature).displayName = cmd2.temperature_min.name;
 						}
 					});
 
@@ -3397,11 +3413,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 	try{
 		var that = this;
 		
-		var customValues={};
-		if(service.customValues) {
-			customValues=service.customValues;
+		var customizedValues={};
+		if(service.customizedValues) {
+			customizedValues=service.customizedValues;
 		} else {
-			customValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0,'SINGLE':0,'DOUBLE':1,'LONG':2};
+			customizedValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0,'SINGLE':0,'DOUBLE':1,'LONG':2};
 		}
 		
 		var returnValue = 0;
@@ -3779,6 +3795,30 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.WeatherCondition.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'WEATHER_CONDITION' && cmd.id == service.infos.condition.id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.Rain.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_RAIN' && cmd.id == service.infos.rain.id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.Snow.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_SNOW' && cmd.id == service.infos.snow.id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;	
+			case Characteristic.MinimumTemperature.UUID :
+				for (const cmd of cmdList) {
+					if (cmd.generic_type == 'WEATHER_TEMPERATURE_MIN' && cmd.id == service.infos.temperature_min.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -4307,29 +4347,29 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						cmd.generic_type == 'BARRIER_STATE') {
 						targetValueToTest=cmd.currentValue.toString();
 						switch(targetValueToTest) {
-								case customValues.OPEN.toString() :
+								case customizedValues.OPEN.toString() :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";	
 								break;
-								case customValues.CLOSED.toString() :
+								case customizedValues.CLOSED.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case customValues.OPENING.toString() :
+								case customizedValues.OPENING.toString() :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
-								case customValues.CLOSING.toString() :
+								case customizedValues.CLOSING.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case customValues.STOPPED.toString() :
+								case customizedValues.STOPPED.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
 						}
 						if (DEV_DEBUG) {
-							console.log(customValues);
+							console.log(customizedValues);
 							that.log('debug','Target Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						}
 						break;
@@ -4344,29 +4384,29 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						cmd.generic_type == 'BARRIER_STATE') {
 						currentValueToTest=cmd.currentValue.toString();
 						switch(currentValueToTest) {
-								case customValues.OPEN.toString() :
+								case customizedValues.OPEN.toString() :
 									returnValue=Characteristic.CurrentDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
-								case customValues.CLOSED.toString() :
+								case customizedValues.CLOSED.toString() :
 									returnValue=Characteristic.CurrentDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case customValues.OPENING.toString() :
+								case customizedValues.OPENING.toString() :
 									returnValue=Characteristic.CurrentDoorState.OPENING; // 2
 									HRreturnValue="OPENING";
 								break;
-								case customValues.CLOSING.toString() :
+								case customizedValues.CLOSING.toString() :
 									returnValue=Characteristic.CurrentDoorState.CLOSING; // 3
 									HRreturnValue="CLOSING";
 								break;
-								case customValues.STOPPED.toString() :
+								case customizedValues.STOPPED.toString() :
 									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 									HRreturnValue="STOPPED";
 								break;
 						}
 						if (DEV_DEBUG) {
-							console.log(customValues);
+							console.log(customizedValues);
 							that.log('debug','Etat Garage/Barrier Homekit: '+returnValue+' soit en Jeedom:'+cmd.currentValue+" ("+HRreturnValue+")");
 						}
 						break;
@@ -4636,18 +4676,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							
 							let buttonSingle,buttonDouble,buttonLong;
 					
-							if(customValues.SINGLE) {
-								buttonSingle = customValues.SINGLE.split(';');
+							if(customizedValues.SINGLE) {
+								buttonSingle = customizedValues.SINGLE.split(';');
 							} else {
 								buttonSingle = [""];
 							}
-							if(customValues.DOUBLE) {
-								buttonDouble = customValues.DOUBLE.split(';');
+							if(customizedValues.DOUBLE) {
+								buttonDouble = customizedValues.DOUBLE.split(';');
 							} else {
 								buttonDouble = [""];
 							}
-							if(customValues.LONG) {
-								buttonLong = customValues.LONG.split(';');
+							if(customizedValues.LONG) {
+								buttonLong = customizedValues.LONG.split(';');
 							} else {
 								buttonLong = [""];
 							}
@@ -5893,6 +5933,43 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
 	inherits(Characteristic.Visibility, Characteristic);
 	
+	Characteristic.Rain = function() {
+		Characteristic.call(this, 'Rain', 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7');
+		this.setProps({
+			format: Characteristic.Formats.BOOL,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.Rain.UUID = 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7';
+	inherits(Characteristic.Rain, Characteristic);
+	
+	Characteristic.Snow = function() {
+		Characteristic.call(this, 'Snow', 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD');
+		this.setProps({
+			format: Characteristic.Formats.BOOL,
+			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.Snow.UUID = 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD';
+	inherits(Characteristic.Snow, Characteristic);
+	
+	Characteristic.MinimumTemperature = function() {
+		Characteristic.call(this, 'MinimumTemperature', '707B78CA-51AB-4DC9-8630-80A58F07E419');
+		this.setProps({
+			format: Characteristic.Formats.FLOAT,
+			unit: Characteristic.Units.CELSIUS,
+			maxValue: 100,
+			minValue: -40,
+			minStep: 0.1,
+			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.MinimumTemperature.UUID = '707B78CA-51AB-4DC9-8630-80A58F07E419';
+	inherits(Characteristic.MinimumTemperature, Characteristic);
+	
 	Characteristic.NoiseLevel = function() {
 			Characteristic.call(this, 'Noise Level', 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5');
 			this.setProps({
@@ -6031,6 +6108,9 @@ function RegisterCustomCharacteristics() {
 		this.addOptionalCharacteristic(Characteristic.WindSpeed);
 		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
 		this.addOptionalCharacteristic(Characteristic.UVIndex);
+		this.addOptionalCharacteristic(Characteristic.Rain);
+		this.addOptionalCharacteristic(Characteristic.Snow);
+		this.addOptionalCharacteristic(Characteristic.MinimumTemperature);
 	};
 	inherits(Service.WeatherService, Service);
 	Service.WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';	
