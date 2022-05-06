@@ -507,7 +507,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(cmd.stateClosing) {
 						Serv.infos.state=cmd.stateClosing;
 						if(Serv.infos.state.subType == 'binary') {
-							if(Serv.infos.state.display.invertBinary) {
+							if(Serv.infos.state.display && Serv.infos.state.display.invertBinary) {
 								Serv.FlapType="Opening";
 							} else {
 								Serv.FlapType="Closing";
@@ -518,7 +518,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					} else if(cmd.state) {
 						Serv.infos.state=cmd.state;
 						if(Serv.infos.state.subType == 'binary') {
-							if(Serv.infos.state.display.invertBinary) {
+							if(Serv.infos.state.display && Serv.infos.state.display.invertBinary) {
 								Serv.FlapType="Closing";
 							} else {
 								Serv.FlapType="Opening";
