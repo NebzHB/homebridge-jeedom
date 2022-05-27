@@ -5284,11 +5284,11 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_SET_SETPOINT' :
 						if(action == 'setTargetLevel') {
-							if(value > 0) {
+							//if(value > 0) {
 								cmdId = cmd.id;
 								cmdFound=cmd.generic_type;
 								found = true;
-							}
+							//}
 							needToTemporize=900;
 						}
 					break;
