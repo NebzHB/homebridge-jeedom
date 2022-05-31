@@ -18,7 +18,7 @@ jobs:
       - name: Cache node-gyp
         uses: actions/cache@v3        
         with:
-          key: ${{ matrix.node }}-node-gyp
+          key: ${{ matrix.node-version }}-node-gyp
           path: |
             /home/runner/.cache/node-gyp
       - name: Use Node.js ${{ matrix.node-version }}
