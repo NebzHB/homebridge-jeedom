@@ -15,10 +15,18 @@ jobs:
         node-version: [14.x, 16.x, 18.x]
     steps:
       - uses: actions/checkout@v3
+      - name: Cache node-gyp
+        uses: actions/cache@v3        
+        with:
+          key: ${{ matrix.node }}-node-gyp
+          path: |
+            /home/runner/.cache/node-gyp
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3.1.1
         with:
           node-version: ${{ matrix.node-version }}
+          registry-url: https://registry.npmjs.org/
+          cache: 'npm'
       - name: Install dependencies
         run: |
           npm i
