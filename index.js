@@ -18,7 +18,7 @@
 
 var Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
 const inherits = require('util').inherits;
-var myLogger = require('./lib/myLogger').myLogger;
+consta myLogger = require('./lib/myLogger').myLogger;
 var debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
