@@ -194,7 +194,7 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 					const Serv = HBservice.controlService;
 					Serv.eqLogic=scenario;
 					Serv.actions={};
-					Serv.infos= {};
+					Serv.infos={};
 					Serv.infos.scenario=scenario;
 
 							
