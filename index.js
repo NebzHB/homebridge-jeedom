@@ -17,7 +17,7 @@
 'use strict';
 
 var Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
-var inherits = require('util').inherits;
+const inherits = require('util').inherits;
 var myLogger = require('./lib/myLogger').myLogger;
 var debug = {};
 debug.DEBUG = 100;
