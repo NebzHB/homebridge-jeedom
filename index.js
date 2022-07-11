@@ -6329,17 +6329,17 @@ function HSVtoRGB(hue, saturation, _value) {
 	let h = hue / 360.0;
 	let s = saturation / 100.0;
 	let v = 1.0;
-	let r, g, b, i, f, p, q, t;
+	let r, g, b;
 	if (arguments.length === 1) {
 		s = h.s;
 		v = 1.0;
 		h = h.h;
 	}
-	i = Math.floor(h * 6);
-	f = h * 6 - i;
-	p = v * (1 - s);
-	q = v * (1 - f * s);
-	t = v * (1 - (1 - f) * s);
+	const i = Math.floor(h * 6);
+	const f = h * 6 - i;
+	const p = v * (1 - s);
+	const q = v * (1 - f * s);
+	const t = v * (1 - (1 - f) * s);
 	switch (i % 6) {
 	case 0:
 		r = v;
