@@ -16,18 +16,18 @@
 /* jshint esversion: 6,node: true,-W041: false */
 'use strict';
 
-var Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
+let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
 const inherits = require('util').inherits;
-consta myLogger = require('./lib/myLogger').myLogger;
-var debug = {};
+const myLogger = require('./lib/myLogger').myLogger;
+const debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
 debug.WARN = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
-var hasError = false;
-var FakeGatoHistoryService;
-var DEV_DEBUG=false;
+let hasError = false;
+let FakeGatoHistoryService;
+let DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
 
@@ -95,7 +95,7 @@ function JeedomPlatform(logger, config, api) {
 		this.settingFan = false;
 		
 		this.pollerPeriod = config.pollerperiod;
-		if ( typeof this.pollerPeriod == 'string') {
+		if ( typeof this.pollerPeriod === 'string') {
 			this.pollerPeriod = parseInt(this.pollerPeriod);
 		} else if (!this.pollerPeriod) {
 			this.pollerPeriod = 0.05; // 0.05 is Nice between 2 calls
@@ -118,15 +118,15 @@ function JeedomPlatform(logger, config, api) {
 // -- Return : nothing
 JeedomPlatform.prototype.addAccessories = function() {
 	try{
-		var that = this;
+		const that = this;
 		that.log('Synchronisation Jeedom <> Homebridge...');
 		that.jeedomClient.getModel()
 			.then(function(model){ // we got the base Model from the API
-				if(model && typeof model == 'object' && model.config && typeof model.config == 'object' && model.config.datetime) {
+				if(model && typeof model === 'object' && model.config && typeof model.config === 'object' && model.config.datetime) {
 					that.lastPoll=model.config.datetime;
 					
 					that.log('debug','Enumération des objets Jeedom (Pièces)...');
-					if(model.objects && typeof model.objects == 'object' && Object.keys(model.objects).length !== 0) {
+					if(model.objects && typeof model.objects === 'object' && Object.keys(model.objects).length !== 0) {
 						model.objects.map(function(r){
 							that.rooms[r.id] = r.name;
 							that.log('debug','Pièce > ' + r.name);
@@ -140,7 +140,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 					that.JeedomScenarios2HomeKitAccessories(model.scenarios);
 					
 					that.log('Enumération des périphériques Jeedom...');
-					if(model.eqLogics && typeof model.eqLogics == 'object' && Object.keys(model.eqLogics).length !== 0) {
+					if(model.eqLogics && typeof model.eqLogics === 'object' && Object.keys(model.eqLogics).length !== 0) {
 						that.JeedomDevices2HomeKitAccessories(model.eqLogics);
 					} else {
 						that.log('error','Périf > '+model.eqLogics);
@@ -163,12 +163,12 @@ JeedomPlatform.prototype.addAccessories = function() {
 
 JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios) {
 	try{
-		var that = this;
+		const that = this;
 		if (scenarios) {
 			scenarios.sort(function compare(a, b) {
 				// reorder by room name asc and name asc
-				var aC = that.rooms[a.object_id]+a.name;
-				var bC = that.rooms[b.object_id]+b.name;
+				const aC = that.rooms[a.object_id]+a.name;
+				const bC = that.rooms[b.object_id]+b.name;
 				if (aC > bC) {
 					return 1;
 				}
@@ -257,12 +257,12 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 // -- Return : nothing
 JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	try{
-		var that = this;
+		const that = this;
 		if (devices) {
 			devices.sort(function compare(a, b) {
 				// reorder by room name asc and name asc
-				var aC = that.rooms[a.object_id]+a.name;
-				var bC = that.rooms[b.object_id]+b.name;
+				const aC = that.rooms[a.object_id]+a.name;
+				const bC = that.rooms[b.object_id]+b.name;
 				if (aC > bC) {
 					return 1;
 				}
@@ -310,7 +310,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			that.log('┌────RAMASSE-MIETTES─────');
 			that.log('│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))');
 			var hasDeleted = false;
-			for (var a in that.accessories) 
+			for (const a in that.accessories) 
 			{
 				if (that.accessories.hasOwnProperty(a)) {
 					if(!that.accessories[a].reviewed && 
@@ -332,7 +332,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 			that.log('error','!!! ERREUR DETECTÉE, ON QUITTE HOMEBRIDGE !!!');
 			process.exit(1);
 		}
-		var endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
+		const endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! (Si vous avez un Warning Avahi, ne pas en tenir compte) ==--';
 		that.log(endLog);
 		if(countA >= 150) {that.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');}
 		else if(countA >= 140) {that.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');}
@@ -354,10 +354,10 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 	var createdAccessory;
 	try {
-		var that = this;
+		const that = this;
 		var HBservices = [];
 		var HBservice = null;	
-		var eqServicesCopy = eqLogic.services;
+		const eqServicesCopy = eqLogic.services;
 		that.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
 		that.log('┌──── ' + that.rooms[eqLogic.object_id] + ' > ' + eqLogic.name +((eqLogic.pseudo)?' > pseudo: '+eqLogic.pseudo:'')+ ' (' + eqLogic.id + ')');
 		eqLogic.origName=eqLogic.name;
@@ -440,7 +440,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					if(Serv.infos.color_temp) {
 						LightType += "_Temp";
-						var props = {};
+						const props = {};
 						
 						if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.maxValue && Serv.actions.setcolor_temp.configuration.minValue && parseInt(Serv.actions.setcolor_temp.configuration.maxValue) && parseInt(Serv.actions.setcolor_temp.configuration.minValue)) {
 							if(parseInt(Serv.actions.setcolor_temp.configuration.maxValue) > 500 && parseInt(Serv.actions.setcolor_temp.configuration.minValue) > 500) { // Kelvin
@@ -460,7 +460,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							props.minValue = 0; // if not set in Jeedom it's 0
 							props.maxValue = 20000; // if not set in Jeedom it's 100
 						}
-						var unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
+						const unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
 						if(unite) {props.unit=unite;}
 						HBservice.characteristics.push(Characteristic.ColorTemperature);
 						Serv.addCharacteristic(Characteristic.ColorTemperature);
@@ -1919,7 +1919,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.StatelessSwitch) {
 			eqLogic.services.StatelessSwitch.forEach(function(cmd) {
 				if(cmd.eventType) {
-					var buttonSingle,buttonDouble,buttonLong;
+					let buttonSingle,buttonDouble,buttonLong;
 					
 					if(cmd.eventType.customizedValues.SINGLE) {
 						buttonSingle = cmd.eventType.customizedValues.SINGLE.split(';');
@@ -1936,7 +1936,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					} else {
 						buttonLong = [""];
 					}
-					var maxValues = Math.max(buttonSingle.length,buttonDouble.length,buttonLong.length);
+					const maxValues = Math.max(buttonSingle.length,buttonDouble.length,buttonLong.length);
 					
 					if(buttonSingle.length === buttonDouble.length && buttonDouble.length === buttonLong.length) {
 					
@@ -1993,7 +1993,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			});
 		}		
 		if (eqLogic.services.StatelessSwitchMono) {
-			var buttonList=[];
+			const buttonList=[];
 			eqLogic.services.StatelessSwitchMono.forEach(function(cmd) {
 				if(cmd.Single || cmd.Double || cmd.Long) {
 					let Label = "";
@@ -2727,7 +2727,7 @@ JeedomPlatform.prototype.adaptiveLightingSupport = function() {
 JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
 	const Serv = HBservice.controlService;
 	Serv.statusArr = {};
-	var sabotage,defect,status_active;
+	let sabotage,defect,status_active;
 	if(services.sabotage) {
 		for(const s in services.sabotage) { if(services.sabotage[s] !== null) {sabotage=services.sabotage[s];break;} }
 		if(sabotage) {
@@ -2767,7 +2767,7 @@ JeedomPlatform.prototype.createStatusCharact = function(HBservice,services) {
 JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 	try{
 		
-		var accessory = new JeedomBridgedAccessory(HBservices);
+		const accessory = new JeedomBridgedAccessory(HBservices);
 		accessory.platform = this;
 		accessory.log = this.log;
 		accessory.name = eqLogic.name;
@@ -2877,7 +2877,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			if(DEV_DEBUG) {
 				HBAccessory.log = {};
 				HBAccessory.log.debug = function()	{
-					var args = [].slice.call(arguments, 0);
+					const args = [].slice.call(arguments, 0);
 					args.unshift('debug');
 					return this.log.apply(this,args);
 				}.bind(this);
@@ -2890,7 +2890,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 										
 		if(HBAccessory.context.eqLogic.hasAdaptive) {
-			var adaptiveLightingController = new AdaptiveLightingController(HBAccessory.getService(Service.Lightbulb));
+			const adaptiveLightingController = new AdaptiveLightingController(HBAccessory.getService(Service.Lightbulb));
 			HBAccessory.configureController(adaptiveLightingController);
 			HBAccessory.adaptiveLightingController = adaptiveLightingController;
 		} else {
@@ -2906,7 +2906,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		HBAccessory.on('identify', function(paired, callback) {
 			this.log(HBAccessory.displayName, "->Identifié!!!");
-			if(typeof callback == 'function') {callback();}
+			if(typeof callback === 'function') {callback();}
 		}.bind(this));
 		HBAccessory.reviewed = true;
 	}
@@ -2928,7 +2928,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
 	try{
 		silence = silence || false;
-		for (var a in this.accessories) {
+		for (const a in this.accessories) {
 			if (this.accessories.hasOwnProperty(a)) {
 				if (this.accessories[a].UUID == UUID) {
 					if(!silence) {this.log('debug',' Accessoire déjà existant dans le cache Homebridge');}
@@ -2966,10 +2966,10 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 			return;
 		}
 		
-		for (var s = 0; s < accessory.services.length; s++) {
-			var service = accessory.services[s];
-			for (var i = 0; i < service.characteristics.length; i++) {
-				var characteristic = service.characteristics[i];
+		for (let s = 0; s < accessory.services.length; s++) {
+			const service = accessory.services[s];
+			for (let i = 0; i < service.characteristics.length; i++) {
+				const characteristic = service.characteristics[i];
 				if (characteristic.props.needsBinding) {
 					this.bindCharacteristicEvents(characteristic, service);
 				}
@@ -3047,7 +3047,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 // -- Return : nothing
 JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, service) {
 	try{
-		var that = this;
+		const that = this;
 		
 		var action,rgb,cmdId;
 		switch (characteristic.UUID) {
@@ -3369,8 +3369,8 @@ JeedomPlatform.prototype.findAccessoryByService = function(service) {
 };
 
 JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service) {
-		var that = this;
-		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
+		const that = this;
+		const cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
 
 		switch (characteristic.UUID) {
 			case Characteristic.ContactSensorState.UUID :
@@ -3411,20 +3411,20 @@ JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service
 // -- Return : nothing
 JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, info=null) {
 	try{
-		var that = this;
+		const that = this;
 		
-		var customizedValues={};
+		let customizedValues={};
 		if(service.customizedValues) {
 			customizedValues=service.customizedValues;
 		} else {
 			customizedValues={'OPEN':255,'OPENING':254,'STOPPED':253,'CLOSING':252,'CLOSED':0,'SINGLE':0,'DOUBLE':1,'LONG':2};
 		}
 		
-		var returnValue = 0;
-		var HRreturnValue;
-		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
-		var targetValueToTest,currentValueToTest;
-		var hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
+		let returnValue = 0;
+		let HRreturnValue;
+		const cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID);
+		let targetValueToTest,currentValueToTest;
+		let hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
 		
 		// masterSwitch :
 		switch (characteristic.UUID) {
@@ -4857,9 +4857,9 @@ function toBool(val) {
 // -- Return : nothing
 JeedomPlatform.prototype.command = function(action, value, service) {
 	try{
-		var that = this;
+		const that = this;
 
-		var cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID); 
+		const cmdList = that.jeedomClient.getDeviceCmdFromCache(service.eqID); 
 		
 		var cmdId = service.cmd_id;
 		let found=false;
@@ -5451,7 +5451,7 @@ JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic) {
 // -- Params --
 // -- Return : nothing
 JeedomPlatform.prototype.startPollingUpdate = function() {
-	var that = this;
+	const that = this;
 	if(that.pollingUpdateRunning) {return;}
 	that.pollingUpdateRunning = true;
 	that.jeedomClient.refreshStates().then(function(updates) {
@@ -5476,7 +5476,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 				} else if(DEV_DEBUG && update.name == 'eqLogic::update' &&
 					update.option.eqLogic_id) {
 				
-					var cacheState = that.jeedomClient.getDevicePropertiesFromCache(update.option.eqLogic_id);
+					const cacheState = that.jeedomClient.getDevicePropertiesFromCache(update.option.eqLogic_id);
 					that.jeedomClient.getDeviceProperties(update.option.eqLogic_id).then(function(eqLogic){
 						if(cacheState && eqLogic && cacheState.isEnable != eqLogic.isEnable) {
 							that.log('debug',"Changing Enable in",update.option.eqLogic_id,'from',cacheState.isEnable,'to',eqLogic.isEnable);
@@ -5506,7 +5506,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 // -- update : the update received from Jeedom
 // -- Return : nothing
 JeedomPlatform.prototype.updateSubscribers = function(update) {
-	var that = this;
+	const that = this;
 	var subCharact,subService,updateID;
 	for (let i = 0; i < that.updateSubscriptions.length; i++) {
 		subCharact = that.updateSubscriptions[i].characteristic;
@@ -5565,7 +5565,7 @@ JeedomPlatform.prototype.updateJeedomColorFromHomeKit = function(h, s, v, servic
 	if (v != null) {
 		service.HSBValue.brightness = v;
 	}
-	var rgb = HSVtoRGB(service.HSBValue.hue, service.HSBValue.saturation, service.HSBValue.brightness);
+	const rgb = HSVtoRGB(service.HSBValue.hue, service.HSBValue.saturation, service.HSBValue.brightness);
 	service.RGBValue.red = rgb.r;
 	service.RGBValue.green = rgb.g;
 	service.RGBValue.blue = rgb.b;
@@ -5584,13 +5584,13 @@ JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service)
 	}
 	// this.log('debug',"couleur :" + color);
 	// var colors = color.split(',');
-	var r = hexToR(color);
-	var g = hexToG(color);
-	var b = hexToB(color);
+	const r = hexToR(color);
+	const g = hexToG(color);
+	const b = hexToB(color);
 	service.RGBValue.red = r;
 	service.RGBValue.green = g;
 	service.RGBValue.blue = b;
-	var hsv = RGBtoHSV(r, g, b);
+	const hsv = RGBtoHSV(r, g, b);
 	service.HSBValue.hue = hsv.h;
 	service.HSBValue.saturation = hsv.s;
 	service.HSBValue.brightness = hsv.v;
@@ -5607,13 +5607,13 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
 	/* switch (--service.countColorCharacteristics) {
 	case -1:
 		service.countColorCharacteristics = 2; */
-		var that = this;
+		const that = this;
 
 		clearTimeout(service.timeoutIdColorCharacteristics);
 		service.timeoutIdColorCharacteristics = setTimeout(function() {
 			// if (service.countColorCharacteristics < 2)
 			//	return;
-			var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
+			const rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
 			if (DEV_DEBUG) {that.log('debug',"---------setRGB : ",rgbColor);}
 			that.command('setRGB', rgbColor, service);
 			// service.countColorCharacteristics = 0;
@@ -6231,23 +6231,23 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	var service;
 	try {
-			var serviceList=[];
-			var cachedValues=[];
-			for(var t=0; t< accessory.services.length;t++) { 
-				if(accessory.services[t].UUID != Service.AccessoryInformation.UUID && 
-					accessory.services[t].UUID != Service.BridgingState.UUID) {
-					serviceList.push(accessory.services[t]);
-				}
-			}		
-			for(service of serviceList){ // dont work in one loop or with temp object :(
-				this.log('debug',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
-				for (const c of service.characteristics) {
-					this.log('debug','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
-					cachedValues[service.subtype+c.displayName]=c.value;
-				}
-				accessory.removeService(service);
+		const serviceList=[];
+		const cachedValues=[];
+		for(var t=0; t< accessory.services.length;t++) { 
+			if(accessory.services[t].UUID != Service.AccessoryInformation.UUID && 
+				accessory.services[t].UUID != Service.BridgingState.UUID) {
+				serviceList.push(accessory.services[t]);
 			}
-			return cachedValues;
+		}		
+		for(service of serviceList){ // dont work in one loop or with temp object :(
+			this.log('debug',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
+			for (const c of service.characteristics) {
+				this.log('debug','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
+				cachedValues[service.subtype+c.displayName]=c.value;
+			}
+			accessory.removeService(service);
+		}
+		return cachedValues;
 	}
 	catch(e){
 		this.log('error','Erreur de la fonction delServices :',e,JSON.stringify(service));
@@ -6326,10 +6326,10 @@ function toHex(n) {
 // -- value : value (brightness) value
 // -- Return : RGB object
 function HSVtoRGB(hue, saturation, _value) {
-	var h = hue / 360.0;
-	var s = saturation / 100.0;
-	var v = 1.0;
-	var r, g, b, i, f, p, q, t;
+	let h = hue / 360.0;
+	let s = saturation / 100.0;
+	let v = 1.0;
+	let r, g, b, i, f, p, q, t;
 	if (arguments.length === 1) {
 		s = h.s;
 		v = 1.0;
@@ -6392,12 +6392,12 @@ function RGBtoHSV(r, g, b) {
 		g = r.g;
 		b = r.b;
 	}
-	var max = Math.max(r, g, b);
-	var min = Math.min(r, g, b);
-	var d = max - min;
-	var h;
-	var s = (max === 0 ? 0 : d / max);
-	var v = max / 255;
+	const max = Math.max(r, g, b);
+	const min = Math.min(r, g, b);
+	const d = max - min;
+	let h;
+	const s = (max === 0 ? 0 : d / max);
+	const v = max / 255;
 
 	switch (max) {
 	case min:
@@ -6430,7 +6430,7 @@ function RGBtoHSV(r, g, b) {
 // -- id : id to find
 // -- Return : Object found
 function findMyID(obj,id) {
-	for(var o in obj) {
+	for(const o in obj) {
         // if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && parseInt(obj[o].id) && parseInt(id) && parseInt(obj[o].id)==parseInt(id)) {
         if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && obj[o].id==id) {
 			return obj[o];
