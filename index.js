@@ -397,6 +397,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.color_temp=cmd2.color_temp;
 						} else if (cmd2.state_bool) {
 							Serv.infos.state_bool=cmd2.state_bool;
+						} else if (cmd2.brightness) {
+								
 						}
 					});
 					if (Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique "Action/Lumière OFF"');}
@@ -3990,7 +3992,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					if (cmd.generic_type == 'LIGHT_STATE' && cmd.subType != 'binary' && cmd.id == service.cmd_id) {
 						const maxJeedom = parseInt(service.maxBright) || 100;
 						returnValue = parseInt(cmd.currentValue);
-						if(maxJeedom) {
+						if(maxJeedom != 0) {
+							returnValue = Math.round((returnValue / maxJeedom)*100);
+						}
+						if (DEV_DEBUG) {that.log('debug','---------update Bright(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);}
+						// that.log('debug','------------Brightness jeedom :',cmd.currentValue,'soit en homekit :',returnValue);
+						break;
+					} else if (cmd.generic_type == 'LIGHT_BRIGHTNESS' && cmd.id == service.infos.brightness.id) {
+						const maxJeedom = parseInt(service.maxBright) || 100;
+						returnValue = parseInt(cmd.currentValue);
+						if(maxJeedom != 0) {
 							returnValue = Math.round((returnValue / maxJeedom)*100);
 						}
 						if (DEV_DEBUG) {that.log('debug','---------update Bright(refresh):',returnValue,'% soit',cmd.currentValue,' / ',maxJeedom);}
