@@ -398,7 +398,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						} else if (cmd2.state_bool) {
 							Serv.infos.state_bool=cmd2.state_bool;
 						} else if (cmd2.brightness) {
-								
+							Serv.infos.brightness=cmd2.brightness;
 						}
 					});
 					if (Serv.actions.on && !Serv.actions.off) {that.log('warn','Pas de type générique "Action/Lumière OFF"');}
