@@ -152,7 +152,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 				}
 			}).catch(function(err) {
 				that.log('error','#2 Erreur de récupération des données Jeedom: ' , err);
-				if(err) {console.error(err.stack);}
+				if(err && err.stack) { console.error(err.stack); }
 			});
 	}
 	catch(e){
@@ -3066,7 +3066,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							that.log('info','[Commande Scenario envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'response:'+JSON.stringify(response));
 						}).catch(function(err) {
 							that.log('error','Erreur à l\'envoi de la commande Scenario ' + action + ' vers ' + cmdId , err);
-							console.error(err.stack);
+							if(err && err.stack) { console.error(err.stack); }
 						});
 					} else {
 						// on
@@ -3077,7 +3077,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							that.log('info','[Commande Scenario envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'response:'+JSON.stringify(response));
 						}).catch(function(err) {
 							that.log('error','Erreur à l\'envoi de la commande Scenario ' + action + ' vers ' + cmdId , err);
-							console.error(err.stack);
+							if(err && err.stack) { console.error(err.stack); }
 						});
 					}
 				} else if (service.actions.Push){
@@ -5372,7 +5372,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				that.log('info','[Commande envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'generic:'+cmdFound,'response:'+JSON.stringify(response));
 			}).catch(function(err) {
 				that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
-				console.error(err.stack);
+				if(err && err.stack) { console.error(err.stack); }
 			});
 		} else if(needToTemporize) {
 			if(service.temporizator) {clearTimeout(service.temporizator);}
@@ -5384,7 +5384,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 				}).catch(function(err) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
-					console.error(err.stack);
+					if(err && err.stack) { console.error(err.stack); }
 				});
 			},needToTemporize);
 		} else if(needToTemporizeSec) {
@@ -5399,7 +5399,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 									that.log('info','[Commande ON LATE envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 								}).catch(function(err) {
 									that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
-									console.error(err.stack);
+									if(err && err.stack) { console.error(err.stack); }
 								});
 							},1000);
 						}
@@ -5411,7 +5411,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					that.log('info','[Commande T envoyée à Jeedom]','cmdId:' + cmdId,'action:' + action,'value: '+value,'response:'+JSON.stringify(response));
 				}).catch(function(err) {
 					that.log('error','Erreur à l\'envoi de la commande ' + action + ' vers ' + service.cmd_id , err);
-					console.error(err.stack);
+					if(err && err.stack) { console.error(err.stack); }
 				});
 				
 			},needToTemporizeSec);
@@ -5494,7 +5494,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 		that.pollingID = setTimeout(function(){ /* that.log('debug','==RESTART POLLING=='); */that.startPollingUpdate(); }, that.pollerPeriod * 1000);
 	}).catch(function(err) {
 		that.log('error','Erreur de récupération des évènements de mise à jour: ', err);
-		if(err && err.stack) {console.error(err.stack);}
+		if(err && err.stack) { console.error(err.stack); }
 		that.pollingUpdateRunning = false;
 		that.pollingID = setTimeout(function(){ that.log('debug','!!RESTART POLLING AFTER ERROR!!');that.startPollingUpdate(); }, that.pollerPeriod * 2 * 1000);
 	});
