@@ -1003,7 +1003,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						characteristics : [Characteristic.On],
 					};
 					const Serv = HBservice.controlService;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' && cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;}
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' && cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;Serv.getCharacteristic(Characteristic.Name).value=SwitchName}
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
