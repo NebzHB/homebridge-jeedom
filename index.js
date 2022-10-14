@@ -3172,7 +3172,16 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.TargetDoorState.UUID :
 				if(service.actions.toggle) {
-					this.command('GBtoggle', 0, service);
+					if(service.actions.toggle.configuration && service.actions.toggle.configuration.hkService == "garage-door-opener") {
+						this.log('debug','Reconnu toggle Select de hkControl:',value);
+						if(parseInt(value) === 0) {
+							this.command('GBtoggleSelect', parseInt(value), service);
+						} else { // value === 1
+							this.command('GBtoggleSelect', parseInt(value), service);
+						}						
+					} else {
+						this.command('GBtoggle', 0, service);
+					}
 				} else if(service.actions.on && parseInt(value) === 0){
 					this.command('GBopen', 0, service);
 				} else if(service.actions.off && parseInt(value) === 1){
@@ -5043,7 +5052,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 						}
 					break;
 					case 'GB_TOGGLE' :
-						if(action == 'GBtoggle') {
+						if(action == 'GBtoggle' || action == 'GBtoggleSelect') {
 							cmdId = cmd.id;
 							found = true;
 							cmdFound=cmd.generic_type;
