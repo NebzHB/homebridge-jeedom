@@ -641,6 +641,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.Push = cmd.up;
 						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 						
+						Serv.ConfiguredName=SwitchName;
 						HBservice.characteristics.push(Characteristic.ConfiguredName);
 						Serv.addCharacteristic(Characteristic.ConfiguredName);
 						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
@@ -667,6 +668,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.Push = cmd.down;
 						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 						
+						Serv.ConfiguredName=SwitchName;
 						HBservice.characteristics.push(Characteristic.ConfiguredName);
 						Serv.addCharacteristic(Characteristic.ConfiguredName);
 						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
@@ -693,6 +695,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.Push = cmd.stop;
 						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 						
+						Serv.ConfiguredName=SwitchName;
 						HBservice.characteristics.push(Characteristic.ConfiguredName);
 						Serv.addCharacteristic(Characteristic.ConfiguredName);
 						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
@@ -1017,6 +1020,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					const Serv = HBservice.controlService;
 					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' && cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
 						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+						
+						Serv.ConfiguredName=SwitchName;
 						HBservice.characteristics.push(Characteristic.ConfiguredName);
 						Serv.addCharacteristic(Characteristic.ConfiguredName);
 						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
@@ -1088,6 +1093,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions.Push = cmd.Push;
 					Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 					
+					Serv.ConfiguredName=SwitchName;
 					HBservice.characteristics.push(Characteristic.ConfiguredName);
 					Serv.addCharacteristic(Characteristic.ConfiguredName);
 					Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
@@ -2585,6 +2591,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos={};
 							Serv.infos.state=modeState;
 							
+							Serv.ConfiguredName=ModeName;
 							Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(ModeName);
 							
 							if(!set_state_previous) {
@@ -3475,6 +3482,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 		// masterSwitch :
 		switch (characteristic.UUID) {
 			// Switch or Light
+			case Characteristic.ConfiguredName.UUID :
+				returnValue = service.ConfiguredName;
+			break;
 			case Characteristic.On.UUID :
 				if(service.infos.scenario) {
 					const scenario = that.jeedomClient.getScenarioPropertiesFromCache(service.infos.scenario.id);
