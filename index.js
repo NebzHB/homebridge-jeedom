@@ -1012,13 +1012,17 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.Switch.forEach(function(cmd) {
 				if (cmd.state) {
 					let SwitchName = eqLogic.name;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {SwitchName=cmd.state.name;}
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
+						that.log('debug',"Switchs multiples dans même équipement, il y en a "+eqLogic.numSwitches);
+						SwitchName=cmd.state.name;
+					}
 					HBservice = {
 						controlService : new Service.Switch(SwitchName),
 						characteristics : [Characteristic.On],
 					};
 					const Serv = HBservice.controlService;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' && cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
+					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
+						that.log('debug',"Nom du switch (multi) : "+SwitchName);
 						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 						
 						Serv.ConfiguredName=SwitchName;
@@ -1084,7 +1088,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					const SwitchName=cmd.Push.name;
 					HBservice = {
 						controlService : new Service.Switch(SwitchName),
-						characteristics : [Characteristic.On],
+						characteristics : [Characteristic.On,Characteristic.ConfiguredName],
 					};
 					const Serv = HBservice.controlService;
 					Serv.eqLogic=eqLogic;
@@ -1094,8 +1098,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 					
 					Serv.ConfiguredName=SwitchName;
-					HBservice.characteristics.push(Characteristic.ConfiguredName);
-					Serv.addCharacteristic(Characteristic.ConfiguredName);
 					Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
 					
 					// add Active, Tampered and Defect Characteristics if needed
@@ -3483,7 +3485,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 		switch (characteristic.UUID) {
 			// Switch or Light
 			case Characteristic.ConfiguredName.UUID :
-				returnValue = service.ConfiguredName;
+				if(service.ConfiguredName != null && service.ConfiguredName != "") {
+					returnValue = service.ConfiguredName;
+				} else {
+					returnValue = undefined;
+				}
 			break;
 			case Characteristic.On.UUID :
 				if(service.infos.scenario) {
