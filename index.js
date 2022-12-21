@@ -3794,11 +3794,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						(cmd.generic_type == 'WEATHER_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging && (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE')) {
-							service.eqLogic.loggingService.addEntry({
-								time: Math.round(new Date().valueOf() / 1000),
-								temp: returnValue,
-							});
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							if (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE') {
+								service.eqLogic.loggingService.addEntry({
+									time: Math.round(new Date().valueOf() / 1000),
+									temp: returnValue,
+								});
+							} else if (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' || cmd.generic_type == 'THERMOSTAT_HC_TEMPERATURE') {
+								service.eqLogic.loggingService.addEntry({
+									time: Math.round(new Date().valueOf() / 1000),
+									currentTemp: returnValue,
+								});
+							}
 						}
 						break;
 					}
