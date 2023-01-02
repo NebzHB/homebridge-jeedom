@@ -3524,7 +3524,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					}
 				} else {
 					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool && (cmd.subType == 'binary')) {
+						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool && (cmd.subType == 'binary' || cmd.subType == 'numeric')) {
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
 							else {returnValue=true;}
 							if(service.eqLogic.hasAdaptive) {
