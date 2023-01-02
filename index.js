@@ -3524,7 +3524,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					}
 				} else {
 					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool && cmd.subType == 'binary') {
+						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool && (cmd.subType == 'binary')) {
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
 							else {returnValue=true;}
 							if(service.eqLogic.hasAdaptive) {
@@ -3535,12 +3535,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 								}
 							}
 							break;
-						} else if ((cmd.generic_type == 'FAN_STATE' || cmd.generic_type == 'FAN_SPEED_STATE') && cmd.id == service.cmd_id) {
-							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
-							else {returnValue=true;}
-							break;
 						} else if (cmd.generic_type == 'LIGHT_STATE_BOOL' && service.infos.state_bool && cmd.id == service.infos.state_bool.id) {
-							if(cmd.subType == 'other') {
+							if(cmd.subType == 'other' || cmd.subType == 'string') {
 								if(cmd.currentValue.toLowerCase() == 'off') {returnValue=false;}
 								else {returnValue=true;}
 							} else {
@@ -3555,7 +3551,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 								}
 							}
 							break;
-						} else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
+						} else if ((cmd.generic_type == 'FAN_STATE' || cmd.generic_type == 'FAN_SPEED_STATE') && cmd.id == service.cmd_id) {
+							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
+							else {returnValue=true;}
+							break;
+						}  else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
 							break;
 						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
