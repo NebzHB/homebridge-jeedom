@@ -3540,8 +3540,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							else {returnValue=true;}
 							break;
 						} else if (cmd.generic_type == 'LIGHT_STATE_BOOL' && service.infos.state_bool && cmd.id == service.infos.state_bool.id) {
-							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
-							else {returnValue=true;}
+							if(cmd.subType == 'other') {
+								if(cmd.currentValue.toLowerCase() == 'off') {returnValue=false;}
+								else {returnValue=true;}
+							} else {
+								if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
+								else {returnValue=true;}
+							}
 							if(service.eqLogic.hasAdaptive) {
 								if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
 									if(returnValue == false) {
