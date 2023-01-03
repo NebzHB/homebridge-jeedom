@@ -59,7 +59,7 @@ function JeedomPlatform(logger, config, api) {
 			DEV_DEBUG = true;
 		}
 		this.debugLevel = config.debugLevel || debug.ERROR;
-		this.log = myLogger.createMyLogger(this.debugLevel,logger);
+		this.log = myLogger.createMyLogger(this.debugLevel,logger,api.user.storagePath()+'/../../../../log/');
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
 		this.adaptiveEnabled = config.adaptiveEnabled;
@@ -3555,7 +3555,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
 							else {returnValue=true;}
 							break;
-						}  else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
+						} else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
 							break;
 						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
