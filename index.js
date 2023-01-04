@@ -3099,7 +3099,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 		switch (characteristic.UUID) {
 			case Characteristic.ConfiguredName.UUID :
 				this.log('debug','Set ConfiguredName - do nothing');
-			break
+			break;
 			case Characteristic.ResetTotal.UUID :
 				this.log('info','--Reset Graphiques Reçu');
 				service.eqLogic.numberOpened = 0;
