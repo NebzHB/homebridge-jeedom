@@ -59,7 +59,7 @@ function JeedomPlatform(logger, config, api) {
 			DEV_DEBUG = true;
 		}
 		this.debugLevel = config.debugLevel || debug.ERROR;
-		this.log = myLogger.createMyLogger(this.debugLevel,logger);
+		this.log = myLogger.createMyLogger(this.debugLevel,logger,api.user.storagePath()+'/../../../../log/');
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
 		this.adaptiveEnabled = config.adaptiveEnabled;
@@ -3097,6 +3097,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 		
 		var action,rgb,cmdId;
 		switch (characteristic.UUID) {
+			case Characteristic.ConfiguredName.UUID :
+				this.log('debug','Set ConfiguredName - do nothing');
+			break;
 			case Characteristic.ResetTotal.UUID :
 				this.log('info','--Reset Graphiques Reçu');
 				service.eqLogic.numberOpened = 0;
@@ -3527,6 +3530,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if (cmd.generic_type == 'LIGHT_STATE' && cmd.id == service.cmd_id && !service.infos.state_bool && (cmd.subType == 'binary' || cmd.subType == 'numeric')) {
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
 							else {returnValue=true;}
+							
 							if(service.eqLogic.hasAdaptive) {
 								if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
 									if(returnValue == false) {
@@ -3536,13 +3540,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							}
 							break;
 						} else if (cmd.generic_type == 'LIGHT_STATE_BOOL' && service.infos.state_bool && cmd.id == service.infos.state_bool.id) {
-							if(cmd.subType == 'other' || cmd.subType == 'string') {
-								if(cmd.currentValue.toLowerCase() == 'off') {returnValue=false;}
-								else {returnValue=true;}
-							} else {
-								if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
-								else {returnValue=true;}
+							returnValue=true;
+							if((cmd.subType == 'other' || cmd.subType == 'string') && cmd.currentValue.toLowerCase() == 'off') {
+								returnValue=false;
+							} else if(parseInt(cmd.currentValue) == 0) {
+								returnValue=false;
 							}
+
 							if(service.eqLogic.hasAdaptive) {
 								if(service.eqLogic.doesLightOnWhenTempColIsChanged) {
 									if(returnValue == false) {
@@ -3555,7 +3559,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							if(parseInt(cmd.currentValue) == 0) {returnValue=false;}
 							else {returnValue=true;}
 							break;
-						}  else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
+						} else if (cmd.generic_type == "ENERGY_STATE" && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
 							break;
 						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
