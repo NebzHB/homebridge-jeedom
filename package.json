@@ -31,7 +31,7 @@
   "devDependencies": {
     "@babel/core": ">=7.21.0",
     "@babel/eslint-parser": "^7.19.1",
-    "eslint": "^8.36.0"
+    "eslint": "^8.39.0"
   },
   "author": "Nebz <nebz@nebz.be>",
   "license": "GPL-2.0",
