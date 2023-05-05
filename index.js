@@ -1448,11 +1448,25 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach(function(cmd) {
 				if (cmd.presence) {
+					let SensorName=eqLogic.name;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
+						SensorName=cmd.presence.name;
+					}
 					HBservice = {
-						controlService : new Service.MotionSensor(eqLogic.name),
+						controlService : new Service.MotionSensor(SensorName),
 						characteristics : [Characteristic.MotionDetected],
 					};
 					const Serv = HBservice.controlService;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Nom du détecteur (multi) : "+SensorName);
+						Serv.getCharacteristic(Characteristic.MotionDetected).displayName = SensorName;
+						
+						Serv.ConfiguredName=SensorName;
+						HBservice.characteristics.push(Characteristic.ConfiguredName);
+						Serv.addCharacteristic(Characteristic.ConfiguredName);
+						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
+					}
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
@@ -1489,11 +1503,25 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.occupancy) {
 			eqLogic.services.occupancy.forEach(function(cmd) {
 				if (cmd.occupancy) {
+					let SensorName=eqLogic.name;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
+						SensorName=cmd.occupancy.name;
+					}
 					HBservice = {
-						controlService : new Service.OccupancySensor(eqLogic.name),
+						controlService : new Service.OccupancySensor(SensorName),
 						characteristics : [Characteristic.OccupancyDetected],
 					};
 					const Serv = HBservice.controlService;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Nom du détecteur (multi) : "+SensorName);
+						Serv.getCharacteristic(Characteristic.OccupancyDetected).displayName = SensorName;
+						
+						Serv.ConfiguredName=SensorName;
+						HBservice.characteristics.push(Characteristic.ConfiguredName);
+						Serv.addCharacteristic(Characteristic.ConfiguredName);
+						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
+					}
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
