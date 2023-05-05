@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
-/* jshint esversion: 6,node: true,-W041: false */
+/* jshint esversion: 11,node: true,-W041: false */
 'use strict';
 
 let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
@@ -1448,11 +1448,25 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach(function(cmd) {
 				if (cmd.presence) {
+					let SensorName=eqLogic.name;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
+						SensorName=cmd.presence.name;
+					}
 					HBservice = {
-						controlService : new Service.MotionSensor(eqLogic.name),
+						controlService : new Service.MotionSensor(SensorName),
 						characteristics : [Characteristic.MotionDetected],
 					};
 					const Serv = HBservice.controlService;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Nom du détecteur (multi) : "+SensorName);
+						Serv.getCharacteristic(Characteristic.MotionDetected).displayName = SensorName;
+						
+						Serv.ConfiguredName=SensorName;
+						HBservice.characteristics.push(Characteristic.ConfiguredName);
+						Serv.addCharacteristic(Characteristic.ConfiguredName);
+						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
+					}
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
@@ -1489,11 +1503,25 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		if (eqLogic.services.occupancy) {
 			eqLogic.services.occupancy.forEach(function(cmd) {
 				if (cmd.occupancy) {
+					let SensorName=eqLogic.name;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
+						SensorName=cmd.occupancy.name;
+					}
 					HBservice = {
-						controlService : new Service.OccupancySensor(eqLogic.name),
+						controlService : new Service.OccupancySensor(SensorName),
 						characteristics : [Characteristic.OccupancyDetected],
 					};
 					const Serv = HBservice.controlService;
+					if(eqLogic.numDetector>1) {
+						that.log('debug',"Nom du détecteur (multi) : "+SensorName);
+						Serv.getCharacteristic(Characteristic.OccupancyDetected).displayName = SensorName;
+						
+						Serv.ConfiguredName=SensorName;
+						HBservice.characteristics.push(Characteristic.ConfiguredName);
+						Serv.addCharacteristic(Characteristic.ConfiguredName);
+						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
+					}
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
@@ -4132,15 +4160,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							if (DEV_DEBUG) {that.log('debug',"alarm_mode T=",cmd.currentValue);}
 							
 							if(service.alarm.present && service.alarm.present.mode_label != undefined) {
-								mode_PRESENT=service.alarm.present.mode_label;
+								mode_PRESENT=service.alarm.present.mode_label?.toLowerCase();
 							}
 							if(service.alarm.away && service.alarm.away.mode_label != undefined) {
-								mode_AWAY=service.alarm.away.mode_label;
+								mode_AWAY=service.alarm.away.mode_label?.toLowerCase();
 							}
 							if(service.alarm.night && service.alarm.night.mode_label != undefined) {
-								mode_NIGHT=service.alarm.night.mode_label;
+								mode_NIGHT=service.alarm.night.mode_label?.toLowerCase();
 							}
-							switch (cmd.currentValue) {
+							switch (cmd.currentValue?.toLowerCase()) {
 								case undefined:
 									if (DEV_DEBUG) {that.log('debug',"renvoie absent T via undefined",Characteristic.SecuritySystemTargetState.AWAY_ARM);}
 									returnValue = Characteristic.SecuritySystemTargetState.AWAY_ARM;
@@ -4227,18 +4255,18 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 								}
 						}
 						if (cmd.generic_type == 'ALARM_MODE') {
-							if (DEV_DEBUG) {that.log('debug',"alarm_mode C=",cmd.currentValue);}
+							if (DEV_DEBUG) {that.log('debug',"alarm_mode C=",cmd.currentValue?.toLowerCase());}
 							
 							if(service.alarm.present && service.alarm.present.mode_label != undefined) {
-								mode_PRESENT=service.alarm.present.mode_label;
+								mode_PRESENT=service.alarm.present.mode_label?.toLowerCase();
 							}
 							if(service.alarm.away && service.alarm.away.mode_label != undefined) {
-								mode_AWAY=service.alarm.away.mode_label;
+								mode_AWAY=service.alarm.away.mode_label?.toLowerCase();
 							}
 							if(service.alarm.night && service.alarm.night.mode_label != undefined) {
-								mode_NIGHT=service.alarm.night.mode_label;
+								mode_NIGHT=service.alarm.night.mode_label?.toLowerCase();
 							}
-							switch (cmd.currentValue) {
+							switch (cmd.currentValue?.toLowerCase()) {
 								case undefined:
 									if (DEV_DEBUG) {that.log('debug',"renvoie absent C via undefined",Characteristic.SecuritySystemCurrentState.AWAY_ARM);}
 									returnValue = Characteristic.SecuritySystemCurrentState.AWAY_ARM;
