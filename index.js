@@ -741,6 +741,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.slider = cmd2.slider;
 						}
 					});
+					Serv.maxValue = 100; // if not set in Jeedom it's 100
+					Serv.minValue = 0; // if not set in Jeedom it's 0
 					if(Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
 					if(!Serv.actions.up && Serv.actions.down) {that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
 					if(!Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
@@ -748,13 +750,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(Serv.actions.slider) {
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
-						} else {
-							Serv.maxValue = 100; // if not set in Jeedom it's 100
 						}
 						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue)) {
 							Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
-						} else {
-							Serv.minValue = 0; // if not set in Jeedom it's 0
 						}
 					}
 					// add Active, Tampered and Defect Characteristics if needed
