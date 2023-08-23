@@ -3951,7 +3951,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.MotionDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
-						returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? 
+						returnValue = parseInt(service.invertBinary)==0 ? !toBool(cmd.currentValue) : toBool(cmd.currentValue); // invertBinary ? 
 						// returnValue = toBool(cmd.currentValue);
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
@@ -3966,7 +3966,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.OccupancyDetected.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'OCCUPANCY' && cmd.id == service.cmd_id) {
-						returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? 
+						returnValue = parseInt(service.invertBinary)==0 ? !toBool(cmd.currentValue) : toBool(cmd.currentValue); // invertBinary ? 
 						// returnValue = toBool(cmd.currentValue);
 						if(returnValue === false) {
 							returnValue = Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
