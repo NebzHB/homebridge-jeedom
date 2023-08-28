@@ -26,4 +26,4 @@ jobs:
         run: |
           npm install eslint@8.10.0
       - name: Run ESLint
-        run: eslint . --ext .js --config .eslintrc.js
+        run: npx eslint . --ext .js --config .eslintrc.js
