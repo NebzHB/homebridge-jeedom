@@ -22,7 +22,5 @@ jobs:
       - name: Install dependencies
         run: |
           npm i
-      - name: eslint
-        uses: icrawl/action-eslint@v1
-        with:
-          custom-glob: .
+      - name: Run ESLint
+        run: eslint . --ext .js
