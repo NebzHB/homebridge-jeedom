@@ -5607,6 +5607,8 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 							that.log('debug',"Changing Enable in",update.option.eqLogic_id,'from',cacheState.isEnable,'to',eqLogic.isEnable);
 							that.jeedomClient.updateModelEq(update.option.eqLogic_id,eqLogic);
 						}
+					}).catch(e => {
+						that.log('error','Erreur :',e);
 					});
 					that.log('debug','[Reçu Type non géré]',update.name+' contenu: '+JSON.stringify(update).replace("\n",""));
 				} else if(DEV_DEBUG) {
