@@ -1,7 +1,7 @@
 {
   "name": "@nebz/homebridge-jeedom",
-  "version": "v1.6.1",
-  "cust_serial": "0007",
+  "version": "v1.6.2",
+  "cust_serial": "0001",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "private":true,
