@@ -1,7 +1,7 @@
 {
   "name": "@nebz/homebridge-jeedom",
   "version": "v1.6.1",
-  "cust_serial": "0007",
+  "cust_serial": "0008",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "private":true,
@@ -29,9 +29,9 @@
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
-    "@babel/core": ">=7.22.10",
-    "@babel/eslint-parser": "^7.22.10",
-    "eslint": "^8.47.0"
+    "@babel/core": ">=7.23.0",
+    "@babel/eslint-parser": "^7.22.15",
+    "eslint": "^8.50.0"
   },
   "author": "Nebz <nebz@nebz.be>",
   "license": "GPL-2.0",
