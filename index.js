@@ -4761,8 +4761,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						returnValue = cmd.currentValue;
 						if(service.infos.power && service.infos.power.unite && service.infos.power.unite.toLowerCase() == 'kw') {
 							returnValue = Math.round(cmd.currentValue*1000);
-						} else {
-							returnValue = cmd.currentValue;
 						}
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
