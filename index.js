@@ -5782,7 +5782,7 @@ function RegisterCustomCharacteristics() {
 			format : Characteristic.Formats.UINT16,
 			unit : 'Watts',
 			maxValue : 100000,
-			minValue : 0,
+			minValue : -100000,
 			minStep : 1,
 			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
