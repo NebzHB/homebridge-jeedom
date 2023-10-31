@@ -17,6 +17,7 @@
 'use strict';
 
 let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
+const fs = require('fs');
 const inherits = require('util').inherits;
 const myLogger = require('./lib/myLogger').myLogger;
 const debug = {};
@@ -59,7 +60,11 @@ function JeedomPlatform(logger, config, api) {
 			DEV_DEBUG = true;
 		}
 		this.debugLevel = config.debugLevel || debug.ERROR;
-		this.log = myLogger.createMyLogger(this.debugLevel,logger,api.user.storagePath()+'/../../../../log/');
+		let logPath = api.user.storagePath()+'/../../../../log/'
+		if (!fs.existsSync(logPath)) {
+			logPath = '/tmp/'
+		}
+		this.log = myLogger.createMyLogger(this.debugLevel,logger,logPath);
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
 		this.adaptiveEnabled = config.adaptiveEnabled;
