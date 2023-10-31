@@ -60,9 +60,9 @@ function JeedomPlatform(logger, config, api) {
 			DEV_DEBUG = true;
 		}
 		this.debugLevel = config.debugLevel || debug.ERROR;
-		let logPath = api.user.storagePath()+'/../../../../log/'
+		let logPath = api.user.storagePath()+'/../../../../log/';
 		if (!fs.existsSync(logPath)) {
-			logPath = '/tmp/'
+			logPath = '/tmp/';
 		}
 		this.log = myLogger.createMyLogger(this.debugLevel,logger,logPath);
 		this.log('debugLevel:'+this.debugLevel);
