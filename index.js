@@ -17,6 +17,7 @@
 'use strict';
 
 let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
+const fs = require('fs');
 const inherits = require('util').inherits;
 const myLogger = require('./lib/myLogger').myLogger;
 const debug = {};
@@ -59,7 +60,11 @@ function JeedomPlatform(logger, config, api) {
 			DEV_DEBUG = true;
 		}
 		this.debugLevel = config.debugLevel || debug.ERROR;
-		this.log = myLogger.createMyLogger(this.debugLevel,logger,api.user.storagePath()+'/../../../../log/');
+		let logPath = api.user.storagePath()+'/../../../../log/';
+		if (!fs.existsSync(logPath)) {
+			logPath = '/tmp/';
+		}
+		this.log = myLogger.createMyLogger(this.debugLevel,logger,logPath);
 		this.log('debugLevel:'+this.debugLevel);
 		this.myPlugin = config.myPlugin;
 		this.adaptiveEnabled = config.adaptiveEnabled;
@@ -4761,8 +4766,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						returnValue = cmd.currentValue;
 						if(service.infos.power && service.infos.power.unite && service.infos.power.unite.toLowerCase() == 'kw') {
 							returnValue = Math.round(cmd.currentValue*1000);
-						} else {
-							returnValue = cmd.currentValue;
 						}
 						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
@@ -5782,7 +5785,7 @@ function RegisterCustomCharacteristics() {
 			format : Characteristic.Formats.UINT16,
 			unit : 'Watts',
 			maxValue : 100000,
-			minValue : 0,
+			minValue : -100000,
 			minStep : 1,
 			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
 		});
