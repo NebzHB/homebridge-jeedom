@@ -1890,14 +1890,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqID = eqLogic.id;
 					Serv.subtype = Serv.subtype || '';
 					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					/* if(that.fakegato && !eqLogic.hasLogging) {
+					if(that.fakegato && !eqLogic.hasLogging) {
 						// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 
 						// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 						eqLogic.loggingService = {type:"custom", options:{storage:'fs',path:that.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 
 						eqLogic.hasLogging=true;
-					} */
+					}
 					HBservices.push(HBservice);
 					HBservice = null;
 				}
@@ -3840,7 +3840,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 									time: Math.round(new Date().valueOf() / 1000),
 									temp: returnValue,
 								});
-							} else if (cmd.generic_type == 'THERMOSTAT_TEMPERATURE' || cmd.generic_type == 'THERMOSTAT_HC_TEMPERATURE') {
+							} else if (cmd.generic_type == 'THERMOSTAT_TEMPERATURE') {
 								service.eqLogic.loggingService.addEntry({
 									time: Math.round(new Date().valueOf() / 1000),
 									currentTemp: returnValue,
