@@ -3816,12 +3816,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
-						/* if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(that.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								lux: returnValue,
 							});
-						} */
+						}
 						break;
 					}
 				}
