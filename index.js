@@ -4392,6 +4392,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							case 'ninguna': // ES
 							case 'ohne': // DE
 							case 'nemhum': // PT
+							case 'manuel': // Plugin Boiler
+							case 'manual': // Plugin Boiler
 								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 							break;
 						}
