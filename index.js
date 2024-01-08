@@ -138,7 +138,7 @@ JeedomPlatform.prototype.addAccessories = function() {
 						});
 					} else {
 						that.log('error','Pièce > '+model.objects);
-						throw new Error('Rooms list empty or invalid');
+						throw new Error('Liste des pièces vide ou invalide, vérifiez que vous avez bien coché au moins une pièce à envoyer à homebridge !');
 					}
 
 					that.log('Enumération des scénarios Jeedom...');
