@@ -739,7 +739,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
-
+					if(cmd.moving) {
+						Serv.infos.moving=cmd.moving;
+					}
 					eqServicesCopy.windowMoto.forEach(function(cmd2) {
 						if (cmd2.up) {
 							Serv.actions.up = cmd2.up;
