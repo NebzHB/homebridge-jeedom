@@ -511,6 +511,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
+					if(cmd.moving) {
+						Serv.infos.moving=cmd.moving;
+					}
 					if(cmd.stateClosing) {
 						Serv.infos.state=cmd.stateClosing;
 						if(Serv.infos.state.subType == 'binary') {
@@ -4579,7 +4582,30 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			case Characteristic.PositionState.UUID :
-				returnValue = Characteristic.PositionState.STOPPED;
+				if(moving in service.infos) {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'FLAP_MOVING' || cmd.generic_type == 'WINDOW_MOVING') {
+							switch(parseInt(cmd.currentValue)) {
+								case 0 :
+									returnValue=Characteristic.PositionState.DECREASING;
+									break;
+								case 1 :
+									returnValue=Characteristic.PositionState.INCREASING;
+									break;
+								case 2 :
+									returnValue=Characteristic.PositionState.STOPPED;
+									break;
+								default : 
+									returnValue=Characteristic.PositionState.STOPPED;
+									break;
+							}
+							that.log('debug','---------update PositionState:',returnValue);
+							break;
+						}
+					}
+				} else {
+					returnValue = Characteristic.PositionState.STOPPED;
+				}
 			break;
 			case Characteristic.CurrentHorizontalTiltAngle.UUID :
 			case Characteristic.TargetHorizontalTiltAngle.UUID :
