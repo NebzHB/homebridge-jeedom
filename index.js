@@ -511,7 +511,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
-					Serv.infos.moving=null;
 					if(cmd.moving) {
 						Serv.infos.moving=cmd.moving;
 					}
@@ -740,7 +739,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
-					Serv.infos.moving=null;
 					if(cmd.moving) {
 						Serv.infos.moving=cmd.moving;
 					}
@@ -4586,7 +4584,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			case Characteristic.PositionState.UUID :
-				if(moving in service.infos && service.infos.moving !== null) {
+				if('moving' in service.infos && service.infos.moving !== null) {
 					for (const cmd of cmdList) {
 						if (cmd.generic_type == 'FLAP_MOVING' || cmd.generic_type == 'WINDOW_MOVING') {
 							switch(parseInt(cmd.currentValue)) {
