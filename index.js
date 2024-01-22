@@ -20,6 +20,8 @@ let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUID
 const fs = require('fs');
 const inherits = require('util').inherits;
 const myLogger = require('./lib/myLogger').myLogger;
+const express = require('express');
+
 const debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
@@ -88,6 +90,15 @@ function JeedomPlatform(logger, config, api) {
 		} else {
 			this.log('info',"Adresse Jeedom bien configurée :"+config.url);	
 		}
+		
+		this.app = express();
+		this.app.get('/config', this.ConfigCMD.bind(this));
+		this.app.use((err, req, res, _next) => {
+			res.type('json');
+			console.log('error',err);
+			res.json({'result':'ko','msg':err});
+		});	
+		
 		this.DEV_DEBUG = DEV_DEBUG; // for passing by
 		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this, config.myPlugin);
 		this.rooms = {};
@@ -108,6 +119,11 @@ function JeedomPlatform(logger, config, api) {
 		if (api) {
 			this.api = api;
 			this.api.on('didFinishLaunching',function(){
+				/** Listen **/
+				this.server = this.app.listen(0, '0.0.0.0', () => {
+					this.log('info',"On écoute les messages sur le port "+this.server.address().port);
+					this.jeedomClient.daemonIsReady(this.server.address().port);
+				});
 				this.addAccessories();
 			}.bind(this));
 		}
@@ -117,6 +133,42 @@ function JeedomPlatform(logger, config, api) {
 		console.error(e.stack);
 	}
 }
+
+JeedomPlatform.prototype.ConfigCMD = function(req, res) {
+	res.type('json');
+	res.status(202);
+	
+	this.log('info','Recu une configuration de jeedom :'+JSON.stringify(req.query));
+	
+	if ('setting' in req.query === false) {
+		const error="Pour faire une config, le démon a besoin de son nom";
+		this.log('error',error); 
+		res.json({'result':'ko','msg':error});
+		return;
+	}
+	if ('value' in req.query === false) {
+		const error="Pour faire une config, le démon a besoin d'une valeur a configurer";
+		this.log('error',error); 
+		res.json({'result':'ko','msg':error});
+		return;
+	}
+	
+	switch(req.query.setting) {
+		case 'sendLoglevel':
+			this.debugLevel = req.query.value;
+			this.log.changeLevel(this.debugLevel);
+		break;
+		default: {
+			const error = "Configuration inexistante";
+			this.log('error','ERROR CONFIG: ' + req.query.setting + ' : '+error);
+			res.json({'result':'ko','msg':error});
+			return;
+		}
+	}
+	this.log('conf',"Configuration de : "+req.query.setting+" effectuée avec la valeur : "+((typeof req.query.value == "object")?JSON.stringify(req.query.value):req.query.value));
+	res.json({'result':'ok','value':req.query.value});
+};
+
 
 // -- addAccessories
 // -- Desc : Accessories creation, we get a full model from jeedom and put it in local cache
