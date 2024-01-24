@@ -120,7 +120,9 @@ function JeedomPlatform(logger, config, api) {
 			this.api = api;
 			this.api.on('didFinishLaunching',function(){
 				/** Listen **/
-				this.server = this.app.listen(0, '0.0.0.0', () => {
+				let port=0;
+				if(fs.existsSync('/homebridge/')) { port=8582; } // if docker, use the port next to homebridge-config-ui
+				this.server = this.app.listen(port, '0.0.0.0', () => {
 					this.log('info',"On écoute les messages sur le port "+this.server.address().port);
 					this.jeedomClient.daemonIsReady(this.server.address().port);
 				});
