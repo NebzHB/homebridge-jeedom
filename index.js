@@ -100,6 +100,7 @@ function JeedomPlatform(logger, config, api) {
 		});	
 		
 		this.DEV_DEBUG = DEV_DEBUG; // for passing by
+		this.USE_QUEUES = config.USE_QUEUES || 1; // 0 = NO, or 1 or 2 etc for the concurrent tasks
 		this.jeedomClient = require('./lib/jeedom-api').createClient(config.url, config.apikey, this, config.myPlugin);
 		this.rooms = {};
 		this.updateSubscriptions = [];
@@ -159,6 +160,10 @@ JeedomPlatform.prototype.ConfigCMD = function(req, res) {
 		case 'sendLoglevel':
 			this.debugLevel = req.query.value;
 			this.log.changeLevel(this.debugLevel);
+		break;
+		case 'changeUSE_QUEUES':
+			this.USE_QUEUES=parseInt(req.query.value);
+			this.jeedomClient.changeQueueSys(this.USE_QUEUES);
 		break;
 		default: {
 			const error = "Configuration inexistante";
