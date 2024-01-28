@@ -119,7 +119,7 @@ function JeedomPlatform(logger, config, api) {
 		}
 		if (api) {
 			this.api = api;
-			this.api.on('didFinishLaunching',function(){
+			this.api.on('didFinishLaunching',() => {
 				/** Listen **/
 				let port=0;
 				if(fs.existsSync('/homebridge/')) { port=8582; } // if docker, use the port next to homebridge-config-ui
@@ -128,7 +128,7 @@ function JeedomPlatform(logger, config, api) {
 					this.jeedomClient.daemonIsReady(this.server.address().port);
 				});
 				this.addAccessories();
-			}.bind(this));
+			});
 		}
 	}
 	catch (e) {
@@ -3045,10 +3045,10 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.log('│ OK : Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
-		HBAccessory.on('identify', function(paired, callback) {
+		HBAccessory.on('identify', (paired, callback) => {
 			this.log(HBAccessory.displayName, "->Identifié!!!");
 			if(typeof callback === 'function') {callback();}
-		}.bind(this));
+		});
 		HBAccessory.reviewed = true;
 	}
 	catch(e){
@@ -3066,15 +3066,13 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 // -- UUID : UUID to find
 // -- silence : flag for logging or not
 // -- Return : nothing
-JeedomPlatform.prototype.existingAccessory = function(UUID,silence) {
+JeedomPlatform.prototype.existingAccessory = function(UUID,silence=false) {
 	try{
-		silence = silence || false;
-		for (const a in this.accessories) {
-			if (this.accessories.hasOwnProperty(a)) {
-				if (this.accessories[a].UUID == UUID) {
-					if(!silence) {this.log('debug',' Accessoire déjà existant dans le cache Homebridge');}
-					return this.accessories[a];
-				}
+		for (const key of Object.keys(this.accessories)) {
+			const accessory = this.accessories[key];
+			if (accessory.UUID == UUID) {
+				if(!silence) {this.log('debug',' Accessoire déjà existant dans le cache Homebridge');}
+				return accessory;
 			}
 		}
 		if(!silence) {this.log('debug',' Accessoire non existant dans le cache Homebridge');}
@@ -3135,15 +3133,9 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 // -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
-		var readOnly = true;
-		for (var i = 0; i < characteristic.props.perms.length; i++) {
-			if (characteristic.props.perms[i] == 'pw') {
-				readOnly = false;
-			}
-		}
 		this.updateSubscriptions.push({ service, characteristic });
-		if (!readOnly) {
-			characteristic.on('set', function(value, callback, context) {
+		if (characteristic.props.perms.includes('pw')) {
+			characteristic.on('set', (value, callback, context) => {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
 					this.log('info','[Commande d\'Homekit]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 					this.setAccessoryValue(value,characteristic,service);
@@ -3151,9 +3143,9 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 					this.log('info','[Commande de Jeedom]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
 				}
 				callback();
-			}.bind(this));
+			});
 		}
-		characteristic.on('get', function(callback) {
+		characteristic.on('get', (callback) => {
 			let returnValue = this.getAccessoryValue(characteristic, service);
 			if(returnValue !== undefined && returnValue !== 'no_response') {
 				returnValue = sanitizeValue(returnValue,characteristic);
@@ -3164,12 +3156,12 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 			} else {
 				callback();
 			}
-		}.bind(this));
+		});
 		
 		if (this.fakegato) {
-			characteristic.on('change', function(_callback) {
+			characteristic.on('change', (_callback) => {
 				this.changeAccessoryValue(characteristic, service);
-			}.bind(this));
+			});
 		}
 	}
 	catch(e){
