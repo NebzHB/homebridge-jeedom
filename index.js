@@ -609,7 +609,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.HorTiltState = cmd2.HorTiltState;
 						} else if (cmd2.VerTiltState) {
 							Serv.infos.VerTiltState = cmd2.VerTiltState;
-						} else if(cmd.moving) {
+						} else if(cmd2.moving) {
 							Serv.infos.moving=cmd2.moving;
 						}
 					});
@@ -804,7 +804,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.down = cmd2.down;
 						} else if (cmd2.slider) {
 							Serv.actions.slider = cmd2.slider;
-						} else if(cmd.moving) {
+						} else if(cmd2.moving) {
 							Serv.infos.moving=cmd2.moving;
 						}
 					});
