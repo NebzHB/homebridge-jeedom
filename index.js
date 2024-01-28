@@ -570,6 +570,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
+					
 					if(cmd.stateClosing) {
 						Serv.infos.state=cmd.stateClosing;
 						if(Serv.infos.state.subType == 'binary') {
@@ -797,6 +798,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
+
 					eqServicesCopy.windowMoto.forEach(function(cmd2) {
 						if (cmd2.up) {
 							Serv.actions.up = cmd2.up;
@@ -5650,8 +5652,9 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 					update.option.state != undefined && 
 					update.option.scenario_id) {
 					
-					that.jeedomClient.updateModelScenario(update.option.scenario_id,update.option.state); // Update cachedModel
-					that.updateSubscribers(update);// Update subscribers
+					if(that.jeedomClient.updateModelScenario(update.option.scenario_id,update.option.state)){ // Update cachedModel
+						that.updateSubscribers(update);// Update subscribers
+					}
 					
 				} else if(DEV_DEBUG && update.name == 'eqLogic::update' &&
 					update.option.eqLogic_id) {
@@ -5689,44 +5692,40 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 // -- Return : nothing
 JeedomPlatform.prototype.updateSubscribers = function(update) {
 	const that = this;
-	var subCharact,subService,updateID;
+	const updateID = update.option.scenario_id || update.option.cmd_id;
 	for (let i = 0; i < that.updateSubscriptions.length; i++) {
-		subCharact = that.updateSubscriptions[i].characteristic;
-		subService = that.updateSubscriptions[i].service;
-
-		if(update.option.scenario_id) {
-			updateID = update.option.scenario_id;
-		} else if(update.option.cmd_id) {
-			updateID = update.option.cmd_id;
-		}
+		const { characteristic: subCharact, service: subService } = that.updateSubscriptions[i];
 		
 		// that.log('debug',"update :",updateID,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
 		const infoFound = findMyID(subService.infos,updateID);
 		const statusFound = findMyID(subService.statusArr,updateID);
-		if(infoFound != -1 || statusFound != -1) {
-			let returnValue = that.getAccessoryValue(subCharact, subService, ((infoFound!=-1)?infoFound:statusFound));
-			if(returnValue !== undefined && returnValue !== 'no_response') {
+		if(infoFound !== -1 || statusFound !== -1) {
+			let returnValue = that.getAccessoryValue(subCharact, subService, (infoFound !== -1?infoFound:statusFound));
+			
+			if (returnValue === 'no_response') {
+				subCharact.updateValue(new Error('no_response'), undefined, 'fromJeedom');
+			} else if(returnValue !== undefined) {
 				returnValue = sanitizeValue(returnValue,subCharact);
-				if(infoFound != -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
+				const logMessage = 'Cause de modif: "' + (infoFound && infoFound.name ? infoFound.name + '" (' + updateID + ')' : '') + (statusFound && statusFound.name ? statusFound.name + '" (' + updateID + ')' : '') + ' Envoi valeur:' + returnValue + ' dans ' + subCharact.displayName;
+				if(infoFound !== -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
 					if(!that.settingLight) { // and it's not currently being modified
-						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+						that.log('info','[Commande envoyée à HomeKit]',logMessage);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					} else if(DEV_DEBUG) {that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);}
-				} else if(infoFound != -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
+					} else if(DEV_DEBUG) {that.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
+				} else if(infoFound !== -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
 					if(!that.settingFan) { // and it's not currently being modified
-						that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+						that.log('info','[Commande envoyée à HomeKit]',logMessage);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					} else if(DEV_DEBUG) {that.log('debug','//Commande NON envoyée à HomeKit','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);}
+					} else if(DEV_DEBUG) {that.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else {
-					that.log('info','[Commande envoyée à HomeKit]','Cause de modif: "'+((infoFound && infoFound.name)?infoFound.name+'" ('+updateID+')':'')+((statusFound && statusFound.name)?statusFound.name+'" ('+updateID+')':''),"Envoi valeur:",returnValue,'dans',subCharact.displayName);
+					that.log('info','[Commande envoyée à HomeKit]',logMessage);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 				}
-			} else if (returnValue === 'no_response') {
-				subCharact.updateValue(new Error('no_response'), undefined, 'fromJeedom');
-			} else { return; }
+			} else {return;}
 		} 
 	}
 };
+
 
 // -- updateJeedomColorFromHomeKit
 // -- Desc : convert HSV value (Homebridge) to html value (Jeedom)
