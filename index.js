@@ -6604,6 +6604,6 @@ function RGBtoHSV(r, g, b) {
 // -- id : id to find
 // -- Return : Object found
 function findMyID(obj, id) {
-	if (!obj) return -1;
+	if (!obj) {return -1;}
 	return Object.values(obj).find((item) => item && item.id == id) || -1;
 }
