@@ -6415,12 +6415,11 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	let service;
 	try {
 		const cachedValues = [];
-	        const serviceList = accessory.services.filter((svc) => 
-			svc.UUID !== Service.AccessoryInformation.UUID &&
-			svc.UUID !== Service.BridgingState.UUID
-	        );
+		const serviceList = accessory.services.filter((svc) => 
+			svc.UUID !== Service.AccessoryInformation.UUID && svc.UUID !== Service.BridgingState.UUID
+		);
 	
-	        serviceList.forEach((svc) => {
+		serviceList.forEach((svc) => {
 			service=svc;
 			this.log('debug', ' Suppression service :' + service.displayName + ' subtype:' + service.subtype + ' UUID:' + service.UUID);
 			service.characteristics.forEach((c) => {
@@ -6428,7 +6427,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 				cachedValues[service.subtype + c.displayName] = c.value;
 			});
 			accessory.removeService(service);
-	        });
+		});
 		return cachedValues;
 	}
 	catch(e){
@@ -6607,5 +6606,5 @@ function RGBtoHSV(r, g, b) {
 // -- id : id to find
 // -- Return : Object found
 function findMyID(obj, id) {
-    return Object.values(obj).find(item => item && item.id == id) || -1;
+	return Object.values(obj).find((item) => item && item.id == id) || -1;
 }
