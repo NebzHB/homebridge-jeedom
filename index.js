@@ -6364,9 +6364,9 @@ JeedomBridgedAccessory.prototype.initAccessory = function(newAccessory) {
 // -- services : services to be added
 // -- Return : nothing
 JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,cachedValues) {
-	var service;
+	let service;
 	try {
-		var cachedValue, characteristic;
+		let cachedValue, characteristic;
 		for (var s = 0; s < services.length; s++) {
 			service = services[s];
 			
@@ -6412,24 +6412,23 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 // -- accessory : accessory to delete the services from
 // -- Return : nothing
 JeedomBridgedAccessory.prototype.delServices = function(accessory) {
-	var service;
+	let service;
 	try {
-		const serviceList=[];
-		const cachedValues=[];
-		for(var t=0; t< accessory.services.length;t++) { 
-			if(accessory.services[t].UUID != Service.AccessoryInformation.UUID && 
-				accessory.services[t].UUID != Service.BridgingState.UUID) {
-				serviceList.push(accessory.services[t]);
-			}
-		}		
-		for(service of serviceList){ // dont work in one loop or with temp object :(
-			this.log('debug',' Suppression service :'+service.displayName+' subtype:'+service.subtype+' UUID:'+service.UUID);
-			for (const c of service.characteristics) {
-				this.log('debug','    Caractéristique :'+c.displayName+' valeur cache:'+c.value);
-				cachedValues[service.subtype+c.displayName]=c.value;
-			}
+		const cachedValues = [];
+	        const serviceList = accessory.services.filter((svc) => 
+			svc.UUID !== Service.AccessoryInformation.UUID &&
+			svc.UUID !== Service.BridgingState.UUID
+	        );
+	
+	        serviceList.forEach((svc) => {
+			service=svc;
+			this.log('debug', ' Suppression service :' + service.displayName + ' subtype:' + service.subtype + ' UUID:' + service.UUID);
+			service.characteristics.forEach((c) => {
+				this.log('debug', '    Caractéristique :' + c.displayName + ' valeur cache:' + c.value);
+				cachedValues[service.subtype + c.displayName] = c.value;
+			});
 			accessory.removeService(service);
-		}
+	        });
 		return cachedValues;
 	}
 	catch(e){
@@ -6473,7 +6472,7 @@ function hexToB(h) {
 // -- h : html color string
 // -- Return : numeric value of html color
 function cutHex(h) {
-	return (h.charAt(0) == '#') ? h.substring(1, 7) : h;
+	return h.charAt(0) === '#' ? h.substring(1, 7) : h;
 }
 
 // -- rgbToHex
@@ -6493,12 +6492,7 @@ function rgbToHex(R, G, B) {
 // -- n : number
 // -- Return : hex value
 function toHex(n) {
-	n = parseInt(n, 10);
-	if (isNaN(n)) {
-		return '00';
-	}
-	n = Math.max(0, Math.min(n, 255));
-	return '0123456789ABCDEF'.charAt((n - n % 16) / 16) + '0123456789ABCDEF'.charAt(n % 16);
+	return parseInt(n,10).toString(16).padStart(2, '0');
 }
 
 // -- HSVtoRGB
@@ -6612,12 +6606,6 @@ function RGBtoHSV(r, g, b) {
 // -- Params --
 // -- id : id to find
 // -- Return : Object found
-function findMyID(obj,id) {
-	for(const o in obj) {
-        // if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && parseInt(obj[o].id) && parseInt(id) && parseInt(obj[o].id)==parseInt(id)) {
-        if( obj.hasOwnProperty( o ) && obj[o] && obj[o].id && obj[o].id==id) {
-			return obj[o];
-        }
-    }
-	return -1;
+function findMyID(obj, id) {
+    return Object.values(obj).find(item => item && item.id == id) || -1;
 }
