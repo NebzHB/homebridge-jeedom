@@ -2937,14 +2937,12 @@ JeedomPlatform.prototype.createAccessory = function(HBservices, eqLogic) {
 // -- jeedomAccessory : JeedomBridgedAccessory to delete
 // -- silence : flag for logging or not
 // -- Return : nothing
-JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
-	var existingAccessory;
+JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) {
+	let existingAccessory;
 	try{
-		silence = silence || false;
 		if (!jeedomAccessory) {
 			return;
 		}
-
 		if(!silence) {this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');}
 		existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
 		if(existingAccessory)
@@ -2973,15 +2971,12 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence) {
 // -- jeedomAccessory : JeedomBridgedAccessory to add
 // -- Return : nothing
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
-	var HBAccessory,numberOpened,lastAct;
 	try{
-		if (!jeedomAccessory) {
-			return;
-		}
+		if (!jeedomAccessory) {return;}
 		let isNewAccessory = false;
 		const services2Add = jeedomAccessory.services_add;
-		this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');
-		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
+		this.log('debug'," Vérification d'existance de l'accessoire dans le cache Homebridge...");
+		var HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
 			isNewAccessory = true;
@@ -2989,6 +2984,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			jeedomAccessory.initAccessory(HBAccessory);
 			this.accessories[jeedomAccessory.UUID] = HBAccessory;
 		}
+		let numberOpened,lastAct;
 		if(this.fakegato) {
 			numberOpened = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.numberOpened || 0;
 			lastAct = HBAccessory.context && HBAccessory.context.eqLogic && HBAccessory.context.eqLogic.lastAct || 0;
@@ -3069,10 +3065,9 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 JeedomPlatform.prototype.existingAccessory = function(UUID,silence=false) {
 	try{
 		for (const key of Object.keys(this.accessories)) {
-			const accessory = this.accessories[key];
-			if (accessory.UUID == UUID) {
+			if (this.accessories[key].UUID == UUID) {
 				if(!silence) {this.log('debug',' Accessoire déjà existant dans le cache Homebridge');}
-				return accessory;
+				return this.accessories[key];
 			}
 		}
 		if(!silence) {this.log('debug',' Accessoire non existant dans le cache Homebridge');}
@@ -3133,7 +3128,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 // -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
-		this.updateSubscriptions.push({ service, characteristic });
+		this.updateSubscriptions.push({service, characteristic});
 		if (characteristic.props.perms.includes('pw')) {
 			characteristic.on('set', (value, callback, context) => {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
