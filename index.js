@@ -2971,12 +2971,13 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 // -- jeedomAccessory : JeedomBridgedAccessory to add
 // -- Return : nothing
 JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
+	let HBAccessory;
 	try{
 		if (!jeedomAccessory) {return;}
 		let isNewAccessory = false;
 		const services2Add = jeedomAccessory.services_add;
 		this.log('debug'," Vérification d'existance de l'accessoire dans le cache Homebridge...");
-		var HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
+		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
 			isNewAccessory = true;
