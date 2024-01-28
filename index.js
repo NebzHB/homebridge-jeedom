@@ -570,9 +570,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.eqLogic=eqLogic;
 					Serv.actions={};
 					Serv.infos={};
-					if(cmd.moving) {
-						Serv.infos.moving=cmd.moving;
-					}
 					if(cmd.stateClosing) {
 						Serv.infos.state=cmd.stateClosing;
 						if(Serv.infos.state.subType == 'binary') {
@@ -612,6 +609,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.HorTiltState = cmd2.HorTiltState;
 						} else if (cmd2.VerTiltState) {
 							Serv.infos.VerTiltState = cmd2.VerTiltState;
+						} else if(cmd.moving) {
+							Serv.infos.moving=cmd2.moving;
 						}
 					});
 					if(Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Volet Bouton Descendre"');}
@@ -798,9 +797,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.actions={};
 					Serv.infos={};
 					Serv.infos.state=cmd.state;
-					if(cmd.moving) {
-						Serv.infos.moving=cmd.moving;
-					}
 					eqServicesCopy.windowMoto.forEach(function(cmd2) {
 						if (cmd2.up) {
 							Serv.actions.up = cmd2.up;
@@ -808,6 +804,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.down = cmd2.down;
 						} else if (cmd2.slider) {
 							Serv.actions.slider = cmd2.slider;
+						} else if(cmd.moving) {
+							Serv.infos.moving=cmd2.moving;
 						}
 					});
 					Serv.maxValue = 100; // if not set in Jeedom it's 100
