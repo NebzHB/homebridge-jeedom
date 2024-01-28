@@ -6415,9 +6415,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	let service;
 	try {
 		const cachedValues = [];
-		const serviceList = accessory.services.filter((svc) => 
-			svc.UUID !== Service.AccessoryInformation.UUID && svc.UUID !== Service.BridgingState.UUID
-		);
+		const serviceList = accessory.services.filter((svc) => svc.UUID !== Service.AccessoryInformation.UUID && svc.UUID !== Service.BridgingState.UUID);
 	
 		serviceList.forEach((svc) => {
 			service=svc;
