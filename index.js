@@ -3141,7 +3141,7 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 				readOnly = false;
 			}
 		}
-		this.subscribeUpdate(service, characteristic);
+		this.updateSubscriptions.push({ service, characteristic });
 		if (!readOnly) {
 			characteristic.on('set', function(value, callback, context) {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
@@ -5640,29 +5640,6 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 	}
 };
 
-// -- subscribeUpdate
-// -- Desc : Populate the subscriptions to the characteristic. if the value is changed, the characteristic will be updated
-// -- Params --
-// -- service : service containing the characteristic to subscribe to
-// -- characteristic : characteristic to subscribe to
-// -- Return : nothing
-JeedomPlatform.prototype.subscribeUpdate = function(service, characteristic) {
-	try{
-		if (characteristic.UUID == Characteristic.PositionState.UUID) {
-			return;
-		}
-		this.updateSubscriptions.push({
-			'service' : service,
-			'characteristic' : characteristic,
-		});
-	}
-	catch(e){
-		this.log('error','Erreur de la fonction subscribeUpdate :',e);
-		console.error(e.stack);
-		hasError=true;
-	}
-};
-
 // -- startPollingUpdate
 // -- Desc : Get the last status from Jeedom and act on it (update model and subscribers)
 // -- Params --
@@ -5720,7 +5697,7 @@ JeedomPlatform.prototype.startPollingUpdate = function() {
 };
 
 // -- updateSubscribers
-// -- Desc : update subcribers populated by the subscribeUpdate method
+// -- Desc : update subcribers in updateSubscriptions array
 // -- Params --
 // -- update : the update received from Jeedom
 // -- Return : nothing
