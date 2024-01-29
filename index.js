@@ -323,17 +323,11 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 	try{
 		const that = this;
 		if (devices) {
-			devices.sort(function compare(a, b) {
+			devices.sort((a, b) => {
 				// reorder by room name asc and name asc
-				const aC = that.rooms[a.object_id]+a.name;
-				const bC = that.rooms[b.object_id]+b.name;
-				if (aC > bC) {
-					return 1;
-				}
-				if (aC < bC) {
-					return -1;
-				}
-				return 0;
+				const aC = that.rooms[a.object_id] + a.name;
+				const bC = that.rooms[b.object_id] + b.name;
+				return aC.localeCompare(bC);
 			});
 			
 			devices.map(function(device) {
@@ -3495,18 +3489,15 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 	}
 };
 
-JeedomPlatform.prototype.findAccessoryByService = function(service) {
-	for (const acc in this.accessories) {
-		if (this.accessories.hasOwnProperty(acc)) {
-			for(const ser in this.accessories[acc].services) {
-				if (this.accessories[acc].services.hasOwnProperty(ser)) {
-					if(this.accessories[acc].services[ser].cmd_id && this.accessories[acc].services[ser].cmd_id.toString() == service.cmd_id.toString()) {
-						return this.accessories[acc];
-					}
-				}
-			}
-		}
-	}
+JeedomPlatform.prototype.findAccessoryByService = function(serviceToFind) {
+    const targetCmdId = serviceToFind.cmd_id.toString();
+    for (const accessory of Object.values(this.accessories)) {
+        for (const service of Object.values(accessory.services)) {
+            if (service.cmd_id && service.cmd_id.toString() === targetCmdId) {
+                return accessory;
+            }
+        }
+    }
 };
 
 JeedomPlatform.prototype.changeAccessoryValue = function(characteristic, service) {
@@ -5694,7 +5685,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 	const that = this;
 	const updateID = update.option.scenario_id || update.option.cmd_id;
 	for (let i = 0; i < that.updateSubscriptions.length; i++) {
-		const { characteristic: subCharact, service: subService } = that.updateSubscriptions[i];
+		const {characteristic: subCharact, service: subService} = that.updateSubscriptions[i];
 		
 		// that.log('debug',"update :",updateID,JSON.stringify(subService.infos),JSON.stringify(subService.statusArr),subCharact.UUID);
 		const infoFound = findMyID(subService.infos,updateID);
@@ -5784,31 +5775,14 @@ JeedomPlatform.prototype.updateHomeKitColorFromJeedom = function(color, service)
 // -- service : service to set color to
 // -- Return : nothing
 JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
-	/* switch (--service.countColorCharacteristics) {
-	case -1:
-		service.countColorCharacteristics = 2; */
 		const that = this;
 
 		clearTimeout(service.timeoutIdColorCharacteristics);
 		service.timeoutIdColorCharacteristics = setTimeout(function() {
-			// if (service.countColorCharacteristics < 2)
-			//	return;
 			const rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
 			if (DEV_DEBUG) {that.log('debug',"---------setRGB : ",rgbColor);}
 			that.command('setRGB', rgbColor, service);
-			// service.countColorCharacteristics = 0;
-			// service.timeoutIdColorCharacteristics = 0;
 		}, 500);
-		/* break;
-	case 0:
-		var rgbColor = rgbToHex(rgb.r, rgb.g, rgb.b);
-		this.command('setRGB', rgbColor, service);
-		service.countColorCharacteristics = 0;
-		service.timeoutIdColorCharacteristics = 0;
-		break;
-	default:
-		break;
-	} */
 };
 
 // -- RegisterCustomCharacteristics
