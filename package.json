@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@babel/core": ">=7.23.7",
-    "@babel/eslint-parser": "^7.23.3",
+    "@babel/eslint-parser": "^7.23.9",
     "eslint": "^8.56.0"
   },
   "author": "Nebz <nebz@nebz.be>",
