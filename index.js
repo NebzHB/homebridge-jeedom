@@ -604,8 +604,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.infos.HorTiltState = cmd2.HorTiltState;
 						} else if (cmd2.VerTiltState) {
 							Serv.infos.VerTiltState = cmd2.VerTiltState;
-						} else if(cmd2.moving) {
-							Serv.infos.moving=cmd2.moving;
 						}
 					});
 					if(Serv.actions.up && !Serv.actions.down) {that.log('warn','Pas de type générique "Action/Volet Bouton Descendre"');}
@@ -800,8 +798,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							Serv.actions.down = cmd2.down;
 						} else if (cmd2.slider) {
 							Serv.actions.slider = cmd2.slider;
-						} else if(cmd2.moving) {
-							Serv.infos.moving=cmd2.moving;
 						}
 					});
 					Serv.maxValue = 100; // if not set in Jeedom it's 100
@@ -3123,7 +3119,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 // -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
-		this.updateSubscriptions.push({service, characteristic});
+		if (characteristic.UUID != Characteristic.PositionState.UUID) {this.updateSubscriptions.push({service, characteristic});}
 		if (characteristic.props.perms.includes('pw')) {
 			characteristic.on('set', (value, callback, context) => {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
@@ -4622,30 +4618,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			case Characteristic.PositionState.UUID :
-				if('moving' in service.infos && service.infos.moving !== null) {
-					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'FLAP_MOVING' || cmd.generic_type == 'WINDOW_MOVING') {
-							switch(parseInt(cmd.currentValue)) {
-								case 0 :
-									returnValue=Characteristic.PositionState.DECREASING;
-									break;
-								case 1 :
-									returnValue=Characteristic.PositionState.INCREASING;
-									break;
-								case 2 :
-									returnValue=Characteristic.PositionState.STOPPED;
-									break;
-								default : 
-									returnValue=Characteristic.PositionState.STOPPED;
-									break;
-							}
-							that.log('debug','---------update PositionState:',returnValue);
-							break;
-						}
-					}
-				} else {
-					returnValue = Characteristic.PositionState.STOPPED;
-				}
+				returnValue = Characteristic.PositionState.STOPPED;
+
 			break;
 			case Characteristic.CurrentHorizontalTiltAngle.UUID :
 			case Characteristic.TargetHorizontalTiltAngle.UUID :
