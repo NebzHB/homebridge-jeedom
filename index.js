@@ -5130,7 +5130,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							}								
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=500;
+							needToTemporize=0;
 						}
 					break;
 					case 'FLAP_HOR_TILT_SLIDER' :
@@ -5160,7 +5160,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							// brightness up to 100% in homekit, in Jeedom (Zwave) up to 99 max. Convert to Zwave						
 							found = true;
 							cmdFound=cmd.generic_type;
-							needToTemporize=500;
+							needToTemporize=0;
 						}
 					break;					
 					case 'GB_OPEN' :
