@@ -3119,7 +3119,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 // -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
-		if (characteristic.UUID != Characteristic.PositionState.UUID) {this.updateSubscriptions.push({service, characteristic});}
+		/*if (characteristic.UUID != Characteristic.PositionState.UUID) {*/this.updateSubscriptions.push({service, characteristic});//}
 		if (characteristic.props.perms.includes('pw')) {
 			characteristic.on('set', (value, callback, context) => {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
@@ -3307,83 +3307,118 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					this.command('SetAlarmMode', value, service);
 				}
 			break;
-			case Characteristic.CurrentPosition.UUID:
-			case Characteristic.PositionState.UUID: // could be Service.Window or Service.Door too so we check
-				this.log('debug','************SHOULD NEVER COME HERE !!!!! *************');
 			case Characteristic.TargetPosition.UUID:
-			
+				value=parseInt(value);
 				if (service.UUID == Service.WindowCovering.UUID) {
 					if(service.FlapType=="Closing") { // flap in percent Closing (100% = closed / 0% = open)
 						if(service.actions.down && service.actions.up) {
 							if (service.actions.slider) {
-								if (parseInt(value) === service.minValue) {
+								if (value === 0) {
+									service.Moving=Characteristic.PositionState.DECREASING;
 									service.TargetValue=0;
 									action = 'flapUp';
-								} else if (parseInt(value) === service.maxValue) {
+									this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
+								} else if (value === 100) {
+									service.Moving=Characteristic.PositionState.INCREASING;
 									service.TargetValue=100;
 									action = 'flapDown';
+									this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 								} else {
 									action = 'setValue';
 									const oldValue = value;
-									value = 100 - parseInt(value);// invert percentage
+									value = 100 - value;// invert percentage
 									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
-									service.Moving=true;
-									service.TargetValue=value;
-									this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
+									if(value > service.infos.state.currentValue) {
+										service.Moving=Characteristic.PositionState.INCREASING;
+									} else if (value != service.infos.state.currentValue) {
+										service.Moving=Characteristic.PositionState.DECREASING;
+									} else {
+										service.Moving=Characteristic.PositionState.STOPPED;
+									}
+									service.TargetValue=oldValue;
+									this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
 								}
 							}
-							else if (parseInt(value) < 50) {
+							else if (value < 50) {
+								service.Moving=Characteristic.PositionState.DECREASING;
 								service.TargetValue=0;
 								action = 'flapUp';
+								this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 							} else {
+								service.Moving=Characteristic.PositionState.INCREASING;
 								service.TargetValue=100;
 								action = 'flapDown';
+								this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 							}
 							
 						} else if (service.actions.slider) {
 							action = 'setValue';
 							const oldValue = value;
-							value = 100 - parseInt(value);// invert percentage
+							value = 100 - value;// invert percentage
 							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
-							service.Moving=true;
-							service.TargetValue=value;
-							this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
+							if(value > service.infos.state.currentValue) {
+								service.Moving=Characteristic.PositionState.INCREASING;
+							} else if (value != service.infos.state.currentValue) {
+								service.Moving=Characteristic.PositionState.DECREASING;
+							} else {
+								service.Moving=Characteristic.PositionState.STOPPED;
+							}
+							service.TargetValue=oldValue;
+							this.log('debug','---------set Inverted Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
 						}
 					} else if (service.FlapType=="Opening") { // flap in percent Opening (100% = open / 0% = closed)
 						if(service.actions.down && service.actions.up) {
 							if (service.actions.slider) {
-								if (parseInt(value) === service.minValue) {
+								if (value === 0) {
+									service.Moving=Characteristic.PositionState.DECREASING;
 									service.TargetValue=0;
 									action = 'flapDown';
-								} else if (parseInt(value) === service.maxValue) {
+									this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
+								} else if (value === 100) {
+									service.Moving=Characteristic.PositionState.INCREASING;
 									service.TargetValue=100;
 									action = 'flapUp';
+									this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 								} else {
 									action = 'setValue';
-									value = parseInt(value);
 									const oldValue = value;
 									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
-									service.Moving=true;
-									service.TargetValue=value;
-									this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
+									if(value > service.infos.state.currentValue) {
+										service.Moving=Characteristic.PositionState.INCREASING;
+									} else if (value != service.infos.state.currentValue) {
+										service.Moving=Characteristic.PositionState.DECREASING;
+									} else {
+										service.Moving=Characteristic.PositionState.STOPPED;
+									}
+									service.TargetValue=oldValue;
+									this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
 								}
 							}
-							else if (parseInt(value) < 50) {
+							else if (value < 50) {
+								service.Moving=Characteristic.PositionState.DECREASING;
 								service.TargetValue=0;
 								action = 'flapDown';
+								this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 							} else {
+								service.Moving=Characteristic.PositionState.INCREASING;
 								service.TargetValue=100;
 								action = 'flapUp';
+								this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 							}
 						}
 						else if (service.actions.slider) {
 							action = 'setValue';
-							value = parseInt(value);
 							const oldValue = value;
 							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
-							service.Moving=true;
-							service.TargetValue=value;
-							this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue);
+							if(value > service.infos.state.currentValue) {
+								service.Moving=Characteristic.PositionState.INCREASING;
+							} else if (value != service.infos.state.currentValue) {
+								service.Moving=Characteristic.PositionState.DECREASING;
+							} else {
+								service.Moving=Characteristic.PositionState.STOPPED;
+							}
+							service.TargetValue=oldValue;
+							this.log('debug','---------set Blinds Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
 						}
 					}
 					
@@ -3393,38 +3428,54 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				if (service.UUID == Service.Window.UUID) {
 					if(service.actions.down && service.actions.up) {
 						if (service.actions.slider) {
-							if (parseInt(value) === service.minValue) {
+							if (value === 0) {
+								service.Moving=Characteristic.PositionState.DECREASING;
 								service.TargetValue=0;
 								action = 'windowDown';
-							} else if (parseInt(value) === service.maxValue) {
+								this.log('debug','---------set WindowMoto action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
+							} else if (value === 100) {
+								service.Moving=Characteristic.PositionState.INCREASING;
 								service.TargetValue=100;
 								action = 'windowUp';
+								this.log('debug','---------set WindowMoto action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 							} else {
 								action = 'setValue';
-								value = parseInt(value);
 								const oldValue = value;
 								value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
-								service.Moving=true;
-								service.TargetValue=value;
-								this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue);
+								if(value > service.infos.state) {
+									service.Moving=Characteristic.PositionState.INCREASING;
+								} else if (value != service.infos.state) {
+									service.Moving=Characteristic.PositionState.DECREASING;
+								}
+								service.TargetValue=oldValue;
+								this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
 							}
 						}
-						else if (parseInt(value) < 50) {
+						else if (value < 50) {
+							service.Moving=Characteristic.PositionState.DECREASING;
 							service.TargetValue=0;
 							action = 'windowDown';
+							this.log('debug','---------set WindowMoto action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 						} else {
+							service.Moving=Characteristic.PositionState.INCREASING;
 							service.TargetValue=100;
 							action = 'windowUp';
+							this.log('debug','---------set WindowMoto action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 						}
 					}
 					else if (service.actions.slider) {
 						action = 'setValue';
-						value = parseInt(value);
 						const oldValue = value;
 						value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
-						service.Moving=true;
-						service.TargetValue=value;
-						this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue);
+						if(value > service.infos.state) {
+							service.Moving=Characteristic.PositionState.INCREASING;
+						} else if (value != service.infos.state) {
+							service.Moving=Characteristic.PositionState.DECREASING;
+						} else {
+							service.Moving=Characteristic.PositionState.STOPPED;
+						}
+						service.TargetValue=oldValue;
+						this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
 					}
 
 					this.command(action, value, service);
@@ -4612,7 +4663,6 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			// Flaps & windowMoto
 			case Characteristic.CurrentPosition.UUID :
-			//case Characteristic.TargetPosition.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
@@ -4621,30 +4671,33 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if(service.maxValue == 100) {
 							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						}
-						that.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue);
-						if(returnValue === service.TargetValue) {service.Moving=false;}
-						else if (service.TargetValue !== undefined && !service.Moving) {service.TargetValue=undefined;}
+						
+						if(returnValue === service.TargetValue) {service.Moving=Characteristic.PositionState.STOPPED;}
+						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
+						that.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
 					}
 					if (cmd.generic_type == 'FLAP_STATE_CLOSING' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
+						
 						if(service.maxValue == 100) {
 							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						}
 						returnValue = 100-returnValue; // invert percentage
-						that.log('debug','---------update Inverted Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue);
-						if(returnValue === service.TargetValue) {service.Moving=false;}
-						else if (service.TargetValue !== undefined && !service.Moving) {service.TargetValue=undefined;}
+						
+						if(returnValue === service.TargetValue) {service.Moving=Characteristic.PositionState.STOPPED;}
+						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
+						that.log('debug','---------update Inverted Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
 					}
 					if (cmd.generic_type == 'WINDOW_STATE' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
 						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
 
-						that.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue);
-						if(returnValue === service.TargetValue) {service.Moving=false;}
-						else if (service.TargetValue !== undefined && !service.Moving) {service.TargetValue=undefined;}
+						if(returnValue === service.TargetValue) {service.Moving=Characteristic.PositionState.STOPPED;}
+						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
+						that.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
 					}
 				}
@@ -4663,7 +4716,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				that.log('debug','---------update TargetPosition(refresh):',returnValue,'%');
 			break;
 			case Characteristic.PositionState.UUID :
-				returnValue = Characteristic.PositionState.STOPPED;
+				if('Moving' in service) {
+					returnValue = service.Moving;
+				} else {
+					returnValue = Characteristic.PositionState.STOPPED;
+				}
+				that.log('debug','---------update PositionState(refresh):',positionStateLabel(returnValue));
 			break;
 			case Characteristic.CurrentHorizontalTiltAngle.UUID :
 			case Characteristic.TargetHorizontalTiltAngle.UUID :
@@ -4976,6 +5034,20 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 	}
 };
 
+function positionStateLabel(ps) {
+	switch(ps) {
+		case Characteristic.PositionState.DECREASING:
+			return "DECREASING";
+		break;
+		case Characteristic.PositionState.INCREASING:
+			return "INCREASING";
+		break;
+		case Characteristic.PositionState.STOPPED:
+			return "STOPPED";
+		break;
+	}
+	return "STOPPED";
+}
 
 // -- sanitizeValue
 // -- Desc : limit the value to the min and max characteristic + round the float to the same precision than the minStep
