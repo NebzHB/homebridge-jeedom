@@ -3316,12 +3316,12 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 								if (value === 0) {
 									service.Moving=Characteristic.PositionState.DECREASING;
 									service.TargetValue=0;
-									action = 'flapUp';
+									action = 'flapDown';
 									this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 								} else if (value === 100) {
 									service.Moving=Characteristic.PositionState.INCREASING;
 									service.TargetValue=100;
-									action = 'flapDown';
+									action = 'flapUp';
 									this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 								} else {
 									action = 'setValue';
@@ -3329,9 +3329,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 									value = 100 - value;// invert percentage
 									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
 									if(value > service.infos.state.currentValue) {
-										service.Moving=Characteristic.PositionState.INCREASING;
-									} else if (value != service.infos.state.currentValue) {
 										service.Moving=Characteristic.PositionState.DECREASING;
+									} else if (value != service.infos.state.currentValue) {
+										service.Moving=Characteristic.PositionState.INCREASING;
 									} else {
 										service.Moving=Characteristic.PositionState.STOPPED;
 									}
@@ -3342,12 +3342,12 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							else if (value < 50) {
 								service.Moving=Characteristic.PositionState.DECREASING;
 								service.TargetValue=0;
-								action = 'flapUp';
+								action = 'flapDown';
 								this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 							} else {
 								service.Moving=Characteristic.PositionState.INCREASING;
 								service.TargetValue=100;
-								action = 'flapDown';
+								action = 'flapUp';
 								this.log('debug','---------set Blinds action:',action,' soit ',service.TargetValue,'/',100,' : ',positionStateLabel(service.Moving));
 							}
 							
@@ -3357,9 +3357,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							value = 100 - value;// invert percentage
 							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
 							if(value > service.infos.state.currentValue) {
-								service.Moving=Characteristic.PositionState.INCREASING;
-							} else if (value != service.infos.state.currentValue) {
 								service.Moving=Characteristic.PositionState.DECREASING;
+							} else if (value != service.infos.state.currentValue) {
+								service.Moving=Characteristic.PositionState.INCREASING;
 							} else {
 								service.Moving=Characteristic.PositionState.STOPPED;
 							}
@@ -4709,6 +4709,10 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 
 					if(service.maxValue == 100) {
 						returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
+					}
+					if(service.FlapType=="Closing" && service.Moving!==Characteristic.PositionState.STOPPED) {
+						that.log('debug','---------update TargetPosition(Closing)before:',returnValue,'%');
+						returnValue=100-returnValue;
 					}
 				} else {
 					returnValue = service.TargetValue;
