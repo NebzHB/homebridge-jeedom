@@ -5035,17 +5035,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 };
 
 function positionStateLabel(ps) {
-	switch(ps) {
-		case Characteristic.PositionState.DECREASING:
+	if(ps == Characteristic.PositionState.DECREASING) {
 			return "DECREASING";
-		break;
-		case Characteristic.PositionState.INCREASING:
+	} else if (ps == Characteristic.PositionState.INCREASING) {
 			return "INCREASING";
-		break;
-		case Characteristic.PositionState.STOPPED:
-			return "STOPPED";
-		break;
-	}
+	} 
 	return "STOPPED";
 }
 
