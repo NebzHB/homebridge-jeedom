@@ -617,7 +617,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.minValue=0;
 					if(Serv.infos.state.subType == 'binary') {
 						Serv.maxValue=1;
-						//Serv.getCharacteristic(Characteristic.TargetPosition).setProps({minStep:1});
+						// Serv.getCharacteristic(Characteristic.TargetPosition).setProps({minStep:1});
 					} else {
 						Serv.maxValue=100;	
 					}
@@ -3119,7 +3119,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 // -- Return : nothing
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
-		/*if (characteristic.UUID != Characteristic.PositionState.UUID) {*/this.updateSubscriptions.push({service, characteristic});//}
+		/* if (characteristic.UUID != Characteristic.PositionState.UUID) { */this.updateSubscriptions.push({service, characteristic});// }
 		if (characteristic.props.perms.includes('pw')) {
 			characteristic.on('set', (value, callback, context) => {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
