@@ -415,128 +415,127 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.light) {
 			eqLogic.services.light.forEach((cmd) => {
-				if (cmd.state) {
-					let LightType="Switch";
-					HBservice = {
-						controlService : new Service.Lightbulb(eqLogic.name),
-						characteristics : [Characteristic.On],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					if(eqLogic.OnAfterBrightness) {Serv.OnAfterBrightness=true;}
-					if(eqLogic.ignoreOnCommandOnBrightnessChange) {Serv.ignoreOnCommandOnBrightnessChange=true;}
+				if (!cmd.state) {return;}
+				let LightType="Switch";
+				HBservice = {
+					controlService : new Service.Lightbulb(eqLogic.name),
+					characteristics : [Characteristic.On],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				if(eqLogic.OnAfterBrightness) {Serv.OnAfterBrightness=true;}
+				if(eqLogic.ignoreOnCommandOnBrightnessChange) {Serv.ignoreOnCommandOnBrightnessChange=true;}
 
-					eqServicesCopy.light.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on=cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off=cmd2.off;
-						} else if (cmd2.slider) {
-							Serv.actions.slider=cmd2.slider;
-						} else if (cmd2.setcolor) {
-							Serv.actions.setcolor=cmd2.setcolor;
-						} else if (cmd2.setcolor_temp) {
-							Serv.actions.setcolor_temp=cmd2.setcolor_temp;
-						} else if (cmd2.color) {
-							Serv.infos.color=cmd2.color;
-						} else if (cmd2.color_temp) {
-							Serv.infos.color_temp=cmd2.color_temp;
-						} else if (cmd2.state_bool) {
-							Serv.infos.state_bool=cmd2.state_bool;
-						} else if (cmd2.brightness) {
-							Serv.infos.brightness=cmd2.brightness;
-						}
-					});
-					if (Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière OFF"');}
-					if (!Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière ON"');}
-					if (!Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
-					if (Serv.infos.color && !Serv.actions.setcolor) {this.log('warn','Pas de type générique "Action/Lumière Couleur"');}
-					if (!Serv.infos.color && Serv.actions.setcolor) {this.log('warn','Pas de type générique "Info/Lumière Couleur"');}
-					if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {this.log('warn','Pas de type générique "Action/Lumière Température Couleur"');}
-					if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) {this.log('warn','Pas de type générique "Info/Lumière Température Couleur"');}
-					
-					if(Serv.actions.slider) {
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
-							Serv.maxBright = parseInt(Serv.actions.slider.configuration.maxValue);
-						} else {
-							Serv.maxBright = 100; // if not set in Jeedom it's 100
-						}
-						LightType += '_Slider,'+Serv.maxBright;
-						HBservice.characteristics.push(Characteristic.Brightness);
-						Serv.addCharacteristic(Characteristic.Brightness);
+				eqServicesCopy.light.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on=cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off=cmd2.off;
+					} else if (cmd2.slider) {
+						Serv.actions.slider=cmd2.slider;
+					} else if (cmd2.setcolor) {
+						Serv.actions.setcolor=cmd2.setcolor;
+					} else if (cmd2.setcolor_temp) {
+						Serv.actions.setcolor_temp=cmd2.setcolor_temp;
+					} else if (cmd2.color) {
+						Serv.infos.color=cmd2.color;
+					} else if (cmd2.color_temp) {
+						Serv.infos.color_temp=cmd2.color_temp;
+					} else if (cmd2.state_bool) {
+						Serv.infos.state_bool=cmd2.state_bool;
+					} else if (cmd2.brightness) {
+						Serv.infos.brightness=cmd2.brightness;
+					}
+				});
+				if (Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière OFF"');}
+				if (!Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière ON"');}
+				if (!Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
+				if (Serv.infos.color && !Serv.actions.setcolor) {this.log('warn','Pas de type générique "Action/Lumière Couleur"');}
+				if (!Serv.infos.color && Serv.actions.setcolor) {this.log('warn','Pas de type générique "Info/Lumière Couleur"');}
+				if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {this.log('warn','Pas de type générique "Action/Lumière Température Couleur"');}
+				if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) {this.log('warn','Pas de type générique "Info/Lumière Température Couleur"');}
+				
+				if(Serv.actions.slider) {
+					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
+						Serv.maxBright = parseInt(Serv.actions.slider.configuration.maxValue);
 					} else {
-						this.log('info','La lumière n\'a pas de variateur');
+						Serv.maxBright = 100; // if not set in Jeedom it's 100
 					}
-					if(Serv.infos.color) {
-						LightType += "_RGB";
-						HBservice.characteristics.push(Characteristic.Hue);
-						Serv.addCharacteristic(Characteristic.Hue);
-						HBservice.characteristics.push(Characteristic.Saturation);
-						Serv.addCharacteristic(Characteristic.Saturation);
-						Serv.HSBValue = {
-							hue : 0,
-							saturation : 0,
-							brightness : 0,
-						};
-						Serv.RGBValue = {
-							red : 0,
-							green : 0,
-							blue : 0,
-						};
-						// Serv.countColorCharacteristics = 0;
-						Serv.timeoutIdColorCharacteristics = 0;
-					}
-					if(Serv.infos.color_temp) {
-						LightType += "_Temp";
-						const props = {};
-						
-						if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.maxValue && Serv.actions.setcolor_temp.configuration.minValue && parseInt(Serv.actions.setcolor_temp.configuration.maxValue) && parseInt(Serv.actions.setcolor_temp.configuration.minValue)) {
-							if(parseInt(Serv.actions.setcolor_temp.configuration.maxValue) > 500 && parseInt(Serv.actions.setcolor_temp.configuration.minValue) > 500) { // Kelvin
-								// convert to Mired (and take the max value to the min)
-								props.minValue = parseInt(1000000/Serv.actions.setcolor_temp.configuration.maxValue);
-								props.maxValue = parseInt(1000000/Serv.actions.setcolor_temp.configuration.minValue);
-								Serv.colorTempType="kelvin";
-								LightType+=Serv.colorTempType;
-							} else { // already mired
-								props.minValue = parseInt(Serv.actions.setcolor_temp.configuration.minValue);
-								props.maxValue = parseInt(Serv.actions.setcolor_temp.configuration.maxValue);
-								Serv.colorTempType="mired";
-								LightType+=Serv.colorTempType;
-							}
-						} else {
-							this.log('error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
-							props.minValue = 0; // if not set in Jeedom it's 0
-							props.maxValue = 20000; // if not set in Jeedom it's 100
-						}
-						const unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
-						if(unite) {props.unit=unite;}
-						HBservice.characteristics.push(Characteristic.ColorTemperature);
-						Serv.addCharacteristic(Characteristic.ColorTemperature);
-						Serv.getCharacteristic(Characteristic.ColorTemperature).setProps(props);
-					}
-
-					if(eqLogic.hasAdaptive) {
-						if (this.adaptiveLightingSupport()) {
-							LightType+='_Adaptive';
-						} else {
-							eqLogic.hasAdaptive=false;
-						}
-					}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					this.log('info','La lumière est du type :',LightType);
-					Serv.LightType = LightType;
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
+					LightType += '_Slider,'+Serv.maxBright;
+					HBservice.characteristics.push(Characteristic.Brightness);
+					Serv.addCharacteristic(Characteristic.Brightness);
+				} else {
+					this.log('info','La lumière n\'a pas de variateur');
 				}
+				if(Serv.infos.color) {
+					LightType += "_RGB";
+					HBservice.characteristics.push(Characteristic.Hue);
+					Serv.addCharacteristic(Characteristic.Hue);
+					HBservice.characteristics.push(Characteristic.Saturation);
+					Serv.addCharacteristic(Characteristic.Saturation);
+					Serv.HSBValue = {
+						hue : 0,
+						saturation : 0,
+						brightness : 0,
+					};
+					Serv.RGBValue = {
+						red : 0,
+						green : 0,
+						blue : 0,
+					};
+					// Serv.countColorCharacteristics = 0;
+					Serv.timeoutIdColorCharacteristics = 0;
+				}
+				if(Serv.infos.color_temp) {
+					LightType += "_Temp";
+					const props = {};
+					
+					if(Serv.actions.setcolor_temp && Serv.actions.setcolor_temp.configuration && Serv.actions.setcolor_temp.configuration.maxValue && Serv.actions.setcolor_temp.configuration.minValue && parseInt(Serv.actions.setcolor_temp.configuration.maxValue) && parseInt(Serv.actions.setcolor_temp.configuration.minValue)) {
+						if(parseInt(Serv.actions.setcolor_temp.configuration.maxValue) > 500 && parseInt(Serv.actions.setcolor_temp.configuration.minValue) > 500) { // Kelvin
+							// convert to Mired (and take the max value to the min)
+							props.minValue = parseInt(1000000/Serv.actions.setcolor_temp.configuration.maxValue);
+							props.maxValue = parseInt(1000000/Serv.actions.setcolor_temp.configuration.minValue);
+							Serv.colorTempType="kelvin";
+							LightType+=Serv.colorTempType;
+						} else { // already mired
+							props.minValue = parseInt(Serv.actions.setcolor_temp.configuration.minValue);
+							props.maxValue = parseInt(Serv.actions.setcolor_temp.configuration.maxValue);
+							Serv.colorTempType="mired";
+							LightType+=Serv.colorTempType;
+						}
+					} else {
+						this.log('error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
+						props.minValue = 0; // if not set in Jeedom it's 0
+						props.maxValue = 20000; // if not set in Jeedom it's 100
+					}
+					const unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
+					if(unite) {props.unit=unite;}
+					HBservice.characteristics.push(Characteristic.ColorTemperature);
+					Serv.addCharacteristic(Characteristic.ColorTemperature);
+					Serv.getCharacteristic(Characteristic.ColorTemperature).setProps(props);
+				}
+
+				if(eqLogic.hasAdaptive) {
+					if (this.adaptiveLightingSupport()) {
+						LightType+='_Adaptive';
+					} else {
+						eqLogic.hasAdaptive=false;
+					}
+				}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				this.log('info','La lumière est du type :',LightType);
+				Serv.LightType = LightType;
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Lumière Etat"');
@@ -546,134 +545,133 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.flap) {
 			eqLogic.services.flap.forEach((cmd) => {
-				if (cmd.state || cmd.stateClosing) {
-					HBservice = {
-						controlService : new Service.WindowCovering(eqLogic.name),
-						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					
-					if(cmd.stateClosing) {
-						Serv.infos.state=cmd.stateClosing;
-						if(Serv.infos.state.subType == 'binary') {
-							if(Serv.infos.state.display && Serv.infos.state.display.invertBinary) {
-								Serv.FlapType="Opening";
-							} else {
-								Serv.FlapType="Closing";
-							}
+				if (!cmd.state && !cmd.stateClosing) {return;}
+				HBservice = {
+					controlService : new Service.WindowCovering(eqLogic.name),
+					characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				
+				if(cmd.stateClosing) {
+					Serv.infos.state=cmd.stateClosing;
+					if(Serv.infos.state.subType == 'binary') {
+						if(Serv.infos.state.display && Serv.infos.state.display.invertBinary) {
+							Serv.FlapType="Opening";
 						} else {
 							Serv.FlapType="Closing";
 						}
-					} else if(cmd.state) {
-						Serv.infos.state=cmd.state;
-						if(Serv.infos.state.subType == 'binary') {
-							if(Serv.infos.state.display && Serv.infos.state.display.invertBinary) {
-								Serv.FlapType="Closing";
-							} else {
-								Serv.FlapType="Opening";
-							}
+					} else {
+						Serv.FlapType="Closing";
+					}
+				} else if(cmd.state) {
+					Serv.infos.state=cmd.state;
+					if(Serv.infos.state.subType == 'binary') {
+						if(Serv.infos.state.display && Serv.infos.state.display.invertBinary) {
+							Serv.FlapType="Closing";
 						} else {
 							Serv.FlapType="Opening";
 						}
-					}
-
-					eqServicesCopy.flap.forEach((cmd2) => {
-						if (cmd2.up) {
-							Serv.actions.up = cmd2.up;
-						} else if (cmd2.down) {
-							Serv.actions.down = cmd2.down;
-						} else if (cmd2.slider) {
-							Serv.actions.slider = cmd2.slider;
-						} else if (cmd2.HorTiltSlider) {
-							Serv.actions.HorTiltSlider = cmd2.HorTiltSlider;
-						} else if (cmd2.VerTiltSlider) {
-							Serv.actions.VerTiltSlider = cmd2.VerTiltSlider;
-						} else if (cmd2.HorTiltState) {
-							Serv.infos.HorTiltState = cmd2.HorTiltState;
-						} else if (cmd2.VerTiltState) {
-							Serv.infos.VerTiltState = cmd2.VerTiltState;
-						}
-					});
-					if(Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Descendre"');}
-					if(!Serv.actions.up && Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Monter"');}
-					if(!Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');}
-					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warn','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');}
-					if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) {this.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');}
-					if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) {this.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');}
-					if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {this.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
-					if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {this.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
-					Serv.minValue=0;
-					if(Serv.infos.state.subType == 'binary') {
-						Serv.maxValue=1;
-						// Serv.getCharacteristic(Characteristic.TargetPosition).setProps({minStep:1});
 					} else {
-						Serv.maxValue=100;	
+						Serv.FlapType="Opening";
 					}
-					if(Serv.actions.slider) {
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
-							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
-						}
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue)) {
-							Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
-						}
-					}
-					if(Serv.actions.HorTiltSlider) {
-						const props = {};
-						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.maxValue && parseInt(Serv.actions.HorTiltSlider.configuration.maxValue)) {
-							props.maxValue = parseInt(Serv.actions.HorTiltSlider.configuration.maxValue);
-						} else {
-							props.maxValue = 90;
-						}
-						if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.minValue && parseInt(Serv.actions.HorTiltSlider.configuration.minValue)) {
-							props.minValue = parseInt(Serv.actions.HorTiltSlider.configuration.minValue);
-						} else {
-							props.minValue = 0;
-						}
-						HBservice.characteristics.push(Characteristic.CurrentHorizontalTiltAngle);
-						Serv.addCharacteristic(Characteristic.CurrentHorizontalTiltAngle);
-						Serv.getCharacteristic(Characteristic.CurrentHorizontalTiltAngle).setProps(props);
-						
-						HBservice.characteristics.push(Characteristic.TargetHorizontalTiltAngle);
-						Serv.addCharacteristic(Characteristic.TargetHorizontalTiltAngle);
-						Serv.getCharacteristic(Characteristic.TargetHorizontalTiltAngle).setProps(props);
-						this.log('debug','Horizontal Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.HorTiltSlider.configuration));
-					}
-					
-					if(Serv.actions.VerTiltSlider) {
-						const props = {};
-						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.maxValue && parseInt(Serv.actions.VerTiltSlider.configuration.maxValue)) {
-							props.maxValue = parseInt(Serv.actions.VerTiltSlider.configuration.maxValue);
-						} else {
-							props.maxValue = 90;
-						}
-						if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.minValue && parseInt(Serv.actions.VerTiltSlider.configuration.minValue)) {
-							props.minValue = parseInt(Serv.actions.VerTiltSlider.configuration.minValue);
-						} else {
-							props.minValue = 0;
-						}	
-						HBservice.characteristics.push(Characteristic.CurrentVerticalTiltAngle);
-						Serv.addCharacteristic(Characteristic.CurrentVerticalTiltAngle);
-						Serv.getCharacteristic(Characteristic.CurrentVerticalTiltAngle).setProps(props);
-						
-						HBservice.characteristics.push(Characteristic.TargetVerticalTiltAngle);
-						Serv.addCharacteristic(Characteristic.TargetVerticalTiltAngle);
-						Serv.getCharacteristic(Characteristic.TargetVerticalTiltAngle).setProps(props);
-						this.log('debug','Vertical Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.VerTiltSlider.configuration));
-					}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = Serv.infos.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-
-					HBservices.push(HBservice);
 				}
+
+				eqServicesCopy.flap.forEach((cmd2) => {
+					if (cmd2.up) {
+						Serv.actions.up = cmd2.up;
+					} else if (cmd2.down) {
+						Serv.actions.down = cmd2.down;
+					} else if (cmd2.slider) {
+						Serv.actions.slider = cmd2.slider;
+					} else if (cmd2.HorTiltSlider) {
+						Serv.actions.HorTiltSlider = cmd2.HorTiltSlider;
+					} else if (cmd2.VerTiltSlider) {
+						Serv.actions.VerTiltSlider = cmd2.VerTiltSlider;
+					} else if (cmd2.HorTiltState) {
+						Serv.infos.HorTiltState = cmd2.HorTiltState;
+					} else if (cmd2.VerTiltState) {
+						Serv.infos.VerTiltState = cmd2.VerTiltState;
+					}
+				});
+				if(Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Descendre"');}
+				if(!Serv.actions.up && Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warn','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');}
+				if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) {this.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');}
+				if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) {this.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');}
+				if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {this.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
+				if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {this.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
+				Serv.minValue=0;
+				if(Serv.infos.state.subType == 'binary') {
+					Serv.maxValue=1;
+					// Serv.getCharacteristic(Characteristic.TargetPosition).setProps({minStep:1});
+				} else {
+					Serv.maxValue=100;	
+				}
+				if(Serv.actions.slider) {
+					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
+						Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
+					}
+					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue)) {
+						Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
+					}
+				}
+				if(Serv.actions.HorTiltSlider) {
+					const props = {};
+					if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.maxValue && parseInt(Serv.actions.HorTiltSlider.configuration.maxValue)) {
+						props.maxValue = parseInt(Serv.actions.HorTiltSlider.configuration.maxValue);
+					} else {
+						props.maxValue = 90;
+					}
+					if(Serv.actions.HorTiltSlider.configuration && Serv.actions.HorTiltSlider.configuration.minValue && parseInt(Serv.actions.HorTiltSlider.configuration.minValue)) {
+						props.minValue = parseInt(Serv.actions.HorTiltSlider.configuration.minValue);
+					} else {
+						props.minValue = 0;
+					}
+					HBservice.characteristics.push(Characteristic.CurrentHorizontalTiltAngle);
+					Serv.addCharacteristic(Characteristic.CurrentHorizontalTiltAngle);
+					Serv.getCharacteristic(Characteristic.CurrentHorizontalTiltAngle).setProps(props);
+					
+					HBservice.characteristics.push(Characteristic.TargetHorizontalTiltAngle);
+					Serv.addCharacteristic(Characteristic.TargetHorizontalTiltAngle);
+					Serv.getCharacteristic(Characteristic.TargetHorizontalTiltAngle).setProps(props);
+					this.log('debug','Horizontal Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.HorTiltSlider.configuration));
+				}
+				
+				if(Serv.actions.VerTiltSlider) {
+					const props = {};
+					if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.maxValue && parseInt(Serv.actions.VerTiltSlider.configuration.maxValue)) {
+						props.maxValue = parseInt(Serv.actions.VerTiltSlider.configuration.maxValue);
+					} else {
+						props.maxValue = 90;
+					}
+					if(Serv.actions.VerTiltSlider.configuration && Serv.actions.VerTiltSlider.configuration.minValue && parseInt(Serv.actions.VerTiltSlider.configuration.minValue)) {
+						props.minValue = parseInt(Serv.actions.VerTiltSlider.configuration.minValue);
+					} else {
+						props.minValue = 0;
+					}	
+					HBservice.characteristics.push(Characteristic.CurrentVerticalTiltAngle);
+					Serv.addCharacteristic(Characteristic.CurrentVerticalTiltAngle);
+					Serv.getCharacteristic(Characteristic.CurrentVerticalTiltAngle).setProps(props);
+					
+					HBservice.characteristics.push(Characteristic.TargetVerticalTiltAngle);
+					Serv.addCharacteristic(Characteristic.TargetVerticalTiltAngle);
+					Serv.getCharacteristic(Characteristic.TargetVerticalTiltAngle).setProps(props);
+					this.log('debug','Vertical Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.VerTiltSlider.configuration));
+				}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = Serv.infos.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture" on regarde s\'il y a uniquement les boutons...');
@@ -704,8 +702,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.subtype = Serv.subtype || '';
 						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 						HBservices.push(HBservice);
-					}
-					if (cmd.down) {
+					} else if (cmd.down) {
 						const SwitchName=cmd.down.name;
 						HBservice = {
 							controlService : new Service.Switch(SwitchName),
@@ -731,8 +728,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.subtype = Serv.subtype || '';
 						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
 						HBservices.push(HBservice);
-					}
-					if (cmd.stop) {
+					} else if (cmd.stop) {
 						const SwitchName=cmd.stop.name;
 						HBservice = {
 							controlService : new Service.Switch(SwitchName),
@@ -771,50 +767,49 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.windowMoto) {
 			eqLogic.services.windowMoto.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.Window(eqLogic.name),
-						characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.Window(eqLogic.name),
+					characteristics : [Characteristic.CurrentPosition, Characteristic.TargetPosition, Characteristic.PositionState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
 
-					eqServicesCopy.windowMoto.forEach((cmd2) => {
-						if (cmd2.up) {
-							Serv.actions.up = cmd2.up;
-						} else if (cmd2.down) {
-							Serv.actions.down = cmd2.down;
-						} else if (cmd2.slider) {
-							Serv.actions.slider = cmd2.slider;
-						}
-					});
-					Serv.maxValue = 100; // if not set in Jeedom it's 100
-					Serv.minValue = 0; // if not set in Jeedom it's 0
-					if(Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
-					if(!Serv.actions.up && Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
-					if(!Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
-					if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');}
-					if(Serv.actions.slider) {
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
-							Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
-						}
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue)) {
-							Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
-						}
+				eqServicesCopy.windowMoto.forEach((cmd2) => {
+					if (cmd2.up) {
+						Serv.actions.up = cmd2.up;
+					} else if (cmd2.down) {
+						Serv.actions.down = cmd2.down;
+					} else if (cmd2.slider) {
+						Serv.actions.slider = cmd2.slider;
 					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-
-					HBservices.push(HBservice);
+				});
+				Serv.maxValue = 100; // if not set in Jeedom it's 100
+				Serv.minValue = 0; // if not set in Jeedom it's 0
+				if(Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
+				if(!Serv.actions.up && Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');}
+				if(Serv.actions.slider) {
+					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
+						Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
+					}
+					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.minValue && parseInt(Serv.actions.slider.configuration.minValue)) {
+						Serv.minValue = parseInt(Serv.actions.slider.configuration.minValue);
+					}
 				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Fenêtre Motorisée Etat"');
@@ -824,38 +819,37 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.energy) {
 			eqLogic.services.energy.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.Outlet(eqLogic.name),
-						characteristics : [Characteristic.On, Characteristic.OutletInUse],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					eqServicesCopy.energy.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on = cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off = cmd2.off;
-						} else if (cmd2.inuse) {
-							Serv.infos.inuse = cmd2.inuse;
-						}
-					});
-					if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Prise Bouton On"');}
-					if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Prise Bouton Off"');}
-					// Test for AdminOnlyAccess, state need to have OwnerOnly attribute to True ou 1
-					if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-				}
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.Outlet(eqLogic.name),
+					characteristics : [Characteristic.On, Characteristic.OutletInUse],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				eqServicesCopy.energy.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on = cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off = cmd2.off;
+					} else if (cmd2.inuse) {
+						Serv.infos.inuse = cmd2.inuse;
+					}
+				});
+				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Prise Bouton On"');}
+				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Prise Bouton Off"');}
+				// Test for AdminOnlyAccess, state need to have OwnerOnly attribute to True ou 1
+				if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Prise Etat"');
@@ -865,37 +859,36 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.faucet) {
 			eqLogic.services.faucet.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.Valve(eqLogic.name),
-						characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.WATER_FAUCET);
-					Serv.ValveType=Characteristic.ValveType.WATER_FAUCET;
-					eqServicesCopy.faucet.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on = cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off = cmd2.off;
-						}
-					});
-					if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Robinet Bouton On"');}
-					if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Robinet Bouton Off"');}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-				}
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.Valve(eqLogic.name),
+					characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.WATER_FAUCET);
+				Serv.ValveType=Characteristic.ValveType.WATER_FAUCET;
+				eqServicesCopy.faucet.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on = cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off = cmd2.off;
+					}
+				});
+				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Robinet Bouton On"');}
+				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Robinet Bouton Off"');}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Robinet Etat"');
@@ -905,37 +898,36 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.irrigation) {
 			eqLogic.services.irrigation.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.Valve(eqLogic.name),
-						characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.IRRIGATION);
-					Serv.ValveType=Characteristic.ValveType.IRRIGATION;
-					eqServicesCopy.irrigation.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on = cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off = cmd2.off;
-						}
-					});
-					if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Irrigation Bouton On"');}
-					if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Irrigation Bouton Off"');}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-				}
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.Valve(eqLogic.name),
+					characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.IRRIGATION);
+				Serv.ValveType=Characteristic.ValveType.IRRIGATION;
+				eqServicesCopy.irrigation.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on = cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off = cmd2.off;
+					}
+				});
+				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Irrigation Bouton On"');}
+				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Irrigation Bouton Off"');}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Irrigation Etat"');
@@ -945,50 +937,49 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.valve) {
 			eqLogic.services.valve.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.Valve(eqLogic.name),
-						characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.GENERIC_VALVE);
-					Serv.ValveType=Characteristic.ValveType.GENERIC_VALVE;
-					eqServicesCopy.valve.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on = cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off = cmd2.off;
-						} else if (cmd2.setDuration) {
-							Serv.actions.setDuration = cmd2.setDuration;
-						} else if (cmd2.remainingDuration) {
-							Serv.infos.remainingDuration = cmd2.remainingDuration;
-						}
-					});
-					if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Valve générique Bouton On"');}
-					if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Valve générique Bouton Off"');}
-					
-					if(Serv.actions.setDuration) {
-						HBservice.characteristics.push(Characteristic.SetDuration);
-						Serv.addOptionalCharacteristic(Characteristic.SetDuration);
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.Valve(eqLogic.name),
+					characteristics : [Characteristic.Active,Characteristic.InUse,Characteristic.ValveType],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				Serv.getCharacteristic(Characteristic.ValveType).setValue(Characteristic.ValveType.GENERIC_VALVE);
+				Serv.ValveType=Characteristic.ValveType.GENERIC_VALVE;
+				eqServicesCopy.valve.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on = cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off = cmd2.off;
+					} else if (cmd2.setDuration) {
+						Serv.actions.setDuration = cmd2.setDuration;
+					} else if (cmd2.remainingDuration) {
+						Serv.infos.remainingDuration = cmd2.remainingDuration;
 					}
-					if(Serv.infos.remainingDuration) {
-						HBservice.characteristics.push(Characteristic.RemainingDuration);
-						Serv.addOptionalCharacteristic(Characteristic.RemainingDuration);
-					}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
+				});
+				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Valve générique Bouton On"');}
+				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Valve générique Bouton Off"');}
+				
+				if(Serv.actions.setDuration) {
+					HBservice.characteristics.push(Characteristic.SetDuration);
+					Serv.addOptionalCharacteristic(Characteristic.SetDuration);
 				}
+				if(Serv.infos.remainingDuration) {
+					HBservice.characteristics.push(Characteristic.RemainingDuration);
+					Serv.addOptionalCharacteristic(Characteristic.RemainingDuration);
+				}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Valve générique Etat"');
@@ -998,57 +989,56 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.fan) {
 			eqLogic.services.fan.forEach((cmd) => {
-				if (cmd.state) {
-					let FanType="Switch";
-					let maxPower;
-					HBservice = {
-						controlService : new Service.Fan(eqLogic.name),
-						characteristics : [Characteristic.On],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
+				if (!cmd.state) {return;}
+				let FanType="Switch";
+				let maxPower;
+				HBservice = {
+					controlService : new Service.Fan(eqLogic.name),
+					characteristics : [Characteristic.On],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
 
-					eqServicesCopy.fan.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on=cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off=cmd2.off;
-						} else if (cmd2.slider) {
-							Serv.actions.slider=cmd2.slider;
-						}
-					});
-					if (Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur OFF"');}
-					if (!Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur ON"');}
-					if (!Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur ON" et "Action/Ventilateur OFF"');}
-					
-					if(Serv.actions.slider) {
-						if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
-							maxPower = parseInt(Serv.actions.slider.configuration.maxValue);
-						} else {
-							maxPower = 100; // if not set in Jeedom it's 100
-						}
-						FanType += "_Slider";
-						HBservice.characteristics.push(Characteristic.RotationSpeed);
-						Serv.addCharacteristic(Characteristic.RotationSpeed);
-					} else {
-						this.log('info','Le ventilateur n\'a pas de variateur');
+				eqServicesCopy.fan.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on=cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off=cmd2.off;
+					} else if (cmd2.slider) {
+						Serv.actions.slider=cmd2.slider;
 					}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					this.log('info','Le ventilateur est du type :',FanType+((maxPower)?','+maxPower:''));
-					Serv.FanType = FanType;
-					Serv.maxPower = maxPower;
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
+				});
+				if (Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur OFF"');}
+				if (!Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur ON"');}
+				if (!Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur ON" et "Action/Ventilateur OFF"');}
+				
+				if(Serv.actions.slider) {
+					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
+						maxPower = parseInt(Serv.actions.slider.configuration.maxValue);
+					} else {
+						maxPower = 100; // if not set in Jeedom it's 100
+					}
+					FanType += "_Slider";
+					HBservice.characteristics.push(Characteristic.RotationSpeed);
+					Serv.addCharacteristic(Characteristic.RotationSpeed);
+				} else {
+					this.log('info','Le ventilateur n\'a pas de variateur');
 				}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				this.log('info','Le ventilateur est du type :',FanType+((maxPower)?','+maxPower:''));
+				Serv.FanType = FanType;
+				Serv.maxPower = maxPower;
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Ventilateur Etat"');
@@ -1058,71 +1048,70 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}		
 		if (eqLogic.services.Switch) {
 			eqLogic.services.Switch.forEach((cmd) => {
-				if (cmd.state) {
-					let SwitchName = eqLogic.name;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
-						this.log('debug',"Switchs multiples dans même équipement, il y en a "+eqLogic.numSwitches);
-						SwitchName=cmd.state.name;
-					}
-					HBservice = {
-						controlService : new Service.Switch(SwitchName),
-						characteristics : [Characteristic.On],
-					};
-					const Serv = HBservice.controlService;
-					if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
-						this.log('debug',"Nom du switch (multi) : "+SwitchName);
-						Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
-						
-						Serv.ConfiguredName=SwitchName;
-						HBservice.characteristics.push(Characteristic.ConfiguredName);
-						Serv.addCharacteristic(Characteristic.ConfiguredName);
-						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
-					}
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					eqServicesCopy.Switch.forEach((cmd2) => {
-						if (cmd2.on) {
-							if(Serv.infos.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
-								if(cmd2.on.value == cmd.state.id) {
-									Serv.actions.on = cmd2.on;
-								}
-							} else {
+				if (!cmd.state) {return;}
+				let SwitchName = eqLogic.name;
+				if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
+					this.log('debug',"Switchs multiples dans même équipement, il y en a "+eqLogic.numSwitches);
+					SwitchName=cmd.state.name;
+				}
+				HBservice = {
+					controlService : new Service.Switch(SwitchName),
+					characteristics : [Characteristic.On],
+				};
+				const Serv = HBservice.controlService;
+				if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
+					this.log('debug',"Nom du switch (multi) : "+SwitchName);
+					Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+					
+					Serv.ConfiguredName=SwitchName;
+					HBservice.characteristics.push(Characteristic.ConfiguredName);
+					Serv.addCharacteristic(Characteristic.ConfiguredName);
+					Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
+				}
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				eqServicesCopy.Switch.forEach((cmd2) => {
+					if (cmd2.on) {
+						if(Serv.infos.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
+							if(cmd2.on.value == cmd.state.id) {
 								Serv.actions.on = cmd2.on;
 							}
-						} else if (cmd2.off) {
-							if(Serv.infos.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
-								if(cmd2.off.value == cmd.state.id) {
-									Serv.actions.off = cmd2.off;
-								}
-							} else {
+						} else {
+							Serv.actions.on = cmd2.on;
+						}
+					} else if (cmd2.off) {
+						if(Serv.infos.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1) {
+							if(cmd2.off.value == cmd.state.id) {
 								Serv.actions.off = cmd2.off;
 							}
+						} else {
+							Serv.actions.off = cmd2.off;
 						}
-					});
-					if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Interrupteur Bouton On"');}
-					if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Interrupteur Bouton Off"');}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(this.fakegato && !eqLogic.hasLogging) {
-						// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
-
-						// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.loggingService = {type:"switch", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-
-						eqLogic.hasLogging=true;
 					}
-					
-					HBservices.push(HBservice);
+				});
+				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Interrupteur Bouton On"');}
+				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Interrupteur Bouton Off"');}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				
+				if(this.fakegato && !eqLogic.hasLogging) {
+					// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+
+					// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.loggingService = {type:"switch", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+
+					eqLogic.hasLogging=true;
 				}
+				
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Interrupteur Etat"');
@@ -1132,31 +1121,30 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}	
 		if (eqLogic.services.Push) {
 			eqLogic.services.Push.forEach((cmd) => {
-				if (cmd.Push && cmd.Push.subType == 'other') {
-					const SwitchName=cmd.Push.name;
-					HBservice = {
-						controlService : new Service.Switch(SwitchName),
-						characteristics : [Characteristic.On,Characteristic.ConfiguredName],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.actions.Push = cmd.Push;
-					Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
-					
-					Serv.ConfiguredName=SwitchName;
-					Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.Push.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-				}
+				if (!cmd.Push || cmd.Push.subType != 'other') {return;}
+				const SwitchName=cmd.Push.name;
+				HBservice = {
+					controlService : new Service.Switch(SwitchName),
+					characteristics : [Characteristic.On,Characteristic.ConfiguredName],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.actions.Push = cmd.Push;
+				Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
+				
+				Serv.ConfiguredName=SwitchName;
+				Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SwitchName);
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.Push.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','La Commande Action associée doit être du type "Autre"');
@@ -1166,559 +1154,547 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}		
 		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
 			eqLogic.services.power.forEach((cmd) => {
-				if (cmd.power) {
-					HBservice = {
-						controlService : new Service.PowerMonitor(eqLogic.name),
-						characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.power=cmd.power;
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					if(eqServicesCopy.consumption) {
-						eqServicesCopy.consumption.forEach((cmd2) => {
-							if (cmd2.consumption) {
-								Serv.infos.consumption=cmd2.consumption;
-							}
-						});
-					}
-					
-					Serv.cmd_id = cmd.power.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					if(this.fakegato && !eqLogic.hasLogging) {
-						// HBservice.characteristics.push(Characteristic.ResetTotal);
-						eqLogic.loggingService = {type:"energy", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-
-						eqLogic.hasLogging=true;
-					}
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.power) {return;}
+				HBservice = {
+					controlService : new Service.PowerMonitor(eqLogic.name),
+					characteristics : [Characteristic.CurrentPowerConsumption, Characteristic.TotalPowerConsumption],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.power=cmd.power;
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				if(eqServicesCopy.consumption) {
+					eqServicesCopy.consumption.forEach((cmd2) => {
+						if (cmd2.consumption) {
+							Serv.infos.consumption=cmd2.consumption;
+						}
+					});
 				}
+				
+				Serv.cmd_id = cmd.power.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.fakegato && !eqLogic.hasLogging) {
+					// HBservice.characteristics.push(Characteristic.ResetTotal);
+					eqLogic.loggingService = {type:"energy", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+
+					eqLogic.hasLogging=true;
+				}
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.battery) {
 			eqLogic.services.battery.forEach((cmd) => {
-				if (cmd.battery) {
-					HBservice = {
-						controlService : new Service.BatteryService(eqLogic.name),
-						characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.battery=cmd.battery;
-					Serv.infos.batteryCharging=cmd.batteryCharging || {id:'NOT'};
-					eqServicesCopy.battery.forEach((cmd2) => {
-						if (cmd2.batteryCharging) {
-							Serv.infos.batteryCharging=cmd2.batteryCharging;
-						} else {
-							Serv.infos.batteryCharging={id:'NOT'};
-						}
-					});
-					Serv.cmd_id = cmd.battery.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
-				}
+				if (!cmd.battery) {return;}
+				HBservice = {
+					controlService : new Service.BatteryService(eqLogic.name),
+					characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.battery=cmd.battery;
+				Serv.infos.batteryCharging=cmd.batteryCharging || {id:'NOT'};
+				eqServicesCopy.battery.forEach((cmd2) => {
+					if (cmd2.batteryCharging) {
+						Serv.infos.batteryCharging=cmd2.batteryCharging;
+					} else {
+						Serv.infos.batteryCharging={id:'NOT'};
+					}
+				});
+				Serv.cmd_id = cmd.battery.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.Noise) {
 			eqLogic.services.Noise.forEach((cmd) => {
-				if (cmd.Noise) {
-					HBservice = {
-						controlService : new Service.NoiseSensor(eqLogic.name),
-						characteristics : [Characteristic.NoiseLevel,Characteristic.NoiseQuality],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.Noise=cmd.Noise;
-					
-					if(cmd.Noise.subType=='numeric') {
-						Serv.levelNum=[];		
-						Serv.levelNum[Characteristic.NoiseQuality.SILENT]=50;
-						Serv.levelNum[Characteristic.NoiseQuality.CALM]=65;
-						Serv.levelNum[Characteristic.NoiseQuality.LIGHTLYNOISY]=70;
-						Serv.levelNum[Characteristic.NoiseQuality.NOISY]=80;
-						Serv.levelNum[Characteristic.NoiseQuality.TOONOISY]=100;
-					} else {
-						Serv.levelTxt=[];		
-						Serv.levelTxt[Characteristic.NoiseQuality.SILENT]="Silencieux";
-						Serv.levelTxt[Characteristic.NoiseQuality.CALM]="Calme";
-						Serv.levelTxt[Characteristic.NoiseQuality.LIGHTLYNOISY]="Légèrement Bruyant";
-						Serv.levelTxt[Characteristic.NoiseQuality.NOISY]="Bruyant";
-						Serv.levelTxt[Characteristic.NoiseQuality.TOONOISY]="Trop Bruyant";
-					}
-					
-					Serv.cmd_id = cmd.Noise.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = 'Noise';
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					const uniteNoise = Serv.infos.Noise.unite ? Serv.infos.Noise.unite : '';
-					if(uniteNoise) {
-						const propsNoise = {};
-						propsNoise.unit=uniteNoise;
-						Serv.getCharacteristic(Characteristic.NoiseLevel).setProps(propsNoise);
-					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.Noise) {return;}
+				HBservice = {
+					controlService : new Service.NoiseSensor(eqLogic.name),
+					characteristics : [Characteristic.NoiseLevel,Characteristic.NoiseQuality],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.Noise=cmd.Noise;
+				
+				if(cmd.Noise.subType=='numeric') {
+					Serv.levelNum=[];		
+					Serv.levelNum[Characteristic.NoiseQuality.SILENT]=50;
+					Serv.levelNum[Characteristic.NoiseQuality.CALM]=65;
+					Serv.levelNum[Characteristic.NoiseQuality.LIGHTLYNOISY]=70;
+					Serv.levelNum[Characteristic.NoiseQuality.NOISY]=80;
+					Serv.levelNum[Characteristic.NoiseQuality.TOONOISY]=100;
+				} else {
+					Serv.levelTxt=[];		
+					Serv.levelTxt[Characteristic.NoiseQuality.SILENT]="Silencieux";
+					Serv.levelTxt[Characteristic.NoiseQuality.CALM]="Calme";
+					Serv.levelTxt[Characteristic.NoiseQuality.LIGHTLYNOISY]="Légèrement Bruyant";
+					Serv.levelTxt[Characteristic.NoiseQuality.NOISY]="Bruyant";
+					Serv.levelTxt[Characteristic.NoiseQuality.TOONOISY]="Trop Bruyant";
 				}
+				
+				Serv.cmd_id = cmd.Noise.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = 'Noise';
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				const uniteNoise = Serv.infos.Noise.unite ? Serv.infos.Noise.unite : '';
+				if(uniteNoise) {
+					const propsNoise = {};
+					propsNoise.unit=uniteNoise;
+					Serv.getCharacteristic(Characteristic.NoiseLevel).setProps(propsNoise);
+				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}		
 		if (eqLogic.services.CO) {
 			eqLogic.services.CO.forEach((cmd) => {
-				if (cmd.CO) {
-					HBservice = {
-						controlService : new Service.CarbonMonoxideSensor(eqLogic.name),
-						characteristics : [Characteristic.CarbonMonoxideDetected],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.CO=cmd.CO;
-					
-					Serv.cmd_id = cmd.CO.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = 'CO';
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-										
-					HBservices.push(HBservice);
-					HBservice = null;
-				}
+				if (!cmd.CO) {return;}
+				HBservice = {
+					controlService : new Service.CarbonMonoxideSensor(eqLogic.name),
+					characteristics : [Characteristic.CarbonMonoxideDetected],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.CO=cmd.CO;
+				
+				Serv.cmd_id = cmd.CO.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = 'CO';
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+									
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}			
 		if (eqLogic.services.CO2) {
 			eqLogic.services.CO2.forEach((cmd) => {
-				if (cmd.CO2) {
-					HBservice = {
-						controlService : new Service.AirQualitySensor(eqLogic.name),
-						characteristics : [Characteristic.AirQuality,Characteristic.CarbonDioxideLevel,Characteristic.CarbonDioxideDetected],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.CO2=cmd.CO2;
-					
-					if(cmd.CO2.subType=='numeric') {
-						Serv.levelNum=[];		
-						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=900;// 700
-						Serv.levelNum[Characteristic.AirQuality.GOOD]=1150;// 1100
-						Serv.levelNum[Characteristic.AirQuality.FAIR]=1400;// 1600
-						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=1600;// 2100
-						Serv.levelNum[Characteristic.AirQuality.POOR]=100000;
-					} else {
-						Serv.levelTxt=[];		
-						Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
-						Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
-						Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
-						Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
-						Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
-					}
-					
-					Serv.cmd_id = cmd.CO2.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = 'CO2';
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					const uniteCO2 = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
-					if(uniteCO2) {
-						const propsCO2 = {};
-						propsCO2.unit=uniteCO2;
-						Serv.getCharacteristic(Characteristic.CarbonDioxideLevel).setProps(propsCO2);
-					}
-					
-					if(this.fakegato && !eqLogic.hasLogging) {
-						HBservice.characteristics.push(Characteristic.PPM);
-						Serv.addCharacteristic(Characteristic.PPM);
-						const unite = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
-						if(unite) {
-							const props = {};
-							props.unit=unite;
-							Serv.getCharacteristic(Characteristic.PPM).setProps(props);
-						}
-						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
-						Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
-
-						eqLogic.loggingService ={type:"room", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.CO2) {return;}
+				HBservice = {
+					controlService : new Service.AirQualitySensor(eqLogic.name),
+					characteristics : [Characteristic.AirQuality,Characteristic.CarbonDioxideLevel,Characteristic.CarbonDioxideDetected],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.CO2=cmd.CO2;
+				
+				if(cmd.CO2.subType=='numeric') {
+					Serv.levelNum=[];		
+					Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=900;// 700
+					Serv.levelNum[Characteristic.AirQuality.GOOD]=1150;// 1100
+					Serv.levelNum[Characteristic.AirQuality.FAIR]=1400;// 1600
+					Serv.levelNum[Characteristic.AirQuality.INFERIOR]=1600;// 2100
+					Serv.levelNum[Characteristic.AirQuality.POOR]=100000;
+				} else {
+					Serv.levelTxt=[];		
+					Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
+					Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
+					Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
+					Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
+					Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
 				}
+				
+				Serv.cmd_id = cmd.CO2.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = 'CO2';
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				const uniteCO2 = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
+				if(uniteCO2) {
+					const propsCO2 = {};
+					propsCO2.unit=uniteCO2;
+					Serv.getCharacteristic(Characteristic.CarbonDioxideLevel).setProps(propsCO2);
+				}
+				
+				if(this.fakegato && !eqLogic.hasLogging) {
+					HBservice.characteristics.push(Characteristic.PPM);
+					Serv.addCharacteristic(Characteristic.PPM);
+					const unite = Serv.infos.CO2.unite ? Serv.infos.CO2.unite : '';
+					if(unite) {
+						const props = {};
+						props.unit=unite;
+						Serv.getCharacteristic(Characteristic.PPM).setProps(props);
+					}
+					HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
+					Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
+
+					eqLogic.loggingService ={type:"room", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.hasLogging=true;
+				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.AirQualityCustom) {
 			eqLogic.services.AirQualityCustom.forEach((cmd) => {
-				if (cmd.Index) {
-					HBservice = {
-						controlService : new Service.AirQualitySensor(eqLogic.name),
-						characteristics : [Characteristic.AirQuality],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.Index=cmd.Index;
-					
-					if(eqLogic.customizedValues && cmd.Index.subType=='numeric') {
-						Serv.levelNum=[];	
-						if(eqLogic.customizedValues.EXCELLENT && eqLogic.customizedValues.EXCELLENT != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.customizedValues.EXCELLENT);
-						} else {
-							this.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
-							Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
-						}
-						if(eqLogic.customizedValues.GOOD && eqLogic.customizedValues.GOOD != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.customizedValues.GOOD);
-						} else {
-							this.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
-							Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
-						}
-						if(eqLogic.customizedValues.FAIR && eqLogic.customizedValues.FAIR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.customizedValues.FAIR);
-						} else {
-							this.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
-							Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
-						}
-						if(eqLogic.customizedValues.INFERIOR && eqLogic.customizedValues.INFERIOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.customizedValues.INFERIOR);
-						} else {
-							this.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
-							Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
-						}
-						if(eqLogic.customizedValues.POOR && eqLogic.customizedValues.POOR != "NOT") {
-							Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.customizedValues.POOR);
-						} else {
-							this.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
-							Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
-						}
-					} else if(this.myPlugin == "homebridge") {
-						this.log('warn',"Pas de config numérique des valeurs que qualité d'air");
+				if (!cmd.Index) {return;}
+				HBservice = {
+					controlService : new Service.AirQualitySensor(eqLogic.name),
+					characteristics : [Characteristic.AirQuality],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.Index=cmd.Index;
+				
+				if(eqLogic.customizedValues && cmd.Index.subType=='numeric') {
+					Serv.levelNum=[];	
+					if(eqLogic.customizedValues.EXCELLENT && eqLogic.customizedValues.EXCELLENT != "NOT") {
+						Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.customizedValues.EXCELLENT);
+					} else {
+						this.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
+						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
 					}
-
-					
-					Serv.cmd_id = cmd.Index.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = 'AirQualityCustom';
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(this.fakegato && !eqLogic.hasLogging) {
-						HBservice.characteristics.push(Characteristic.VOCDensity);
-						Serv.addCharacteristic(Characteristic.VOCDensity);
-						const unite = Serv.infos.Index.unite ? Serv.infos.Index.unite : '';
-						if(unite) {
-							const props = {};
-							props.unit=unite;
-							if(Serv.levelNum) {props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);}
-							Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
-						}
-						HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
-						Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
-
-						eqLogic.loggingService ={type:"room2", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
+					if(eqLogic.customizedValues.GOOD && eqLogic.customizedValues.GOOD != "NOT") {
+						Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.customizedValues.GOOD);
+					} else {
+						this.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
+						Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
 					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+					if(eqLogic.customizedValues.FAIR && eqLogic.customizedValues.FAIR != "NOT") {
+						Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.customizedValues.FAIR);
+					} else {
+						this.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
+						Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
+					}
+					if(eqLogic.customizedValues.INFERIOR && eqLogic.customizedValues.INFERIOR != "NOT") {
+						Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.customizedValues.INFERIOR);
+					} else {
+						this.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
+						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
+					}
+					if(eqLogic.customizedValues.POOR && eqLogic.customizedValues.POOR != "NOT") {
+						Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.customizedValues.POOR);
+					} else {
+						this.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
+						Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
+					}
+				} else if(this.myPlugin == "homebridge") {
+					this.log('warn',"Pas de config numérique des valeurs que qualité d'air");
 				}
+
+				
+				Serv.cmd_id = cmd.Index.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = 'AirQualityCustom';
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				
+				if(this.fakegato && !eqLogic.hasLogging) {
+					HBservice.characteristics.push(Characteristic.VOCDensity);
+					Serv.addCharacteristic(Characteristic.VOCDensity);
+					const unite = Serv.infos.Index.unite ? Serv.infos.Index.unite : '';
+					if(unite) {
+						const props = {};
+						props.unit=unite;
+						if(Serv.levelNum) {props.maxValue=parseInt(Serv.levelNum[Characteristic.AirQuality.POOR]*4.57);}
+						Serv.getCharacteristic(Characteristic.VOCDensity).setProps(props);
+					}
+					HBservice.characteristics.push(Characteristic.AQExtraCharacteristic);
+					Serv.addCharacteristic(Characteristic.AQExtraCharacteristic);
+
+					eqLogic.loggingService ={type:"room2", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.hasLogging=true;
+				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}	
 		if (eqLogic.services.AirQuality) {
 			eqLogic.services.AirQuality.forEach((cmd) => {
-				if (cmd.Index) {
-					HBservice = {
-						controlService : new Service.AirQualitySensor(eqLogic.name),
-						characteristics : [Characteristic.AirQuality],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.Index=cmd.Index;
-					eqServicesCopy.AirQuality.forEach((cmd2) => {
-						if (cmd2.PM25) {
-							Serv.infos.PM25= cmd2.PM25;
-						}
-					});	
-					// if there is a PM2.5 density, display it
-					if(Serv.infos.PM25) {
-						HBservice.characteristics.push(Characteristic.PM2_5Density);
-						Serv.addCharacteristic(Characteristic.PM2_5Density);
+				if (!cmd.Index) {return;}
+				HBservice = {
+					controlService : new Service.AirQualitySensor(eqLogic.name),
+					characteristics : [Characteristic.AirQuality],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.Index=cmd.Index;
+				eqServicesCopy.AirQuality.forEach((cmd2) => {
+					if (cmd2.PM25) {
+						Serv.infos.PM25= cmd2.PM25;
 					}
-					// AQI Generic
-					HBservice.characteristics.push(Characteristic.AQI);
-					Serv.addCharacteristic(Characteristic.AQI);
-					Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
-					
-					if(cmd.Index.subType=='numeric') {
-						Serv.levelNum=[];		
-						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
-						Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
-						Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
-						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
-						Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
-					} else {
-						Serv.levelTxt=[];		
-						Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
-						Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
-						Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
-						Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
-						Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
-					}
-					Serv.cmd_id = cmd.Index.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = 'AQI';
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
+				});	
+				// if there is a PM2.5 density, display it
+				if(Serv.infos.PM25) {
+					HBservice.characteristics.push(Characteristic.PM2_5Density);
+					Serv.addCharacteristic(Characteristic.PM2_5Density);
 				}
+				// AQI Generic
+				HBservice.characteristics.push(Characteristic.AQI);
+				Serv.addCharacteristic(Characteristic.AQI);
+				Serv.getCharacteristic(Characteristic.AQI).displayName = cmd.Index.name;
+				
+				if(cmd.Index.subType=='numeric') {
+					Serv.levelNum=[];		
+					Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
+					Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
+					Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
+					Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
+					Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
+				} else {
+					Serv.levelTxt=[];		
+					Serv.levelTxt[Characteristic.AirQuality.EXCELLENT]="Excellent";
+					Serv.levelTxt[Characteristic.AirQuality.GOOD]="Bon";
+					Serv.levelTxt[Characteristic.AirQuality.FAIR]="Moyen";
+					Serv.levelTxt[Characteristic.AirQuality.INFERIOR]="Inférieur";
+					Serv.levelTxt[Characteristic.AirQuality.POOR]="Faible";
+				}
+				Serv.cmd_id = cmd.Index.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = 'AQI';
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		} 	
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach((cmd) => {
-				if (cmd.presence) {
-					let SensorName=eqLogic.name;
-					if(eqLogic.numDetector>1) {
-						this.log('debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
-						SensorName=cmd.presence.name;
-					}
-					HBservice = {
-						controlService : new Service.MotionSensor(SensorName),
-						characteristics : [Characteristic.MotionDetected],
-					};
-					const Serv = HBservice.controlService;
-					if(eqLogic.numDetector>1) {
-						this.log('debug',"Nom du détecteur (multi) : "+SensorName);
-						Serv.getCharacteristic(Characteristic.MotionDetected).displayName = SensorName;
-						
-						Serv.ConfiguredName=SensorName;
-						HBservice.characteristics.push(Characteristic.ConfiguredName);
-						Serv.addCharacteristic(Characteristic.ConfiguredName);
-						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
-					}
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.presence=cmd.presence;
-					Serv.invertBinary=0;
-					if(cmd.presence.display && cmd.presence.display.invertBinary != undefined) {
-						Serv.invertBinary=cmd.presence.display.invertBinary;
-					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-
-					Serv.cmd_id = cmd.presence.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(this.fakegato && !eqLogic.hasLogging) {
-						HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
-						Serv.addOptionalCharacteristic(Characteristic.Sensitivity);
-						Serv.addOptionalCharacteristic(Characteristic.Duration);
-						Serv.addOptionalCharacteristic(Characteristic.LastActivation);
-
-						// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.loggingService = {type:"motion", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-
-						eqLogic.hasLogging=true;
-					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.presence) {return;}
+				let SensorName=eqLogic.name;
+				if(eqLogic.numDetector>1) {
+					this.log('debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
+					SensorName=cmd.presence.name;
 				}
+				HBservice = {
+					controlService : new Service.MotionSensor(SensorName),
+					characteristics : [Characteristic.MotionDetected],
+				};
+				const Serv = HBservice.controlService;
+				if(eqLogic.numDetector>1) {
+					this.log('debug',"Nom du détecteur (multi) : "+SensorName);
+					Serv.getCharacteristic(Characteristic.MotionDetected).displayName = SensorName;
+					
+					Serv.ConfiguredName=SensorName;
+					HBservice.characteristics.push(Characteristic.ConfiguredName);
+					Serv.addCharacteristic(Characteristic.ConfiguredName);
+					Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
+				}
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.presence=cmd.presence;
+				Serv.invertBinary=0;
+				if(cmd.presence.display && cmd.presence.display.invertBinary != undefined) {
+					Serv.invertBinary=cmd.presence.display.invertBinary;
+				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+
+				Serv.cmd_id = cmd.presence.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				
+				if(this.fakegato && !eqLogic.hasLogging) {
+					HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+					Serv.addOptionalCharacteristic(Characteristic.Sensitivity);
+					Serv.addOptionalCharacteristic(Characteristic.Duration);
+					Serv.addOptionalCharacteristic(Characteristic.LastActivation);
+
+					// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.loggingService = {type:"motion", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+
+					eqLogic.hasLogging=true;
+				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.occupancy) {
 			eqLogic.services.occupancy.forEach((cmd) => {
-				if (cmd.occupancy) {
-					let SensorName=eqLogic.name;
-					if(eqLogic.numDetector>1) {
-						this.log('debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
-						SensorName=cmd.occupancy.name;
-					}
-					HBservice = {
-						controlService : new Service.OccupancySensor(SensorName),
-						characteristics : [Characteristic.OccupancyDetected],
-					};
-					const Serv = HBservice.controlService;
-					if(eqLogic.numDetector>1) {
-						this.log('debug',"Nom du détecteur (multi) : "+SensorName);
-						Serv.getCharacteristic(Characteristic.OccupancyDetected).displayName = SensorName;
-						
-						Serv.ConfiguredName=SensorName;
-						HBservice.characteristics.push(Characteristic.ConfiguredName);
-						Serv.addCharacteristic(Characteristic.ConfiguredName);
-						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
-					}
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.occupancy=cmd.occupancy;
-					Serv.invertBinary=0;
-					if(cmd.occupancy.display && cmd.occupancy.display.invertBinary != undefined) {
-						Serv.invertBinary=cmd.occupancy.display.invertBinary;
-					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-
-					Serv.cmd_id = cmd.occupancy.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.occupancy) {return;}
+				let SensorName=eqLogic.name;
+				if(eqLogic.numDetector>1) {
+					this.log('debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
+					SensorName=cmd.occupancy.name;
 				}
+				HBservice = {
+					controlService : new Service.OccupancySensor(SensorName),
+					characteristics : [Characteristic.OccupancyDetected],
+				};
+				const Serv = HBservice.controlService;
+				if(eqLogic.numDetector>1) {
+					this.log('debug',"Nom du détecteur (multi) : "+SensorName);
+					Serv.getCharacteristic(Characteristic.OccupancyDetected).displayName = SensorName;
+					
+					Serv.ConfiguredName=SensorName;
+					HBservice.characteristics.push(Characteristic.ConfiguredName);
+					Serv.addCharacteristic(Characteristic.ConfiguredName);
+					Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(SensorName);
+				}
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.occupancy=cmd.occupancy;
+				Serv.invertBinary=0;
+				if(cmd.occupancy.display && cmd.occupancy.display.invertBinary != undefined) {
+					Serv.invertBinary=cmd.occupancy.display.invertBinary;
+				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+
+				Serv.cmd_id = cmd.occupancy.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}		
 		if (eqLogic.services.generic) {
 			eqLogic.services.generic.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.CustomService(cmd.state.name),
-						characteristics : [],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.CustomService(cmd.state.name),
+					characteristics : [],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				var props = {};
+				var unite = '';
+				if(cmd.state.subType=="numeric") {
+					this.log('debug','Le générique',cmd.state.name,'est un numérique');
+					// test if default value is Float or Int ?
+					var CharactToSet=Characteristic.GenericFLOAT;
+					var NumericGenericType='float';
+					if(cmd.state.currentValue.toString().indexOf('.') == -1) {
+						CharactToSet=Characteristic.GenericINT;
+						NumericGenericType='int';
+					}
+					this.log('debug','Sur base de sa valeur actuelle',cmd.state.currentValue,', on determine un type :',NumericGenericType);
+					HBservice.characteristics.push(CharactToSet);
+					Serv.addCharacteristic(CharactToSet);
+					Serv.getCharacteristic(CharactToSet).displayName = cmd.state.name;
 					
-					var props = {};
-					var unite = '';
-					if(cmd.state.subType=="numeric") {
-						this.log('debug','Le générique',cmd.state.name,'est un numérique');
-						// test if default value is Float or Int ?
-						var CharactToSet=Characteristic.GenericFLOAT;
-						var NumericGenericType='float';
-						if(cmd.state.currentValue.toString().indexOf('.') == -1) {
-							CharactToSet=Characteristic.GenericINT;
-							NumericGenericType='int';
+					unite = cmd.state.unite ? cmd.state.unite : '';
+					if(unite) {props.unit=unite;}
+					if(cmd.state.configuration) {
+						if(NumericGenericType=='float'){
+							if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined && cmd.state.configuration.maxValue != "") {props.maxValue = parseFloat(cmd.state.configuration.maxValue);}
+							if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined && cmd.state.configuration.minValue != "") {props.minValue = parseFloat(cmd.state.configuration.minValue);}
+						} else if (NumericGenericType=='int'){
+							if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined && cmd.state.configuration.maxValue != "") {props.maxValue = parseInt(cmd.state.configuration.maxValue);}
+							if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined && cmd.state.configuration.minValue != "") {props.minValue = parseInt(cmd.state.configuration.minValue);}
 						}
-						this.log('debug','Sur base de sa valeur actuelle',cmd.state.currentValue,', on determine un type :',NumericGenericType);
-						HBservice.characteristics.push(CharactToSet);
-						Serv.addCharacteristic(CharactToSet);
-						Serv.getCharacteristic(CharactToSet).displayName = cmd.state.name;
-						
-						unite = cmd.state.unite ? cmd.state.unite : '';
-						if(unite) {props.unit=unite;}
-						if(cmd.state.configuration) {
-							if(NumericGenericType=='float'){
-								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined && cmd.state.configuration.maxValue != "") {props.maxValue = parseFloat(cmd.state.configuration.maxValue);}
-								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined && cmd.state.configuration.minValue != "") {props.minValue = parseFloat(cmd.state.configuration.minValue);}
-							} else if (NumericGenericType=='int'){
-								if(cmd.state.configuration.maxValue != null && cmd.state.configuration.maxValue != undefined && cmd.state.configuration.maxValue != "") {props.maxValue = parseInt(cmd.state.configuration.maxValue);}
-								if(cmd.state.configuration.minValue != null && cmd.state.configuration.minValue != undefined && cmd.state.configuration.minValue != "") {props.minValue = parseInt(cmd.state.configuration.minValue);}
-							}
-						}
-						if(Object.keys(props).length !== 0) {
-							this.log('debug','On lui set les props suivants :',props);
-							Serv.getCharacteristic(CharactToSet).setProps(props);
-						}
-					} else if (cmd.state.subType=="binary") {
-						this.log('debug','Le générique',cmd.state.name,'est un booléen');
-						HBservice.characteristics.push(Characteristic.GenericBOOL);
-						Serv.addCharacteristic(Characteristic.GenericBOOL);
-						Serv.getCharacteristic(Characteristic.GenericBOOL).displayName = cmd.state.name;
-					} else if (cmd.state.subType=="string" || cmd.state.subType=="other") {
-						this.log('debug','Le générique',cmd.state.name,'est une chaîne');
-						HBservice.characteristics.push(Characteristic.GenericSTRING);
-						Serv.addCharacteristic(Characteristic.GenericSTRING);
-						Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
-						
-						unite = cmd.state.unite ? cmd.state.unite : '';
-						if(unite) {props.unit=unite;}
-						if(Object.keys(props).length !== 0) {
-							this.log('debug','On lui set les props suivants :',props);
-							Serv.getCharacteristic(Characteristic.GenericSTRING).setProps(props);
-						}
-					}					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id +'-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
-				}
+					}
+					if(Object.keys(props).length !== 0) {
+						this.log('debug','On lui set les props suivants :',props);
+						Serv.getCharacteristic(CharactToSet).setProps(props);
+					}
+				} else if (cmd.state.subType=="binary") {
+					this.log('debug','Le générique',cmd.state.name,'est un booléen');
+					HBservice.characteristics.push(Characteristic.GenericBOOL);
+					Serv.addCharacteristic(Characteristic.GenericBOOL);
+					Serv.getCharacteristic(Characteristic.GenericBOOL).displayName = cmd.state.name;
+				} else if (cmd.state.subType=="string" || cmd.state.subType=="other") {
+					this.log('debug','Le générique',cmd.state.name,'est une chaîne');
+					HBservice.characteristics.push(Characteristic.GenericSTRING);
+					Serv.addCharacteristic(Characteristic.GenericSTRING);
+					Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
+					
+					unite = cmd.state.unite ? cmd.state.unite : '';
+					if(unite) {props.unit=unite;}
+					if(Object.keys(props).length !== 0) {
+						this.log('debug','On lui set les props suivants :',props);
+						Serv.getCharacteristic(Characteristic.GenericSTRING).setProps(props);
+					}
+				}					
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id +'-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.uv) {
 			eqLogic.services.uv.forEach((cmd) => {
-				if (cmd.uv) {
-					HBservice = {
-						controlService : new Service.WeatherService(eqLogic.name),
-						characteristics : [Characteristic.UVIndex],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.uv=cmd.uv;
-					Serv.cmd_id = cmd.uv.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
-				}
+				if (!cmd.uv) {return;}
+				HBservice = {
+					controlService : new Service.WeatherService(eqLogic.name),
+					characteristics : [Characteristic.UVIndex],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.uv=cmd.uv;
+				Serv.cmd_id = cmd.uv.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}		
 		if (eqLogic.services.speaker) {
 			eqLogic.services.speaker.forEach((cmd) => {
-				if (cmd.volume) {
-					HBservice = {
-						controlService : new Service.Speaker(eqLogic.name),
-						characteristics : [Characteristic.Mute,Characteristic.Volume],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.volume=cmd.volume;
-					eqServicesCopy.speaker.forEach((cmd2) => {
-						if (cmd2.mute_toggle) {
-							Serv.actions.mute_toggle = cmd2.mute_toggle;
-						} else if (cmd2.mute_on) {
-							Serv.actions.mute_on = cmd2.mute_on;
-						} else if (cmd2.mute_off) {
-							Serv.actions.mute_off = cmd2.mute_off;
-						} else if (cmd2.set_volume) {
-							Serv.actions.set_volume = cmd2.set_volume;
-						} else if (cmd2.mute) {
-							Serv.infos.mute=cmd2.mute;
-						}
-					});
-					if(!Serv.actions.set_volume) {this.log('warn','Pas de type générique "Action/Haut-Parleur Volume"');}
-					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur Mute"');}
-					if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur UnMute"');}
-					if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');}
-					Serv.cmd_id = cmd.volume.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-				}
+				if (!cmd.volume) {return;}
+				HBservice = {
+					controlService : new Service.Speaker(eqLogic.name),
+					characteristics : [Characteristic.Mute,Characteristic.Volume],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.volume=cmd.volume;
+				eqServicesCopy.speaker.forEach((cmd2) => {
+					if (cmd2.mute_toggle) {
+						Serv.actions.mute_toggle = cmd2.mute_toggle;
+					} else if (cmd2.mute_on) {
+						Serv.actions.mute_on = cmd2.mute_on;
+					} else if (cmd2.mute_off) {
+						Serv.actions.mute_off = cmd2.mute_off;
+					} else if (cmd2.set_volume) {
+						Serv.actions.set_volume = cmd2.set_volume;
+					} else if (cmd2.mute) {
+						Serv.infos.mute=cmd2.mute;
+					}
+				});
+				if(!Serv.actions.set_volume) {this.log('warn','Pas de type générique "Action/Haut-Parleur Volume"');}
+				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur Mute"');}
+				if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur UnMute"');}
+				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');}
+				Serv.cmd_id = cmd.volume.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Haut-Parleur Volume"');
@@ -1728,264 +1704,256 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}			
 		if (eqLogic.services.temperature) {
 			eqLogic.services.temperature.forEach((cmd) => {
-				if (cmd.temperature) {
-					HBservice = {
-						controlService : new Service.TemperatureSensor(eqLogic.name),
-						characteristics : [Characteristic.CurrentTemperature],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.temperature=cmd.temperature;
-					
-					HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
-					Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
-					Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.temperature.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					if(this.fakegato && !eqLogic.hasLogging) {
-						eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.temperature) {return;}
+				HBservice = {
+					controlService : new Service.TemperatureSensor(eqLogic.name),
+					characteristics : [Characteristic.CurrentTemperature],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.temperature=cmd.temperature;
+				
+				HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
+				Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
+				Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.temperature.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.fakegato && !eqLogic.hasLogging) {
+					eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.hasLogging=true;
 				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 
 		}
 		if (eqLogic.services.humidity) {
 			eqLogic.services.humidity.forEach((cmd) => {
-				if (cmd.humidity) {
-					HBservice = {
-						controlService : new Service.HumiditySensor(eqLogic.name),
-						characteristics : [Characteristic.CurrentRelativeHumidity],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.humidity=cmd.humidity;
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.humidity.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(this.fakegato && !eqLogic.hasLogging) {
-						eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.humidity) {return;}
+				HBservice = {
+					controlService : new Service.HumiditySensor(eqLogic.name),
+					characteristics : [Characteristic.CurrentRelativeHumidity],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.humidity=cmd.humidity;
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.humidity.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				
+				if(this.fakegato && !eqLogic.hasLogging) {
+					eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.hasLogging=true;
 				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.pressure) {
 			eqLogic.services.pressure.forEach((cmd) => {
-				if (cmd.pressure) {
-					HBservice = {
-						controlService : new Service.PressureSensor(eqLogic.name),
-						characteristics : [Characteristic.AirPressure],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.pressure=cmd.pressure;
-					Serv.cmd_id = cmd.pressure.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(this.fakegato && !eqLogic.hasLogging) {
-						eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.pressure) {return;}
+				HBservice = {
+					controlService : new Service.PressureSensor(eqLogic.name),
+					characteristics : [Characteristic.AirPressure],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.pressure=cmd.pressure;
+				Serv.cmd_id = cmd.pressure.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				
+				if(this.fakegato && !eqLogic.hasLogging) {
+					eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.hasLogging=true;
 				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}			
 		if (eqLogic.services.smoke) {
 			eqLogic.services.smoke.forEach((cmd) => {
-				if (cmd.smoke) {
-					HBservice = {
-						controlService : new Service.SmokeSensor(eqLogic.name),
-						characteristics : [Characteristic.SmokeDetected],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.smoke=cmd.smoke;
-					Serv.invertBinary=0;
-					if(cmd.smoke.display && cmd.smoke.display.invertBinary != undefined) {
-						Serv.invertBinary=cmd.smoke.display.invertBinary;
-					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.smoke.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.smoke) {return;}
+				HBservice = {
+					controlService : new Service.SmokeSensor(eqLogic.name),
+					characteristics : [Characteristic.SmokeDetected],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.smoke=cmd.smoke;
+				Serv.invertBinary=0;
+				if(cmd.smoke.display && cmd.smoke.display.invertBinary != undefined) {
+					Serv.invertBinary=cmd.smoke.display.invertBinary;
 				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.smoke.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.flood) {
 			eqLogic.services.flood.forEach((cmd) => {
-				if (cmd.flood) {
-					HBservice = {
-						controlService : new Service.LeakSensor(eqLogic.name),
-						characteristics : [Characteristic.LeakDetected],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.flood=cmd.flood;
-					Serv.invertBinary=0;
-					if(cmd.flood.display && cmd.flood.display.invertBinary != undefined) {
-						Serv.invertBinary=cmd.flood.display.invertBinary;
-					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.flood.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.flood) {return;}
+				HBservice = {
+					controlService : new Service.LeakSensor(eqLogic.name),
+					characteristics : [Characteristic.LeakDetected],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.flood=cmd.flood;
+				Serv.invertBinary=0;
+				if(cmd.flood.display && cmd.flood.display.invertBinary != undefined) {
+					Serv.invertBinary=cmd.flood.display.invertBinary;
 				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.flood.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.opening) {
 			eqLogic.services.opening.forEach((cmd) => {
-				if (cmd.opening) {
-					HBservice = {
-						controlService : new Service.ContactSensor(eqLogic.name),
-						characteristics : [Characteristic.ContactSensorState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.opening=cmd.opening;
-					Serv.invertBinary=0;
-					if(cmd.opening.display && cmd.opening.display.invertBinary != undefined) {
-						Serv.invertBinary=cmd.opening.display.invertBinary;
-					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.opening.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					
-					if(this.fakegato && !eqLogic.hasLogging) {
-						// Serv.eqLogic.numberOpened = 0;
-						HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
-						Serv.addOptionalCharacteristic(Characteristic.TimesOpened);
-						Serv.addOptionalCharacteristic(Characteristic.Char118);
-						Serv.addOptionalCharacteristic(Characteristic.Char119);
-						Serv.addOptionalCharacteristic(Characteristic.ResetTotal);
-						Serv.addOptionalCharacteristic(Characteristic.LastActivation);
-
-						eqLogic.loggingService = {type:"door", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
-					
-					HBservices.push(HBservice);
-					HBservice = null;
+				if (!cmd.opening) {return;}
+				HBservice = {
+					controlService : new Service.ContactSensor(eqLogic.name),
+					characteristics : [Characteristic.ContactSensorState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.opening=cmd.opening;
+				Serv.invertBinary=0;
+				if(cmd.opening.display && cmd.opening.display.invertBinary != undefined) {
+					Serv.invertBinary=cmd.opening.display.invertBinary;
 				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.opening.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				
+				if(this.fakegato && !eqLogic.hasLogging) {
+					// Serv.eqLogic.numberOpened = 0;
+					HBservice.characteristics.push(Characteristic.TimesOpened,Characteristic.Char118,Characteristic.Char119,Characteristic.ResetTotal,Characteristic.LastActivation);
+					Serv.addOptionalCharacteristic(Characteristic.TimesOpened);
+					Serv.addOptionalCharacteristic(Characteristic.Char118);
+					Serv.addOptionalCharacteristic(Characteristic.Char119);
+					Serv.addOptionalCharacteristic(Characteristic.ResetTotal);
+					Serv.addOptionalCharacteristic(Characteristic.LastActivation);
+
+					eqLogic.loggingService = {type:"door", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.hasLogging=true;
+				}
+				
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.brightness) {
 			eqLogic.services.brightness.forEach((cmd) => {
-				if (cmd.brightness) {
-					HBservice = {
-						controlService : new Service.LightSensor(eqLogic.name),
-						characteristics : [Characteristic.CurrentAmbientLightLevel],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.brightness=cmd.brightness;
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.brightness.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					if(this.fakegato && !eqLogic.hasLogging) {
-						// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
+				if (!cmd.brightness) {return;}
+				HBservice = {
+					controlService : new Service.LightSensor(eqLogic.name),
+					characteristics : [Characteristic.CurrentAmbientLightLevel],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.brightness=cmd.brightness;
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.brightness.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.fakegato && !eqLogic.hasLogging) {
+					// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
 
-						// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.loggingService = {type:"custom", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					// eqLogic.loggingService = {type:"motion", options:{storage:'googleDrive',folder:'fakegato',keyPath:'/home/pi/.homebridge/'},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.loggingService = {type:"custom", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 
-						eqLogic.hasLogging=true;
-					}
-					HBservices.push(HBservice);
-					HBservice = null;
+					eqLogic.hasLogging=true;
 				}
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.GarageDoor) {
 			eqLogic.services.GarageDoor.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.GarageDoorOpener(eqLogic.name),
-						characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					eqServicesCopy.GarageDoor.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on = cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off = cmd2.off;
-						} else if (cmd2.toggle) {
-							Serv.actions.toggle = cmd2.toggle;
-						}
-					});
-					if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Portail ou garage bouton d\'ouverture"');}
-					if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
-					if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
-									
-					if(eqLogic.customizedValues) {
-						Serv.customizedValues = eqLogic.customizedValues;
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.GarageDoorOpener(eqLogic.name),
+					characteristics : [Characteristic.CurrentDoorState, Characteristic.TargetDoorState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				eqServicesCopy.GarageDoor.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on = cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off = cmd2.off;
+					} else if (cmd2.toggle) {
+						Serv.actions.toggle = cmd2.toggle;
 					}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
+				});
+				if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Portail ou garage bouton d\'ouverture"');}
+				if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
+				if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
+								
+				if(eqLogic.customizedValues) {
+					Serv.customizedValues = eqLogic.customizedValues;
 				}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
@@ -1995,35 +1963,34 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.lock) {
 			eqLogic.services.lock.forEach((cmd) => {
-				if (cmd.state) {
-					HBservice = {
-						controlService : new Service.LockMechanism(eqLogic.name),
-						characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					eqServicesCopy.lock.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on = cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off = cmd2.off;
-						}
-					});
-					if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir"');}
-					// if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Serrure Bouton Fermer"');}
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-				}
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.LockMechanism(eqLogic.name),
+					characteristics : [Characteristic.LockCurrentState, Characteristic.LockTargetState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				eqServicesCopy.lock.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on = cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off = cmd2.off;
+					}
+				});
+				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir"');}
+				// if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Serrure Bouton Fermer"');}
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
 				this.log('warn','Pas de type générique "Info/Serrure Etat"');
@@ -2033,77 +2000,76 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.StatelessSwitch) {
 			eqLogic.services.StatelessSwitch.forEach((cmd) => {
-				if(cmd.eventType) {
-					let buttonSingle,buttonDouble,buttonLong;
-					
-					if(cmd.eventType.customizedValues.SINGLE) {
-						buttonSingle = cmd.eventType.customizedValues.SINGLE.split(';');
-					} else {
-						buttonSingle = [""];
-					}
-					if(cmd.eventType.customizedValues.DOUBLE) {
-						buttonDouble = cmd.eventType.customizedValues.DOUBLE.split(';');
-					} else {
-						buttonDouble = [""];
-					}
-					if(cmd.eventType.customizedValues.LONG) {
-						buttonLong = cmd.eventType.customizedValues.LONG.split(';');
-					} else {
-						buttonLong = [""];
-					}
-					const maxValues = Math.max(buttonSingle.length,buttonDouble.length,buttonLong.length);
-					
-					if(buttonSingle.length === buttonDouble.length && buttonDouble.length === buttonLong.length) {
-					
-						for(let b = 0;b<maxValues;b++) {
-							const numButton = b+1;
-							HBservice = {
-								controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+numButton),
-								characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex],
+				if (!cmd.eventType) {return;}
+				let buttonSingle,buttonDouble,buttonLong;
+				
+				if(cmd.eventType.customizedValues.SINGLE) {
+					buttonSingle = cmd.eventType.customizedValues.SINGLE.split(';');
+				} else {
+					buttonSingle = [""];
+				}
+				if(cmd.eventType.customizedValues.DOUBLE) {
+					buttonDouble = cmd.eventType.customizedValues.DOUBLE.split(';');
+				} else {
+					buttonDouble = [""];
+				}
+				if(cmd.eventType.customizedValues.LONG) {
+					buttonLong = cmd.eventType.customizedValues.LONG.split(';');
+				} else {
+					buttonLong = [""];
+				}
+				const maxValues = Math.max(buttonSingle.length,buttonDouble.length,buttonLong.length);
+				
+				if(buttonSingle.length === buttonDouble.length && buttonDouble.length === buttonLong.length) {
+				
+					for(let b = 0;b<maxValues;b++) {
+						const numButton = b+1;
+						HBservice = {
+							controlService : new Service.StatelessProgrammableSwitch(eqLogic.name+' '+numButton),
+							characteristics : [Characteristic.ProgrammableSwitchEvent, Characteristic.ServiceLabelIndex],
+						};
+						const Serv = HBservice.controlService;
+						Serv.eqLogic=eqLogic;
+						eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
+						Serv.ServiceLabelIndex = numButton;
+						Serv.type='Multi';
+						
+						Serv.customizedValues = cmd.eventType.customizedValues;
+						const values = [];
+						if(buttonSingle[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);}
+						if(buttonDouble[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);}
+						if(buttonLong[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);}
+						this.log('debug','ValidValues',values);
+						Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
+						
+						Serv.getCharacteristic(Characteristic.ServiceLabelIndex).updateValue(Serv.ServiceLabelIndex);
+						Serv.actions={};
+						Serv.infos={};
+						Serv.infos.eventType=cmd.eventType;
+						Serv.cmd_id = cmd.eventType.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = Serv.subtype || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype+numButton;
+						
+						if(!eqLogic.LabelExists) {
+							const tmpHBservice = {
+								controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
+								characteristics : [Characteristic.ServiceLabelNamespace],
 							};
-							const Serv = HBservice.controlService;
-							Serv.eqLogic=eqLogic;
-							eqLogic.indexStateless = ++eqLogic.indexStateless || 1;
-							Serv.ServiceLabelIndex = numButton;
-							Serv.type='Multi';
-							
-							Serv.customizedValues = cmd.eventType.customizedValues;
-							const values = [];
-							if(buttonSingle[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);}
-							if(buttonDouble[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);}
-							if(buttonLong[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);}
-							this.log('debug','ValidValues',values);
-							Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
-							
-							Serv.getCharacteristic(Characteristic.ServiceLabelIndex).updateValue(Serv.ServiceLabelIndex);
-							Serv.actions={};
-							Serv.infos={};
-							Serv.infos.eventType=cmd.eventType;
-							Serv.cmd_id = cmd.eventType.id;
-							Serv.eqID = eqLogic.id;
-							Serv.subtype = Serv.subtype || '';
-							Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype+numButton;
-							
-							if(!eqLogic.LabelExists) {
-								const tmpHBservice = {
-									controlService : new Service.ServiceLabel(eqLogic.name, eqLogic.id+'_label'),
-									characteristics : [Characteristic.ServiceLabelNamespace],
-								};
-								const Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
-								// let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
-								tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
-								tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
-								eqLogic.LabelExists = tmpHBservice.controlService;
-								HBservices.push(tmpHBservice);
-							}
-							
-							HBservices.push(HBservice);
-							HBservice = null;
+							const Namespace = Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS;
+							// let Namespace = Characteristic.ServiceLabelNamespace.DOTS;
+							tmpHBservice.controlService.getCharacteristic(Characteristic.ServiceLabelNamespace).updateValue(Namespace);
+							tmpHBservice.controlService.cmd_id = eqLogic.id+'_label';
+							eqLogic.LabelExists = tmpHBservice.controlService;
+							HBservices.push(tmpHBservice);
 						}
 						
-					} else {
-						this.log('warn',"Pas le même nombre de boutons pour chaque évènement (il doit y avoir le même nombre de ';')");
+						HBservices.push(HBservice);
+						HBservice = null;
 					}
+					
+				} else {
+					this.log('warn',"Pas le même nombre de boutons pour chaque évènement (il doit y avoir le même nombre de ';')");
 				}
 			});
 		}		
@@ -2412,289 +2378,285 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}		
 		if (eqLogic.services.thermostat) {
 			eqLogic.services.thermostat.forEach((cmd) => {
-				if(cmd.setpoint) {
-					HBservice = {
-						controlService : new Service.Thermostat(eqLogic.name),
-						characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.setpoint=cmd.setpoint;
-					Serv.thermo={};
-					
-					HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
-					Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
-					Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
-					
-					eqServicesCopy.thermostat.forEach((cmd2) => {
-						if (cmd2.state_name) {
-							Serv.infos.state_name=cmd2.state_name;
-						} else if (cmd2.lock) {
-							Serv.infos.lock=cmd2.lock;
-							HBservice.characteristics.push(Characteristic.LockPhysicalControls);
-							Serv.addCharacteristic(Characteristic.LockPhysicalControls);
-							Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
-						} else if (cmd2.mode) {
-							Serv.infos.mode=cmd2.mode;
-						} else if (cmd2.temperature) {
-							Serv.infos.temperature=cmd2.temperature;
-						} else if (cmd2.state) {
-							Serv.infos.state=cmd2.state;
-						} else if (cmd2.set_lock) {
-							Serv.actions.set_lock=cmd2.set_lock;
-						} else if (cmd2.set_unlock) {
-							Serv.actions.set_unlock=cmd2.set_unlock;
-						} else if (cmd2.set_setpoint) {
-							Serv.actions.set_setpoint=cmd2.set_setpoint;
-						}
-					});
+				if (!cmd.setpoint) {return;}
+				HBservice = {
+					controlService : new Service.Thermostat(eqLogic.name),
+					characteristics : [Characteristic.CurrentTemperature, Characteristic.TargetTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.setpoint=cmd.setpoint;
+				Serv.thermo={};
+				
+				HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
+				Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
+				Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
+				
+				eqServicesCopy.thermostat.forEach((cmd2) => {
+					if (cmd2.state_name) {
+						Serv.infos.state_name=cmd2.state_name;
+					} else if (cmd2.lock) {
+						Serv.infos.lock=cmd2.lock;
+						HBservice.characteristics.push(Characteristic.LockPhysicalControls);
+						Serv.addCharacteristic(Characteristic.LockPhysicalControls);
+						Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
+					} else if (cmd2.mode) {
+						Serv.infos.mode=cmd2.mode;
+					} else if (cmd2.temperature) {
+						Serv.infos.temperature=cmd2.temperature;
+					} else if (cmd2.state) {
+						Serv.infos.state=cmd2.state;
+					} else if (cmd2.set_lock) {
+						Serv.actions.set_lock=cmd2.set_lock;
+					} else if (cmd2.set_unlock) {
+						Serv.actions.set_unlock=cmd2.set_unlock;
+					} else if (cmd2.set_setpoint) {
+						Serv.actions.set_setpoint=cmd2.set_setpoint;
+					}
+				});
 
-					var props = {};
-					if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.minValue && parseInt(Serv.actions.set_setpoint.configuration.minValue)) {
-						props.minValue = parseInt(Serv.actions.set_setpoint.configuration.minValue);
-					}
-					if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.maxValue && parseInt(Serv.actions.set_setpoint.configuration.maxValue)) {
-						props.maxValue = parseInt(Serv.actions.set_setpoint.configuration.maxValue);
-					}
-					if(props.minValue && props.maxValue) {
-						Serv.getCharacteristic(Characteristic.TargetTemperature).setProps(props);	
-					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);	
-
-					props = {};
-					props.validValues=[0];
-					if(eqLogic.thermoModes) {
-						if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
-							Serv.thermo.chauf = {};
-							const splitted = eqLogic.thermoModes.Chauf.split('|');
-							Serv.thermo.chauf.mode_label = splitted[1];
-							Serv.thermo.chauf.mode_id = splitted[0];
-							props.validValues.push(1);
-						} else {
-							this.log('warn','Pas de config du mode Chauffage');
-						}
-						if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
-							Serv.thermo.clim = {};
-							const splitted = eqLogic.thermoModes.Clim.split('|');
-							Serv.thermo.clim.mode_label = splitted[1];
-							Serv.thermo.clim.mode_id = splitted[0];
-							props.validValues.push(2);
-						} else {
-							this.log('warn','Pas de config du mode Climatisation');
-						}
-						if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
-							Serv.thermo.off = {};
-							const splitted = eqLogic.thermoModes.Off.split('|');
-							Serv.thermo.off.mode_label = splitted[1];
-							Serv.thermo.off.mode_id = splitted[0];
-						}
-					} else if(this.myPlugin == "homebridge") {
-						this.log('warn','Pas de config des modes du thermostat');
-					}
-					// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
-					props.validValues.push(3);
-					Serv.getCharacteristic(Characteristic.TargetHeatingCoolingState).setProps(props);
-					Serv.cmd_id = cmd.setpoint.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					if(this.fakegato && !eqLogic.hasLogging) {
-						eqLogic.loggingService ={type:"thermo", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
-						eqLogic.hasLogging=true;
-					}
-					HBservices.push(HBservice);
-					HBservice = null;
+				var props = {};
+				if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.minValue && parseInt(Serv.actions.set_setpoint.configuration.minValue)) {
+					props.minValue = parseInt(Serv.actions.set_setpoint.configuration.minValue);
 				}
+				if(Serv.actions.set_setpoint && Serv.actions.set_setpoint.configuration && Serv.actions.set_setpoint.configuration.maxValue && parseInt(Serv.actions.set_setpoint.configuration.maxValue)) {
+					props.maxValue = parseInt(Serv.actions.set_setpoint.configuration.maxValue);
+				}
+				if(props.minValue && props.maxValue) {
+					Serv.getCharacteristic(Characteristic.TargetTemperature).setProps(props);	
+				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);	
+
+				props = {};
+				props.validValues=[0];
+				if(eqLogic.thermoModes) {
+					if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
+						Serv.thermo.chauf = {};
+						const splitted = eqLogic.thermoModes.Chauf.split('|');
+						Serv.thermo.chauf.mode_label = splitted[1];
+						Serv.thermo.chauf.mode_id = splitted[0];
+						props.validValues.push(1);
+					} else {
+						this.log('warn','Pas de config du mode Chauffage');
+					}
+					if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
+						Serv.thermo.clim = {};
+						const splitted = eqLogic.thermoModes.Clim.split('|');
+						Serv.thermo.clim.mode_label = splitted[1];
+						Serv.thermo.clim.mode_id = splitted[0];
+						props.validValues.push(2);
+					} else {
+						this.log('warn','Pas de config du mode Climatisation');
+					}
+					if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
+						Serv.thermo.off = {};
+						const splitted = eqLogic.thermoModes.Off.split('|');
+						Serv.thermo.off.mode_label = splitted[1];
+						Serv.thermo.off.mode_id = splitted[0];
+					}
+				} else if(this.myPlugin == "homebridge") {
+					this.log('warn','Pas de config des modes du thermostat');
+				}
+				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
+				props.validValues.push(3);
+				Serv.getCharacteristic(Characteristic.TargetHeatingCoolingState).setProps(props);
+				Serv.cmd_id = cmd.setpoint.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.fakegato && !eqLogic.hasLogging) {
+					eqLogic.loggingService ={type:"thermo", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
+					eqLogic.hasLogging=true;
+				}
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.thermostatHC) {
 			eqLogic.services.thermostatHC.forEach((cmd) => {
-				if(cmd.setpointH) {
-					HBservice = {
-						controlService : new Service.HeaterCooler(eqLogic.name),
-						characteristics : [Characteristic.CurrentTemperature, Characteristic.CoolingThresholdTemperature, Characteristic.HeatingThresholdTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.setpointH=cmd.setpointH;
-					Serv.thermoHC={};
-					
-					HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
-					Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
-					Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
-					
-					eqServicesCopy.thermostatHC.forEach((cmd2) => {
-						if (cmd2.setpointC) {
-							Serv.infos.setpointC=cmd2.setpointC;
-						} else if (cmd2.state_name) {
-							Serv.infos.state_name=cmd2.state_name;
-						} else if (cmd2.lock) {
-							Serv.infos.lock=cmd2.lock;
-							HBservice.characteristics.push(Characteristic.LockPhysicalControls);
-							Serv.addCharacteristic(Characteristic.LockPhysicalControls);
-							Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
-						} else if (cmd2.mode) {
-							Serv.infos.mode=cmd2.mode;
-						} else if (cmd2.temperature) {
-							Serv.infos.temperature=cmd2.temperature;
-						} else if (cmd2.state) {
-							Serv.infos.state=cmd2.state;
-						} else if (cmd2.set_lock) {
-							Serv.actions.set_lock=cmd2.set_lock;
-						} else if (cmd2.set_unlock) {
-							Serv.actions.set_unlock=cmd2.set_unlock;
-						} else if (cmd2.set_setpointH) {
-							Serv.actions.set_setpointH=cmd2.set_setpointH;
-						} else if (cmd2.set_setpointC) {
-							Serv.actions.set_setpointC=cmd2.set_setpointC;
-						}
-					});
+				if (!cmd.setpointH) {return;}
+				HBservice = {
+					controlService : new Service.HeaterCooler(eqLogic.name),
+					characteristics : [Characteristic.CurrentTemperature, Characteristic.CoolingThresholdTemperature, Characteristic.HeatingThresholdTemperature, Characteristic.CurrentHeatingCoolingState, Characteristic.TargetHeatingCoolingState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.setpointH=cmd.setpointH;
+				Serv.thermoHC={};
+				
+				HBservice.characteristics.push(Characteristic.TemperatureDisplayUnits);
+				Serv.addOptionalCharacteristic(Characteristic.TemperatureDisplayUnits);
+				Serv.getCharacteristic(Characteristic.TemperatureDisplayUnits).updateValue(Characteristic.TemperatureDisplayUnits.CELSIUS);
+				
+				eqServicesCopy.thermostatHC.forEach((cmd2) => {
+					if (cmd2.setpointC) {
+						Serv.infos.setpointC=cmd2.setpointC;
+					} else if (cmd2.state_name) {
+						Serv.infos.state_name=cmd2.state_name;
+					} else if (cmd2.lock) {
+						Serv.infos.lock=cmd2.lock;
+						HBservice.characteristics.push(Characteristic.LockPhysicalControls);
+						Serv.addCharacteristic(Characteristic.LockPhysicalControls);
+						Serv.getCharacteristic(Characteristic.LockPhysicalControls).displayName = cmd2.lock.name;
+					} else if (cmd2.mode) {
+						Serv.infos.mode=cmd2.mode;
+					} else if (cmd2.temperature) {
+						Serv.infos.temperature=cmd2.temperature;
+					} else if (cmd2.state) {
+						Serv.infos.state=cmd2.state;
+					} else if (cmd2.set_lock) {
+						Serv.actions.set_lock=cmd2.set_lock;
+					} else if (cmd2.set_unlock) {
+						Serv.actions.set_unlock=cmd2.set_unlock;
+					} else if (cmd2.set_setpointH) {
+						Serv.actions.set_setpointH=cmd2.set_setpointH;
+					} else if (cmd2.set_setpointC) {
+						Serv.actions.set_setpointC=cmd2.set_setpointC;
+					}
+				});
 
-					var props = {};
-					if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.minValue && parseInt(Serv.actions.set_setpointH.configuration.minValue)) {
-						props.minValue = parseInt(Serv.actions.set_setpointH.configuration.minValue);
-					}
-					if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.maxValue && parseInt(Serv.actions.set_setpointH.configuration.maxValue)) {
-						props.maxValue = parseInt(Serv.actions.set_setpointH.configuration.maxValue);
-					}
-					if(props.minValue && props.maxValue) {
-						Serv.getCharacteristic(Characteristic.HeatingThresholdTemperature).setProps(props);	
-					}
-					props = {};
-					if(Serv.actions.set_setpointC && Serv.actions.set_setpointC.configuration && Serv.actions.set_setpointC.configuration.minValue && parseInt(Serv.actions.set_setpointC.configuration.minValue)) {
-						props.minValue = parseInt(Serv.actions.set_setpointC.configuration.minValue);
-					}
-					if(Serv.actions.set_setpointC && Serv.actions.set_setpointC.configuration && Serv.actions.set_setpointC.configuration.maxValue && parseInt(Serv.actions.set_setpointC.configuration.maxValue)) {
-						props.maxValue = parseInt(Serv.actions.set_setpointC.configuration.maxValue);
-					}
-					if(props.minValue && props.maxValue) {
-						Serv.getCharacteristic(Characteristic.CoolingThresholdTemperature).setProps(props);	
-					}
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);	
-
-					props = {};
-					props.validValues=[0];
-					if(eqLogic.thermoModes) {
-						if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
-							Serv.thermoHC.chauf = {};
-							const splitted = eqLogic.thermoModes.Chauf.split('|');
-							Serv.thermoHC.chauf.mode_label = splitted[1];
-							Serv.thermoHC.chauf.mode_id = splitted[0];
-							props.validValues.push(1);
-						} else {
-							this.log('warn','Pas de config du mode Chauffage');
-						}
-						if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
-							Serv.thermoHC.clim = {};
-							const splitted = eqLogic.thermoModes.Clim.split('|');
-							Serv.thermoHC.clim.mode_label = splitted[1];
-							Serv.thermoHC.clim.mode_id = splitted[0];
-							props.validValues.push(2);
-						} else {
-							this.log('warn','Pas de config du mode Climatisation');
-						}
-						if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
-							Serv.thermoHC.off = {};
-							const splitted = eqLogic.thermoModes.Off.split('|');
-							Serv.thermoHC.off.mode_label = splitted[1];
-							Serv.thermoHC.off.mode_id = splitted[0];
-						}
-					}
-					else if(this.myPlugin == "homebridge") {
-							this.log('warn','Pas de config des modes du thermostatHC');
-					}
-					// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
-					props.validValues.push(3);
-					Serv.getCharacteristic(Characteristic.TargetHeatingCoolingState).setProps(props);
-					Serv.cmd_id = cmd.setpointH.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
+				var props = {};
+				if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.minValue && parseInt(Serv.actions.set_setpointH.configuration.minValue)) {
+					props.minValue = parseInt(Serv.actions.set_setpointH.configuration.minValue);
 				}
+				if(Serv.actions.set_setpointH && Serv.actions.set_setpointH.configuration && Serv.actions.set_setpointH.configuration.maxValue && parseInt(Serv.actions.set_setpointH.configuration.maxValue)) {
+					props.maxValue = parseInt(Serv.actions.set_setpointH.configuration.maxValue);
+				}
+				if(props.minValue && props.maxValue) {
+					Serv.getCharacteristic(Characteristic.HeatingThresholdTemperature).setProps(props);	
+				}
+				props = {};
+				if(Serv.actions.set_setpointC && Serv.actions.set_setpointC.configuration && Serv.actions.set_setpointC.configuration.minValue && parseInt(Serv.actions.set_setpointC.configuration.minValue)) {
+					props.minValue = parseInt(Serv.actions.set_setpointC.configuration.minValue);
+				}
+				if(Serv.actions.set_setpointC && Serv.actions.set_setpointC.configuration && Serv.actions.set_setpointC.configuration.maxValue && parseInt(Serv.actions.set_setpointC.configuration.maxValue)) {
+					props.maxValue = parseInt(Serv.actions.set_setpointC.configuration.maxValue);
+				}
+				if(props.minValue && props.maxValue) {
+					Serv.getCharacteristic(Characteristic.CoolingThresholdTemperature).setProps(props);	
+				}
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);	
+
+				props = {};
+				props.validValues=[0];
+				if(eqLogic.thermoModes) {
+					if(eqLogic.thermoModes.Chauf && eqLogic.thermoModes.Chauf != "NOT") {
+						Serv.thermoHC.chauf = {};
+						const splitted = eqLogic.thermoModes.Chauf.split('|');
+						Serv.thermoHC.chauf.mode_label = splitted[1];
+						Serv.thermoHC.chauf.mode_id = splitted[0];
+						props.validValues.push(1);
+					} else {
+						this.log('warn','Pas de config du mode Chauffage');
+					}
+					if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
+						Serv.thermoHC.clim = {};
+						const splitted = eqLogic.thermoModes.Clim.split('|');
+						Serv.thermoHC.clim.mode_label = splitted[1];
+						Serv.thermoHC.clim.mode_id = splitted[0];
+						props.validValues.push(2);
+					} else {
+						this.log('warn','Pas de config du mode Climatisation');
+					}
+					if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
+						Serv.thermoHC.off = {};
+						const splitted = eqLogic.thermoModes.Off.split('|');
+						Serv.thermoHC.off.mode_label = splitted[1];
+						Serv.thermoHC.off.mode_id = splitted[0];
+					}
+				}
+				else if(this.myPlugin == "homebridge") {
+						this.log('warn','Pas de config des modes du thermostatHC');
+				}
+				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
+				props.validValues.push(3);
+				Serv.getCharacteristic(Characteristic.TargetHeatingCoolingState).setProps(props);
+				Serv.cmd_id = cmd.setpointH.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.mode) {
 			let modeState=null;
 			eqLogic.services.mode.forEach((cmd) => {
-				if(cmd.state) {
-					HBservice = {
-						controlService : new Service.CustomService(eqLogic.name),
-						characteristics : [Characteristic.GenericSTRING],
-					};
-					const Serv = HBservice.controlService;
-					
-					Serv.addCharacteristic(Characteristic.GenericSTRING);
-					Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
-					
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					modeState=cmd.state;
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
-				} 
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.CustomService(eqLogic.name),
+					characteristics : [Characteristic.GenericSTRING],
+				};
+				const Serv = HBservice.controlService;
+				
+				Serv.addCharacteristic(Characteristic.GenericSTRING);
+				Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
+				
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				modeState=cmd.state;
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 			if(modeState) {
 				var set_state_previous = null;
 				eqLogic.services.mode.forEach((cmd) => {
-					if (cmd.set_state) {
-						cmd.set_state.forEach((set_action) => {
-							var ModeName = "";
-							if(set_action.name.toLowerCase().includes('mode') || set_action.name.toLowerCase().includes('modo')) {
-								ModeName = set_action.name;
-							} else {
-								ModeName = "Mode "+set_action.name;
-							}
-							HBservice = {
-								controlService : new Service.Switch(ModeName),
-								characteristics : [Characteristic.On,Characteristic.ConfiguredName],
-							};
-							const Serv = HBservice.controlService;
-							Serv.modeSwitch=set_action.name;
-							Serv.eqLogic=eqLogic;
-							Serv.actions={};
-							Serv.infos={};
-							Serv.infos.state=modeState;
-							
-							Serv.ConfiguredName=ModeName;
-							Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(ModeName);
-							
-							if(!set_state_previous) {
-								eqServicesCopy.mode.forEach((cmd2) => {
-									if (cmd2.set_state_previous) {
-										Serv.actions.set_state_previous=cmd2.set_state_previous;
-										set_state_previous=cmd2.set_state_previous;
-									}
-								});	
-							} else {
-								Serv.actions.set_state_previous=set_state_previous;
-							}
-							
-							Serv.cmd_id = modeState.id;
-							Serv.eqID = eqLogic.id;
-							Serv.subtype = set_action.id || '';
-							Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-							
-							const set_state_name = set_action.name;
-							Serv.actions[set_state_name]={"set_state":set_action};
-							
-							HBservices.push(HBservice);
-							HBservice = null;
-						});
-					}
+					if (!cmd.set_state) {return;}
+					cmd.set_state.forEach((set_action) => {
+						var ModeName = "";
+						if(set_action.name.toLowerCase().includes('mode') || set_action.name.toLowerCase().includes('modo')) {
+							ModeName = set_action.name;
+						} else {
+							ModeName = "Mode "+set_action.name;
+						}
+						HBservice = {
+							controlService : new Service.Switch(ModeName),
+							characteristics : [Characteristic.On,Characteristic.ConfiguredName],
+						};
+						const Serv = HBservice.controlService;
+						Serv.modeSwitch=set_action.name;
+						Serv.eqLogic=eqLogic;
+						Serv.actions={};
+						Serv.infos={};
+						Serv.infos.state=modeState;
+						
+						Serv.ConfiguredName=ModeName;
+						Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(ModeName);
+						
+						if(!set_state_previous) {
+							eqServicesCopy.mode.forEach((cmd2) => {
+								if (cmd2.set_state_previous) {
+									Serv.actions.set_state_previous=cmd2.set_state_previous;
+									set_state_previous=cmd2.set_state_previous;
+								}
+							});	
+						} else {
+							Serv.actions.set_state_previous=set_state_previous;
+						}
+						
+						Serv.cmd_id = modeState.id;
+						Serv.eqID = eqLogic.id;
+						Serv.subtype = set_action.id || '';
+						Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+						
+						const set_state_name = set_action.name;
+						Serv.actions[set_state_name]={"set_state":set_action};
+						
+						HBservices.push(HBservice);
+						HBservice = null;
+					});
 				});
 			} else {
 				this.log('warn','Vous utilisez le type générique Mode en dehors du plugin Mode !');	
@@ -2702,112 +2664,110 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 		if (eqLogic.services.siren) {
 			eqLogic.services.siren.forEach((cmd) => {
-				if(cmd.state) {
-					HBservice = {
-						controlService : new Service.SecuritySystem(eqLogic.name),
-						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.state=cmd.state;
-					Serv.siren=true;
+				if (!cmd.state) {return;}
+				HBservice = {
+					controlService : new Service.SecuritySystem(eqLogic.name),
+					characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.state=cmd.state;
+				Serv.siren=true;
 
-					eqServicesCopy.siren.forEach((cmd2) => {
-						if (cmd2.on) {
-							Serv.actions.on=cmd2.on;
-						} else if (cmd2.off) {
-							Serv.actions.off=cmd2.off;
-						}
-					});
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					// Serv.getCharacteristic(Characteristic.SecuritySystemCurrentState).setProps({validValues:[3,4]});
-					Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps({validValues:[3]});
-					Serv.cmd_id = cmd.state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
-				}
+				eqServicesCopy.siren.forEach((cmd2) => {
+					if (cmd2.on) {
+						Serv.actions.on=cmd2.on;
+					} else if (cmd2.off) {
+						Serv.actions.off=cmd2.off;
+					}
+				});
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				// Serv.getCharacteristic(Characteristic.SecuritySystemCurrentState).setProps({validValues:[3,4]});
+				Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps({validValues:[3]});
+				Serv.cmd_id = cmd.state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 		if (eqLogic.services.alarm) {
 			eqLogic.services.alarm.forEach((cmd) => {
-				if(cmd.enable_state) {
-					HBservice = {
-						controlService : new Service.SecuritySystem(eqLogic.name),
-						characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState],
-					};
-					const Serv = HBservice.controlService;
-					Serv.eqLogic=eqLogic;
-					Serv.actions={};
-					Serv.infos={};
-					Serv.infos.enable_state=cmd.enable_state;
-					Serv.alarm={};
-					eqServicesCopy.alarm.forEach((cmd2) => {
-						if (cmd2.state) {
-							Serv.infos.state=cmd2.state;
-						} else if (cmd2.mode) {
-							Serv.infos.mode=cmd2.mode;
-						}
-					});
-					
-					// add Active, Tampered and Defect Characteristics if needed
-					HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-					
-					var props = {};
-					props.validValues=[];
-					Serv.hasAlarmModes=false;
-					if(eqLogic.alarmModes) {
-						if(eqLogic.alarmModes.SetModePresent && eqLogic.alarmModes.SetModePresent != "NOT") {
-							Serv.alarm.present = {};
-							const splitted = eqLogic.alarmModes.SetModePresent.split('|');
-							Serv.alarm.present.mode_label = splitted[1];
-							Serv.alarm.present.mode_id = splitted[0];
-							props.validValues.push(Characteristic.SecuritySystemTargetState.STAY_ARM);
-							Serv.hasAlarmModes=true;
-						} else {
-							this.log('warn','Pas de config du mode Domicile/Présence');
-						}
-						if(eqLogic.alarmModes.SetModeAbsent && eqLogic.alarmModes.SetModeAbsent != "NOT") {
-							Serv.alarm.away = {};
-							const splitted = eqLogic.alarmModes.SetModeAbsent.split('|');
-							Serv.alarm.away.mode_label = splitted[1];
-							Serv.alarm.away.mode_id = splitted[0];
-							props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
-							Serv.hasAlarmModes=true;
-						} else {
-							this.log('warn','Pas de config du mode À distance/Absence');
-						}
-						if(eqLogic.alarmModes.SetModeNuit && eqLogic.alarmModes.SetModeNuit != "NOT") {
-							Serv.alarm.night = {};
-							const splitted = eqLogic.alarmModes.SetModeNuit.split('|');
-							Serv.alarm.night.mode_label = splitted[1];
-							Serv.alarm.night.mode_id = splitted[0];
-							props.validValues.push(Characteristic.SecuritySystemTargetState.NIGHT_ARM);
-							Serv.hasAlarmModes=true;
-						} else {
-							this.log('warn','Pas de config du mode Nuit');
-						}
+				if (!cmd.enable_state) {return;}
+				HBservice = {
+					controlService : new Service.SecuritySystem(eqLogic.name),
+					characteristics : [Characteristic.SecuritySystemCurrentState, Characteristic.SecuritySystemTargetState],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.infos.enable_state=cmd.enable_state;
+				Serv.alarm={};
+				eqServicesCopy.alarm.forEach((cmd2) => {
+					if (cmd2.state) {
+						Serv.infos.state=cmd2.state;
+					} else if (cmd2.mode) {
+						Serv.infos.mode=cmd2.mode;
 					}
-					if(this.myPlugin == "homebridge" && !Serv.hasAlarmModes) {
+				});
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				var props = {};
+				props.validValues=[];
+				Serv.hasAlarmModes=false;
+				if(eqLogic.alarmModes) {
+					if(eqLogic.alarmModes.SetModePresent && eqLogic.alarmModes.SetModePresent != "NOT") {
+						Serv.alarm.present = {};
+						const splitted = eqLogic.alarmModes.SetModePresent.split('|');
+						Serv.alarm.present.mode_label = splitted[1];
+						Serv.alarm.present.mode_id = splitted[0];
+						props.validValues.push(Characteristic.SecuritySystemTargetState.STAY_ARM);
+						Serv.hasAlarmModes=true;
+					} else {
+						this.log('warn','Pas de config du mode Domicile/Présence');
+					}
+					if(eqLogic.alarmModes.SetModeAbsent && eqLogic.alarmModes.SetModeAbsent != "NOT") {
+						Serv.alarm.away = {};
+						const splitted = eqLogic.alarmModes.SetModeAbsent.split('|');
+						Serv.alarm.away.mode_label = splitted[1];
+						Serv.alarm.away.mode_id = splitted[0];
 						props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
-						this.log('warn','Pas de config des modes de l\'alarme');
+						Serv.hasAlarmModes=true;
+					} else {
+						this.log('warn','Pas de config du mode À distance/Absence');
 					}
-					props.validValues.push(Characteristic.SecuritySystemTargetState.DISARM);
-					Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
-					Serv.cmd_id = cmd.enable_state.id;
-					Serv.eqID = eqLogic.id;
-					Serv.subtype = Serv.subtype || '';
-					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-					HBservices.push(HBservice);
-					HBservice = null;
+					if(eqLogic.alarmModes.SetModeNuit && eqLogic.alarmModes.SetModeNuit != "NOT") {
+						Serv.alarm.night = {};
+						const splitted = eqLogic.alarmModes.SetModeNuit.split('|');
+						Serv.alarm.night.mode_label = splitted[1];
+						Serv.alarm.night.mode_id = splitted[0];
+						props.validValues.push(Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+						Serv.hasAlarmModes=true;
+					} else {
+						this.log('warn','Pas de config du mode Nuit');
+					}
 				}
+				if(this.myPlugin == "homebridge" && !Serv.hasAlarmModes) {
+					props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
+					this.log('warn','Pas de config des modes de l\'alarme');
+				}
+				props.validValues.push(Characteristic.SecuritySystemTargetState.DISARM);
+				Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
+				Serv.cmd_id = cmd.enable_state.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+				HBservice = null;
 			});
 		}
 
