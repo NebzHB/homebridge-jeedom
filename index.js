@@ -6643,7 +6643,7 @@ function RGBtoHSV(r, g, b) {
 // -- id : id to find
 // -- Return : Object found
 function findMyID(obj,id) {
-	if (!obj) return -1;
+	if (!obj) {return -1;}
 	for(const key in obj) {
         if( obj.hasOwnProperty(key) && obj[key] && obj[key].id==id) {
 			return obj[key];
