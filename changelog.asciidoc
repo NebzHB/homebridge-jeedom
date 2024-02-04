@@ -1,5 +1,0 @@
-== Changelog
-
-=== Homebridge
-
-Voir changelog.asciidoc de plugin-homebridge
