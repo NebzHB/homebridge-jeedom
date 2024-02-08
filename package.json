@@ -1,7 +1,7 @@
 {
   "name": "@nebz/homebridge-jeedom",
   "version": "v1.7.0",
-  "cust_serial": "0023",
+  "cust_serial": "0024",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "private":true,
@@ -25,9 +25,9 @@
     "Siri"
   ],
   "dependencies": {
-    "async": "^3.2.5",
-    "axios": ">=1.6.7",
-    "express": "^4.18.2",
+    "async": "3.2.5",
+    "axios": "1.6.7",
+    "express": "4.18.2",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
