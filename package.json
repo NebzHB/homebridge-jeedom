@@ -1,7 +1,7 @@
 {
   "name": "@nebz/homebridge-jeedom",
-  "version": "v1.6.1",
-  "cust_serial": "0009",
+  "version": "v1.7.0",
+  "cust_serial": "0024",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "private":true,
@@ -25,13 +25,15 @@
     "Siri"
   ],
   "dependencies": {
-    "request": ">=2.88.2",
+    "async": "3.2.5",
+    "axios": "1.6.7",
+    "express": "4.18.2",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
-    "@babel/core": ">=7.23.2",
-    "@babel/eslint-parser": "^7.22.15",
-    "eslint": "^8.52.0"
+    "@babel/core": ">=7.23.9",
+    "@babel/eslint-parser": "^7.23.10",
+    "eslint": "^8.56.0"
   },
   "author": "Nebz <nebz@nebz.be>",
   "license": "GPL-2.0",
