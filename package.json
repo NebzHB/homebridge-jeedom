@@ -31,8 +31,7 @@
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
-    "@babel/core": ">=7.24.4",
-    "@babel/eslint-parser": "^7.24.1",
+
     "eslint": "^8.57.0"
   },
   "author": "Nebz <nebz@nebz.be>",
