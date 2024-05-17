@@ -3276,7 +3276,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 									action = 'setValue';
 									const oldValue = value;
 									value = 100 - value;// invert percentage
-									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
+									value = Math.ceil(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
 									if(value > service.infos.state.currentValue) {
 										service.Moving=Characteristic.PositionState.DECREASING;
 									} else if (value != service.infos.state.currentValue) {
@@ -3304,7 +3304,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							action = 'setValue';
 							const oldValue = value;
 							value = 100 - value;// invert percentage
-							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
+							value = Math.ceil(((value / 100)*(service.maxValue-service.minValue))+service.minValue); // transform from percentage to scale
 							if(value > service.infos.state.currentValue) {
 								service.Moving=Characteristic.PositionState.DECREASING;
 							} else if (value != service.infos.state.currentValue) {
@@ -3331,7 +3331,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 								} else {
 									action = 'setValue';
 									const oldValue = value;
-									value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
+									value = Math.ceil(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
 									if(value > service.infos.state.currentValue) {
 										service.Moving=Characteristic.PositionState.INCREASING;
 									} else if (value != service.infos.state.currentValue) {
@@ -3358,7 +3358,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						else if (service.actions.slider) {
 							action = 'setValue';
 							const oldValue = value;
-							value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
+							value = Math.ceil(((value / 100)*(service.maxValue-service.minValue))+service.minValue);// transform from percentage to scale
 							if(value > service.infos.state.currentValue) {
 								service.Moving=Characteristic.PositionState.INCREASING;
 							} else if (value != service.infos.state.currentValue) {
@@ -3390,7 +3390,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							} else {
 								action = 'setValue';
 								const oldValue = value;
-								value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
+								value = Math.ceil(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
 								if(value > service.infos.state) {
 									service.Moving=Characteristic.PositionState.INCREASING;
 								} else if (value != service.infos.state) {
@@ -3415,7 +3415,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 					else if (service.actions.slider) {
 						action = 'setValue';
 						const oldValue = value;
-						value = Math.round(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
+						value = Math.ceil(((value / 100)*(service.maxValue-service.minValue))+service.minValue);
 						if(value > service.infos.state) {
 							service.Moving=Characteristic.PositionState.INCREASING;
 						} else if (value != service.infos.state) {
@@ -4612,7 +4612,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'FLAP_STATE' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
-						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
+						returnValue = Math.ceil(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
 
 						if(service.maxValue == 100) {
 							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
@@ -4625,7 +4625,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					}
 					if (cmd.generic_type == 'FLAP_STATE_CLOSING' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
-						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
+						returnValue = Math.ceil(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
 						
 						if(service.maxValue == 100) {
 							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
@@ -4639,7 +4639,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					}
 					if (cmd.generic_type == 'WINDOW_STATE' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
-						returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
+						returnValue = Math.ceil(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
 
 						if(Math.abs(returnValue - service.TargetValue) <= 1) {service.Moving=Characteristic.PositionState.STOPPED;}
 						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
@@ -4651,7 +4651,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.TargetPosition.UUID :
 				if(service.TargetValue === undefined) {
 					returnValue = parseInt(service.infos.state.currentValue);
-					returnValue = Math.round(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
+					returnValue = Math.ceil(((returnValue-service.minValue) / (service.maxValue-service.minValue))*100);
 
 					if(service.maxValue == 100) {
 						returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
