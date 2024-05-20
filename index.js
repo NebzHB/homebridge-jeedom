@@ -6437,11 +6437,13 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 
 // convert range to percentage
 function rangeToPercentage(value, min, max) {
+	if(min == 0 && max == 100) { return value; }
 	return Math.floor(((value - min) / (max - min)) * 100);
 }
 
 // convert percentage to range
 function percentageToRange(percentage, min, max) {
+	if(min == 0 && max == 100) { return percentage; }
 	return Math.ceil((percentage / 100) * (max - min) + min);
 }
 
