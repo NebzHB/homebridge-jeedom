@@ -4618,7 +4618,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						}
 						
-						if(returnValue === service.TargetValue) {service.Moving=Characteristic.PositionState.STOPPED;}
+						if(Math.abs(returnValue - service.TargetValue) <= 2) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
 						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
 						this.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
@@ -4632,7 +4632,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						}
 						returnValue = 100-returnValue; // invert percentage
 						
-						if(returnValue === service.TargetValue) {service.Moving=Characteristic.PositionState.STOPPED;}
+						if(Math.abs(returnValue - service.TargetValue) <= 2) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
 						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
 						this.log('debug','---------update Inverted Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
@@ -4641,7 +4641,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						returnValue = parseInt(cmd.currentValue);
 						returnValue = rangeToPercentage(returnValue, service.minValue, service.maxValue);
 
-						if(returnValue === service.TargetValue) {service.Moving=Characteristic.PositionState.STOPPED;}
+						if(Math.abs(returnValue - service.TargetValue) <= 2) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
 						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
 						this.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
@@ -6437,11 +6437,13 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 
 // convert range to percentage
 function rangeToPercentage(value, min, max) {
+	if(min == 0 && max == 100) { return value; }
 	return Math.floor(((value - min) / (max - min)) * 100);
 }
 
 // convert percentage to range
 function percentageToRange(percentage, min, max) {
+	if(min == 0 && max == 100) { return percentage; }
 	return Math.ceil((percentage / 100) * (max - min) + min);
 }
 
