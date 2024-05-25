@@ -450,13 +450,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.brightness=cmd2.brightness;
 					}
 				});
-				if (Serv.actions.on && !Serv.actions.off) {this.log('warning','Pas de type générique "Action/Lumière OFF"');}
-				if (!Serv.actions.on && Serv.actions.off) {this.log('warning','Pas de type générique "Action/Lumière ON"');}
-				if (!Serv.actions.on && !Serv.actions.off) {this.log('warning','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
-				if (Serv.infos.color && !Serv.actions.setcolor) {this.log('warning','Pas de type générique "Action/Lumière Couleur"');}
-				if (!Serv.infos.color && Serv.actions.setcolor) {this.log('warning','Pas de type générique "Info/Lumière Couleur"');}
-				if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {this.log('warning','Pas de type générique "Action/Lumière Température Couleur"');}
-				if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) {this.log('warning','Pas de type générique "Info/Lumière Température Couleur"');}
+				if (Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière OFF"');}
+				if (!Serv.actions.on && Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière ON"');}
+				if (!Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
+				if (Serv.infos.color && !Serv.actions.setcolor) {this.log('|warning','Pas de type générique "Action/Lumière Couleur"');}
+				if (!Serv.infos.color && Serv.actions.setcolor) {this.log('|warning','Pas de type générique "Info/Lumière Couleur"');}
+				if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {this.log('|warning','Pas de type générique "Action/Lumière Température Couleur"');}
+				if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) {this.log('|warning','Pas de type générique "Info/Lumière Température Couleur"');}
 				
 				if(Serv.actions.slider) {
 					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
@@ -468,7 +468,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.Brightness);
 					Serv.addCharacteristic(Characteristic.Brightness);
 				} else {
-					this.log('info','La lumière n\'a pas de variateur');
+					this.log('|info','La lumière n\'a pas de variateur');
 				}
 				if(Serv.infos.color) {
 					LightType += "_RGB";
@@ -507,7 +507,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							LightType+=Serv.colorTempType;
 						}
 					} else {
-						this.log('error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
+						this.log('|error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
 						props.minValue = 0; // if not set in Jeedom it's 0
 						props.maxValue = 20000; // if not set in Jeedom it's 100
 					}
@@ -529,7 +529,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
 				
-				this.log('info','La lumière est du type :',LightType);
+				this.log('|info','La lumière est du type :',LightType);
 				Serv.LightType = LightType;
 				Serv.cmd_id = cmd.state.id;
 				Serv.eqID = eqLogic.id;
@@ -538,7 +538,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Lumière Etat"');
+				this.log('|warning','Pas de type générique "Info/Lumière Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -596,14 +596,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.VerTiltState = cmd2.VerTiltState;
 					}
 				});
-				if(Serv.actions.up && !Serv.actions.down) {this.log('warning','Pas de type générique "Action/Volet Bouton Descendre"');}
-				if(!Serv.actions.up && Serv.actions.down) {this.log('warning','Pas de type générique "Action/Volet Bouton Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down) {this.log('warning','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warning','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');}
-				if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) {this.log('warning','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');}
-				if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) {this.log('warning','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');}
-				if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {this.log('warning','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
-				if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {this.log('warning','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
+				if(Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Volet Bouton Descendre"');}
+				if(!Serv.actions.up && Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Volet Bouton Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('|warning','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');}
+				if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) {this.log('|warning','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');}
+				if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) {this.log('|warning','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');}
+				if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {this.log('|warning','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
+				if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {this.log('|warning','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
 				Serv.minValue=0;
 				if(Serv.infos.state.subType == 'binary') {
 					Serv.maxValue=1;
@@ -638,7 +638,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.TargetHorizontalTiltAngle);
 					Serv.addCharacteristic(Characteristic.TargetHorizontalTiltAngle);
 					Serv.getCharacteristic(Characteristic.TargetHorizontalTiltAngle).setProps(props);
-					this.log('debug','Horizontal Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.HorTiltSlider.configuration));
+					this.log('|debug','Horizontal Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.HorTiltSlider.configuration));
 				}
 				
 				if(Serv.actions.VerTiltSlider) {
@@ -660,7 +660,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.TargetVerticalTiltAngle);
 					Serv.addCharacteristic(Characteristic.TargetVerticalTiltAngle);
 					Serv.getCharacteristic(Characteristic.TargetVerticalTiltAngle).setProps(props);
-					this.log('debug','Vertical Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.VerTiltSlider.configuration));
+					this.log('|debug','Vertical Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.VerTiltSlider.configuration));
 				}
 				
 				// add Active, Tampered and Defect Characteristics if needed
@@ -674,7 +674,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture" on regarde s\'il y a uniquement les boutons...');
+				this.log('|warning','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture" on regarde s\'il y a uniquement les boutons...');
 				eqLogic.services.flap.forEach((cmd) => {
 					if (cmd.up) {
 						const SwitchName=cmd.up.name;
@@ -757,7 +757,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 				});
 				if(!HBservice) {
-					this.log('warning','Pas de type générique "Action/Volet Bouton Monter" ou "Action/Volet Bouton Descendre" ou "Action/Volet Bouton Stop"');
+					this.log('|warning','Pas de type générique "Action/Volet Bouton Monter" ou "Action/Volet Bouton Descendre" ou "Action/Volet Bouton Stop"');
 				} else {
 					HBservice = null;
 				}
@@ -789,10 +789,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				});
 				Serv.maxValue = 100; // if not set in Jeedom it's 100
 				Serv.minValue = 0; // if not set in Jeedom it's 0
-				if(Serv.actions.up && !Serv.actions.down) {this.log('warning','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
-				if(!Serv.actions.up && Serv.actions.down) {this.log('warning','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down) {this.log('warning','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warning','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');}
+				if(Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
+				if(!Serv.actions.up && Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');}
 				if(Serv.actions.slider) {
 					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 						Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
@@ -812,7 +812,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Fenêtre Motorisée Etat"');
+				this.log('|warning','Pas de type générique "Info/Fenêtre Motorisée Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -838,8 +838,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.inuse = cmd2.inuse;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warning','Pas de type générique "Action/Prise Bouton On"');}
-				if(!Serv.actions.off) {this.log('warning','Pas de type générique "Action/Prise Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Prise Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Prise Bouton Off"');}
 				// Test for AdminOnlyAccess, state need to have OwnerOnly attribute to True ou 1
 				if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
 				// add Active, Tampered and Defect Characteristics if needed
@@ -852,7 +852,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Prise Etat"');
+				this.log('|warning','Pas de type générique "Info/Prise Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -878,8 +878,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.off = cmd2.off;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warning','Pas de type générique "Action/Robinet Bouton On"');}
-				if(!Serv.actions.off) {this.log('warning','Pas de type générique "Action/Robinet Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Robinet Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Robinet Bouton Off"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -891,7 +891,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Robinet Etat"');
+				this.log('|warning','Pas de type générique "Info/Robinet Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -917,8 +917,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.off = cmd2.off;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warning','Pas de type générique "Action/Irrigation Bouton On"');}
-				if(!Serv.actions.off) {this.log('warning','Pas de type générique "Action/Irrigation Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Irrigation Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Irrigation Bouton Off"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -930,7 +930,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Irrigation Etat"');
+				this.log('|warning','Pas de type générique "Info/Irrigation Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -960,8 +960,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.remainingDuration = cmd2.remainingDuration;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warning','Pas de type générique "Action/Valve générique Bouton On"');}
-				if(!Serv.actions.off) {this.log('warning','Pas de type générique "Action/Valve générique Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Valve générique Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Valve générique Bouton Off"');}
 				
 				if(Serv.actions.setDuration) {
 					HBservice.characteristics.push(Characteristic.SetDuration);
@@ -982,7 +982,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Valve générique Etat"');
+				this.log('|warning','Pas de type générique "Info/Valve générique Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -1011,9 +1011,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.slider=cmd2.slider;
 					}
 				});
-				if (Serv.actions.on && !Serv.actions.off) {this.log('warning','Pas de type générique "Action/Ventilateur OFF"');}
-				if (!Serv.actions.on && Serv.actions.off) {this.log('warning','Pas de type générique "Action/Ventilateur ON"');}
-				if (!Serv.actions.on && !Serv.actions.off) {this.log('warning','Pas de type générique "Action/Ventilateur ON" et "Action/Ventilateur OFF"');}
+				if (Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Ventilateur OFF"');}
+				if (!Serv.actions.on && Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Ventilateur ON"');}
+				if (!Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Ventilateur ON" et "Action/Ventilateur OFF"');}
 				
 				if(Serv.actions.slider) {
 					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
@@ -1025,13 +1025,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.RotationSpeed);
 					Serv.addCharacteristic(Characteristic.RotationSpeed);
 				} else {
-					this.log('info','Le ventilateur n\'a pas de variateur');
+					this.log('|info','Le ventilateur n\'a pas de variateur');
 				}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
 				
-				this.log('info','Le ventilateur est du type :',FanType+((maxPower)?','+maxPower:''));
+				this.log('|info','Le ventilateur est du type :',FanType+((maxPower)?','+maxPower:''));
 				Serv.FanType = FanType;
 				Serv.maxPower = maxPower;
 				Serv.cmd_id = cmd.state.id;
@@ -1041,7 +1041,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Ventilateur Etat"');
+				this.log('|warning','Pas de type générique "Info/Ventilateur Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -1051,7 +1051,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (!cmd.state) {return;}
 				let SwitchName = eqLogic.name;
 				if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
-					this.log('debug',"Switchs multiples dans même équipement, il y en a "+eqLogic.numSwitches);
+					this.log('|debug',"Switchs multiples dans même équipement, il y en a "+eqLogic.numSwitches);
 					SwitchName=cmd.state.name;
 				}
 				HBservice = {
@@ -1060,7 +1060,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				};
 				const Serv = HBservice.controlService;
 				if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
-					this.log('debug',"Nom du switch (multi) : "+SwitchName);
+					this.log('|debug',"Nom du switch (multi) : "+SwitchName);
 					Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 					
 					Serv.ConfiguredName=SwitchName;
@@ -1091,8 +1091,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					}
 				});
-				if(!Serv.actions.on) {this.log('warning','Pas de type générique "Action/Interrupteur Bouton On"');}
-				if(!Serv.actions.off) {this.log('warning','Pas de type générique "Action/Interrupteur Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton Off"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -1114,7 +1114,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Interrupteur Etat"');
+				this.log('|warning','Pas de type générique "Info/Interrupteur Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -1147,7 +1147,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','La Commande Action associée doit être du type "Autre"');
+				this.log('|warning','La Commande Action associée doit être du type "Autre"');
 			} else {
 				HBservice = null;
 			}
@@ -1364,35 +1364,35 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(eqLogic.customizedValues.EXCELLENT && eqLogic.customizedValues.EXCELLENT != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.customizedValues.EXCELLENT);
 					} else {
-						this.log('warning',"Pas de config de la valeur 'Excellent', on la défini sur 50");
+						this.log('|warning',"Pas de config de la valeur 'Excellent', on la défini sur 50");
 						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
 					}
 					if(eqLogic.customizedValues.GOOD && eqLogic.customizedValues.GOOD != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.customizedValues.GOOD);
 					} else {
-						this.log('warning',"Pas de config de la valeur 'Bon', on la défini sur 100");
+						this.log('|warning',"Pas de config de la valeur 'Bon', on la défini sur 100");
 						Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
 					}
 					if(eqLogic.customizedValues.FAIR && eqLogic.customizedValues.FAIR != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.customizedValues.FAIR);
 					} else {
-						this.log('warning',"Pas de config de la valeur 'Moyen', on la défini sur 150");
+						this.log('|warning',"Pas de config de la valeur 'Moyen', on la défini sur 150");
 						Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
 					}
 					if(eqLogic.customizedValues.INFERIOR && eqLogic.customizedValues.INFERIOR != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.customizedValues.INFERIOR);
 					} else {
-						this.log('warning',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
+						this.log('|warning',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
 						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
 					}
 					if(eqLogic.customizedValues.POOR && eqLogic.customizedValues.POOR != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.customizedValues.POOR);
 					} else {
-						this.log('warning',"Pas de config de la valeur 'Faible', on la défini sur 1000");
+						this.log('|warning',"Pas de config de la valeur 'Faible', on la défini sur 1000");
 						Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
 					}
 				} else if(this.myPlugin == "homebridge") {
-					this.log('warning',"Pas de config numérique des valeurs que qualité d'air");
+					this.log('|warning',"Pas de config numérique des valeurs que qualité d'air");
 				}
 
 				
@@ -1479,7 +1479,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (!cmd.presence) {return;}
 				let SensorName=eqLogic.name;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
+					this.log('|debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
 					SensorName=cmd.presence.name;
 				}
 				HBservice = {
@@ -1488,7 +1488,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				};
 				const Serv = HBservice.controlService;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Nom du détecteur (multi) : "+SensorName);
+					this.log('|debug',"Nom du détecteur (multi) : "+SensorName);
 					Serv.getCharacteristic(Characteristic.MotionDetected).displayName = SensorName;
 					
 					Serv.ConfiguredName=SensorName;
@@ -1533,7 +1533,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (!cmd.occupancy) {return;}
 				let SensorName=eqLogic.name;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
+					this.log('|debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
 					SensorName=cmd.occupancy.name;
 				}
 				HBservice = {
@@ -1542,7 +1542,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				};
 				const Serv = HBservice.controlService;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Nom du détecteur (multi) : "+SensorName);
+					this.log('|debug',"Nom du détecteur (multi) : "+SensorName);
 					Serv.getCharacteristic(Characteristic.OccupancyDetected).displayName = SensorName;
 					
 					Serv.ConfiguredName=SensorName;
@@ -1587,7 +1587,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				var props = {};
 				var unite = '';
 				if(cmd.state.subType=="numeric") {
-					this.log('debug','Le générique',cmd.state.name,'est un numérique');
+					this.log('|debug','Le générique',cmd.state.name,'est un numérique');
 					// test if default value is Float or Int ?
 					var CharactToSet=Characteristic.GenericFLOAT;
 					var NumericGenericType='float';
@@ -1595,7 +1595,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						CharactToSet=Characteristic.GenericINT;
 						NumericGenericType='int';
 					}
-					this.log('debug','Sur base de sa valeur actuelle',cmd.state.currentValue,', on determine un type :',NumericGenericType);
+					this.log('|debug','Sur base de sa valeur actuelle',cmd.state.currentValue,', on determine un type :',NumericGenericType);
 					HBservice.characteristics.push(CharactToSet);
 					Serv.addCharacteristic(CharactToSet);
 					Serv.getCharacteristic(CharactToSet).displayName = cmd.state.name;
@@ -1612,16 +1612,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					}
 					if(Object.keys(props).length !== 0) {
-						this.log('debug','On lui set les props suivants :',props);
+						this.log('|debug','On lui set les props suivants :',props);
 						Serv.getCharacteristic(CharactToSet).setProps(props);
 					}
 				} else if (cmd.state.subType=="binary") {
-					this.log('debug','Le générique',cmd.state.name,'est un booléen');
+					this.log('|debug','Le générique',cmd.state.name,'est un booléen');
 					HBservice.characteristics.push(Characteristic.GenericBOOL);
 					Serv.addCharacteristic(Characteristic.GenericBOOL);
 					Serv.getCharacteristic(Characteristic.GenericBOOL).displayName = cmd.state.name;
 				} else if (cmd.state.subType=="string" || cmd.state.subType=="other") {
-					this.log('debug','Le générique',cmd.state.name,'est une chaîne');
+					this.log('|debug','Le générique',cmd.state.name,'est une chaîne');
 					HBservice.characteristics.push(Characteristic.GenericSTRING);
 					Serv.addCharacteristic(Characteristic.GenericSTRING);
 					Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
@@ -1629,7 +1629,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					unite = cmd.state.unite ? cmd.state.unite : '';
 					if(unite) {props.unit=unite;}
 					if(Object.keys(props).length !== 0) {
-						this.log('debug','On lui set les props suivants :',props);
+						this.log('|debug','On lui set les props suivants :',props);
 						Serv.getCharacteristic(Characteristic.GenericSTRING).setProps(props);
 					}
 				}					
@@ -1686,10 +1686,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.mute=cmd2.mute;
 					}
 				});
-				if(!Serv.actions.set_volume) {this.log('warning','Pas de type générique "Action/Haut-Parleur Volume"');}
-				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) {this.log('warning','Pas de type générique "Action/Haut-Parleur Mute"');}
-				if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warning','Pas de type générique "Action/Haut-Parleur UnMute"');}
-				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warning','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');}
+				if(!Serv.actions.set_volume) {this.log('|warning','Pas de type générique "Action/Haut-Parleur Volume"');}
+				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) {this.log('|warning','Pas de type générique "Action/Haut-Parleur Mute"');}
+				if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('|warning','Pas de type générique "Action/Haut-Parleur UnMute"');}
+				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('|warning','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');}
 				Serv.cmd_id = cmd.volume.id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
@@ -1697,7 +1697,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Haut-Parleur Volume"');
+				this.log('|warning','Pas de type générique "Info/Haut-Parleur Volume"');
 			} else {
 				HBservice = null;
 			}
@@ -1938,9 +1938,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.toggle = cmd2.toggle;
 					}
 				});
-				if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) {this.log('warning','Pas de type générique "Action/Portail ou garage bouton d\'ouverture"');}
-				if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {this.log('warning','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
-				if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {this.log('warning','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
+				if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Portail ou garage bouton d\'ouverture"');}
+				if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
+				if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
 								
 				if(eqLogic.customizedValues) {
 					Serv.customizedValues = eqLogic.customizedValues;
@@ -1956,7 +1956,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
+				this.log('|warning','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
 			} else {
 				HBservice = null;
 			}
@@ -1980,8 +1980,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.off = cmd2.off;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warning','Pas de type générique "Action/Serrure Bouton Ouvrir"');}
-				// if(!Serv.actions.off) {this.log('warning','Pas de type générique "Action/Serrure Bouton Fermer"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Serrure Bouton Ouvrir"');}
+				// if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Serrure Bouton Fermer"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -1993,7 +1993,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warning','Pas de type générique "Info/Serrure Etat"');
+				this.log('|warning','Pas de type générique "Info/Serrure Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -2039,7 +2039,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(buttonSingle[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);}
 						if(buttonDouble[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);}
 						if(buttonLong[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);}
-						this.log('debug','ValidValues',values);
+						this.log('|debug','ValidValues',values);
 						Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 						
 						Serv.getCharacteristic(Characteristic.ServiceLabelIndex).updateValue(Serv.ServiceLabelIndex);
@@ -2069,7 +2069,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					
 				} else {
-					this.log('warning',"Pas le même nombre de boutons pour chaque évènement (il doit y avoir le même nombre de ';')");
+					this.log('|warning',"Pas le même nombre de boutons pour chaque évènement (il doit y avoir le même nombre de ';')");
 				}
 			});
 		}		
@@ -2126,7 +2126,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 											Serv.cmd_id += Serv.infos.Long.id;
 										break;
 									}
-									this.log('debug','ValidValues 0 Mono',values);
+									this.log('|debug','ValidValues 0 Mono',values);
 									Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 
 									
@@ -2182,7 +2182,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 								Serv.infos.Long=cmdType.Long;
 								Serv.cmd_id += Serv.infos.Long.id;
 							}
-							this.log('debug','ValidValues '+b+' Mono',values);
+							this.log('|debug','ValidValues '+b+' Mono',values);
 							Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 
 							
@@ -2440,7 +2440,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermo.chauf.mode_id = splitted[0];
 						props.validValues.push(1);
 					} else {
-						this.log('warning','Pas de config du mode Chauffage');
+						this.log('|warning','Pas de config du mode Chauffage');
 					}
 					if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
 						Serv.thermo.clim = {};
@@ -2449,7 +2449,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermo.clim.mode_id = splitted[0];
 						props.validValues.push(2);
 					} else {
-						this.log('warning','Pas de config du mode Climatisation');
+						this.log('|warning','Pas de config du mode Climatisation');
 					}
 					if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
 						Serv.thermo.off = {};
@@ -2458,7 +2458,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermo.off.mode_id = splitted[0];
 					}
 				} else if(this.myPlugin == "homebridge") {
-					this.log('warning','Pas de config des modes du thermostat');
+					this.log('|warning','Pas de config des modes du thermostat');
 				}
 				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
 				props.validValues.push(3);
@@ -2553,7 +2553,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermoHC.chauf.mode_id = splitted[0];
 						props.validValues.push(1);
 					} else {
-						this.log('warning','Pas de config du mode Chauffage');
+						this.log('|warning','Pas de config du mode Chauffage');
 					}
 					if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
 						Serv.thermoHC.clim = {};
@@ -2562,7 +2562,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermoHC.clim.mode_id = splitted[0];
 						props.validValues.push(2);
 					} else {
-						this.log('warning','Pas de config du mode Climatisation');
+						this.log('|warning','Pas de config du mode Climatisation');
 					}
 					if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
 						Serv.thermoHC.off = {};
@@ -2572,7 +2572,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 				}
 				else if(this.myPlugin == "homebridge") {
-						this.log('warning','Pas de config des modes du thermostatHC');
+						this.log('|warning','Pas de config des modes du thermostatHC');
 				}
 				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
 				props.validValues.push(3);
@@ -2659,7 +2659,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 				});
 			} else {
-				this.log('warning','Vous utilisez le type générique Mode en dehors du plugin Mode !');	
+				this.log('|warning','Vous utilisez le type générique Mode en dehors du plugin Mode !');	
 			}
 		}
 		if (eqLogic.services.siren) {
@@ -2733,7 +2733,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						props.validValues.push(Characteristic.SecuritySystemTargetState.STAY_ARM);
 						Serv.hasAlarmModes=true;
 					} else {
-						this.log('warning','Pas de config du mode Domicile/Présence');
+						this.log('|warning','Pas de config du mode Domicile/Présence');
 					}
 					if(eqLogic.alarmModes.SetModeAbsent && eqLogic.alarmModes.SetModeAbsent != "NOT") {
 						Serv.alarm.away = {};
@@ -2743,7 +2743,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
 						Serv.hasAlarmModes=true;
 					} else {
-						this.log('warning','Pas de config du mode À distance/Absence');
+						this.log('|warning','Pas de config du mode À distance/Absence');
 					}
 					if(eqLogic.alarmModes.SetModeNuit && eqLogic.alarmModes.SetModeNuit != "NOT") {
 						Serv.alarm.night = {};
@@ -2753,12 +2753,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						props.validValues.push(Characteristic.SecuritySystemTargetState.NIGHT_ARM);
 						Serv.hasAlarmModes=true;
 					} else {
-						this.log('warning','Pas de config du mode Nuit');
+						this.log('|warning','Pas de config du mode Nuit');
 					}
 				}
 				if(this.myPlugin == "homebridge" && !Serv.hasAlarmModes) {
 					props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
-					this.log('warning','Pas de config des modes de l\'alarme');
+					this.log('|warning','Pas de config des modes de l\'alarme');
 				}
 				props.validValues.push(Characteristic.SecuritySystemTargetState.DISARM);
 				Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
@@ -2772,7 +2772,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 
 		if (HBservices.length != 0) {
-			if (DEV_DEBUG) {this.log('debug','HBservices : '+JSON.stringify(HBservices));}
+			if (DEV_DEBUG) {this.log('|debug','HBservices : '+JSON.stringify(HBservices));}
 			createdAccessory = this.createAccessory(HBservices, eqLogic);
 			this.addAccessory(createdAccessory);
 			HBservices = [];
@@ -2884,7 +2884,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 		if (!jeedomAccessory) {
 			return;
 		}
-		if(!silence) {this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');}
+		if(!silence) {this.log('|debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');}
 		existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
 		if(existingAccessory)
 		{
@@ -2894,7 +2894,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 			existingAccessory.reviewed=true;
 		}
 		else if(!silence) {
-			this.log('│ KO : Accessoire Ignoré');
+			this.log('│  KO  : Accessoire Ignoré');
 		}
 	}
 	catch(e){
@@ -2917,7 +2917,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		if (!jeedomAccessory) {return;}
 		let isNewAccessory = false;
 		const services2Add = jeedomAccessory.services_add;
-		this.log('debug'," Vérification d'existance de l'accessoire dans le cache Homebridge...");
+		this.log('|debug'," Vérification d'existance de l'accessoire dans le cache Homebridge...");
 		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
@@ -2965,7 +2965,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
 			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
 			// HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
-			this.log('debug',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+			this.log('|debug',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
 		}
 										
 		if(HBAccessory.context.eqLogic.hasAdaptive) {
@@ -2977,10 +2977,10 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		
 		if (isNewAccessory) {
-			this.log('│ OK : Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│  OK  : Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			this.log('│ OK : Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│  OK  : Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
 		HBAccessory.on('identify', (paired, callback) => {
@@ -3008,11 +3008,11 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence=false) {
 	try{
 		for (const key of Object.keys(this.accessories)) {
 			if (this.accessories[key].UUID == UUID) {
-				if(!silence) {this.log('debug',' Accessoire déjà existant dans le cache Homebridge');}
+				if(!silence) {this.log('|debug',' Accessoire déjà existant dans le cache Homebridge');}
 				return this.accessories[key];
 			}
 		}
-		if(!silence) {this.log('debug',' Accessoire non existant dans le cache Homebridge');}
+		if(!silence) {this.log('|debug',' Accessoire non existant dans le cache Homebridge');}
 		return null;
 	}
 	catch(e){
@@ -6370,7 +6370,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 			service = services[s];
 			
 			if(!newAccessory.getService(service.controlService)){// not exist ?
-				this.log('debug',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+				this.log('|debug',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
 				newAccessory.addService(service.controlService);
 				for (var i = 0; i < service.characteristics.length; i++) {
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
@@ -6390,7 +6390,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 						characteristic.props.minStep = 0.01;
 					}
 					this.platform.bindCharacteristicEvents(characteristic, service.controlService);
-					this.log('debug','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
+					this.log('|debug','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 				}
 			} else {
 				this.log('debug','On essaye d\'ajouter un service mais il existe déjà : ',service.controlService);
@@ -6418,9 +6418,9 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	
 		serviceList.forEach((svc) => {
 			service=svc;
-			this.log('debug', ' Suppression service :' + service.displayName + ' subtype:' + service.subtype + ' UUID:' + service.UUID);
+			this.log('|debug', ' Suppression service :' + service.displayName + ' subtype:' + service.subtype + ' UUID:' + service.UUID);
 			service.characteristics.forEach((c) => {
-				this.log('debug', '    Caractéristique :' + c.displayName + ' valeur cache:' + c.value);
+				this.log('|debug', '    Caractéristique :' + c.displayName + ' valeur cache:' + c.value);
 				cachedValues[service.subtype + c.displayName] = c.value;
 			});
 			accessory.removeService(service);
