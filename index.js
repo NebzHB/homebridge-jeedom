@@ -3175,7 +3175,23 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							}
 						}
 					}
-					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+					if(value == 0) {
+						if(service.actions.off) {
+							this.command('turnOff', null, service);
+						} else if(service.actions.slider && service.LightType) {
+							this.command('setValueBright', 0, service);
+						} else {
+							this.command('turnOff', null, service);
+						}
+					else {
+						if(service.actions.on) {
+							this.command('turnOn', null, service);
+						} else if(service.actions.slider && service.LightType) {
+							this.command('setValueBright', service.maxBright, service);
+						} else {
+							this.command('turnOn', null, service);
+						}
+					}
 				}
 			break;	
 			case Characteristic.Active.UUID :
