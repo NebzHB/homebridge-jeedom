@@ -419,7 +419,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				let LightType="Switch";
 				HBservice = {
 					controlService : new Service.Lightbulb(eqLogic.name),
-					characteristics : [Characteristic.On],
+					characteristics : [],
 				};
 				const Serv = HBservice.controlService;
 				Serv.eqLogic=eqLogic;
@@ -453,6 +453,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière OFF"');}
 				if (!Serv.actions.on && Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière ON"');}
 				if (!Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
+				else {
+					HBservice.characteristics.push(Characteristic.On);
+					Serv.addCharacteristic(Characteristic.On);
+				}
 				if (Serv.infos.color && !Serv.actions.setcolor) {this.log('|warning','Pas de type générique "Action/Lumière Couleur"');}
 				if (!Serv.infos.color && Serv.actions.setcolor) {this.log('|warning','Pas de type générique "Info/Lumière Couleur"');}
 				if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {this.log('|warning','Pas de type générique "Action/Lumière Température Couleur"');}
