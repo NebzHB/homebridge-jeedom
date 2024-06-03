@@ -3183,7 +3183,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						} else {
 							this.command('turnOff', null, service);
 						}
-					else {
+					} else {
 						if(service.actions.on) {
 							this.command('turnOn', null, service);
 						} else if(service.actions.slider && service.LightType) {
