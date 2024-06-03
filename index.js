@@ -3186,7 +3186,7 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						}
 					} else {
 						// if we want to turn the switch on
-						this.log('nothing','');
+						let doNothing="";
 						if(service.actions.on) {
 							this.command('turnOn', null, service);
 						} else if(service.actions.slider && service.LightType) {
