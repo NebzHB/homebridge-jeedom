@@ -16,7 +16,7 @@
 /* jshint esversion: 11,node: true,-W041: false */
 'use strict';
 
-let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
+let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen, Units, Formats, Perms, FakeGatoHistoryService;
 const fs = require('fs');
 const inherits = require('util').inherits;
 const myLogger = require('./lib/myLogger').myLogger;
@@ -29,7 +29,6 @@ debug.WARNING = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
 let hasError = false;
-let FakeGatoHistoryService;
 let DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
@@ -39,6 +38,9 @@ module.exports = function(homebridge) {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 	Access = homebridge.hap.Access;
+	Units = homebridge.hap.Units;
+	Formats = homebridge.hap.Formats;
+	Perms = homebridge.hap.Perms;
 	AdaptiveLightingController = homebridge.hap.AdaptiveLightingController;
 	UUIDGen = homebridge.hap.uuid;
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
@@ -2941,10 +2943,6 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			const exec = require('child_process').exec;
 			exec('sudo rm -f '+this.pathHomebridgeConf+'*_persist.json');
 		}
-
-		// No more supported by HAP-NodeJS
-		// HBAccessory.reachable = true;
-		// HBAccessory.updateReachability(true);
 		
 		if(!isNewAccessory) {
 			const cachedValues=jeedomAccessory.delServices(HBAccessory);
@@ -5025,34 +5023,34 @@ function sanitizeValue(currentValue,characteristic) {
 	}
 	
 	switch(characteristic.props.format) {
-			case Characteristic.Formats.UINT8 :
-			case Characteristic.Formats.UINT16:
-			case Characteristic.Formats.UINT32 :
-			case Characteristic.Formats.UINT64 :
+			case Formats.UINT8 :
+			case Formats.UINT16:
+			case Formats.UINT32 :
+			case Formats.UINT64 :
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
 				if(!val) {val = 0;}
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) {val = parseInt(characteristic.props.minValue);}
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) {val = parseInt(characteristic.props.maxValue);}		
 			break;
-			case Characteristic.Formats.INT :
+			case Formats.INT :
 				val = parseInt(currentValue);
 				if(!val) {val = 0;}
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) {val = parseInt(characteristic.props.minValue);}
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) {val = parseInt(characteristic.props.maxValue);}	
 			break;
-			case Characteristic.Formats.FLOAT :
+			case Formats.FLOAT :
 				val = minStepRound(parseFloat(currentValue),characteristic);
 				if(!val) {val = 0.0;}
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) {val = parseFloat(characteristic.props.minValue);}
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) {val = parseFloat(characteristic.props.maxValue);}	
 			break;
-			case Characteristic.Formats.BOOL :
+			case Formats.BOOL :
 				val = toBool(currentValue);
 				if(!val) {val = false;}
 			break;
-			case Characteristic.Formats.STRING :
-			case Characteristic.Formats.TLV8 :
+			case Formats.STRING :
+			case Formats.TLV8 :
 				if(currentValue !== undefined) {
 					val = currentValue.toString();
 				}
@@ -5841,12 +5839,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.TimeInterval = function() {
 		Characteristic.call(this, 'Time Interval', '2A6529B5-5825-4AF3-AD52-20288FBDA115');
 		this.setProps({
-			format : Characteristic.Formats.FLOAT,
-			unit : Characteristic.Units.SECONDS,
+			format : Formats.FLOAT,
+			unit : Units.SECONDS,
 			maxValue : 21600, // 12 hours
 			minValue : 0,
 			minStep : 900, // 15 min
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY],
+			perms : [Perms.READ, Perms.WRITE, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5856,12 +5854,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.CurrentPowerConsumption = function() {
 		Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format : Characteristic.Formats.UINT16,
+			format : Formats.UINT16,
 			unit : 'Watts',
 			maxValue : 100000,
 			minValue : -100000,
 			minStep : 1,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms : [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5871,12 +5869,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.TotalPowerConsumption = function() {
 		Characteristic.call(this, 'Total Consumption', 'E863F10C-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format : Characteristic.Formats.FLOAT, // Deviation from Eve Energy observed type
+			format : Formats.FLOAT, // Deviation from Eve Energy observed type
 			unit : 'kWh',
 			maxValue : 100000000000,
 			minValue : 0,
 			minStep : 0.001,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms : [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5886,11 +5884,11 @@ function RegisterCustomCharacteristics() {
 	Characteristic.UVIndex = function() {
 		Characteristic.call(this, 'UV Index', '05ba0fe0-b848-4226-906d-5b64272e05ce');
 		this.setProps({
-			format: Characteristic.Formats.UINT8,
+			format: Formats.UINT8,
 			maxValue: 10,
 			minValue: 0,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms: [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5900,12 +5898,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AirPressure = function() {
 		Characteristic.call(this, 'Air Pressure', 'E863F10F-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT16,
+			format: Formats.UINT16,
 			unit: "hPa",
 			maxValue: 1100,
 			minValue: 700,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms: [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5916,8 +5914,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.TimesOpened = function() {
 		Characteristic.call(this, 'TimesOpened', 'E863F129-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.UINT32,
+			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5927,8 +5925,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Char118 = function() {
 		Characteristic.call(this, 'Char118', 'E863F118-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.UINT32,
+			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5938,8 +5936,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Char119 = function() {
 		Characteristic.call(this, 'Char119', 'E863F119-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.UINT32,
+			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5949,8 +5947,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.LastActivation = function() {
 		Characteristic.call(this, 'LastActivation', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.UINT32,
+			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5960,8 +5958,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.ResetTotal = function() {
 		Characteristic.call(this, 'ResetTotal', 'E863F112-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.UINT32,
+			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5973,11 +5971,11 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Sensitivity = function() {
 		Characteristic.call(this, 'Sensitivity', 'E863F120-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT16,
+			format: Formats.UINT16,
 			maxValue: 7,
 			minValue: 0,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE],
+			perms: [Perms.READ, Perms.WRITE],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -5987,11 +5985,11 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Duration = function() {
 		Characteristic.call(this, 'Duration', 'E863F12D-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT16,
+			format: Formats.UINT16,
 			maxValue: 3600,
 			minValue: 0,
 			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE],
+			perms: [Perms.READ, Perms.WRITE],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6004,9 +6002,9 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericINT = function() {
 		Characteristic.call(this, 'ValueINT', '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263');
 		this.setProps({
-			format: Characteristic.Formats.INT,
+			format: Formats.INT,
 			minStep: 1,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms: [ Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6016,9 +6014,9 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericFLOAT = function() {
 		Characteristic.call(this, 'ValueFLOAT', '0168A695-70A7-4AF7-A800-417D30055719');
 		this.setProps({
-			format: Characteristic.Formats.FLOAT,
+			format: Formats.FLOAT,
 			minStep: 0.01,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms: [ Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6028,8 +6026,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericBOOL = function() {
 		Characteristic.call(this, 'ValueBOOL', 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB');
 		this.setProps({
-			format: Characteristic.Formats.BOOL,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.BOOL,
+			perms: [ Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6039,8 +6037,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.GenericSTRING = function() {
 		Characteristic.call(this, 'ValueSTRING', 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1');
 		this.setProps({
-			format: Characteristic.Formats.STRING,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.STRING,
+			perms: [ Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6050,10 +6048,10 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AQI = function() {
 		Characteristic.call(this, 'Index', '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263');
 		this.setProps({
-			format: Characteristic.Formats.INT,
+			format: Formats.INT,
 			unit: '',
 			minStep: 1,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms: [ Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6063,8 +6061,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.PPM = function() {
 		Characteristic.call(this, 'PPM', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.UINT16,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN],
+			format: Formats.UINT16,
+			perms: [ Perms.READ, Perms.HIDDEN],
 		});
 		this.value = this.getDefaultValue();
     };
@@ -6074,8 +6072,8 @@ function RegisterCustomCharacteristics() {
     Characteristic.AQExtraCharacteristic = function() {
 		Characteristic.call(this, 'AQX2', 'E863F132-079E-48FF-8F27-9C2605A29F52');
 		this.setProps({
-			format: Characteristic.Formats.DATA,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN],
+			format: Formats.DATA,
+			perms: [ Perms.READ, Perms.HIDDEN],
 		});
         this.value = this.getDefaultValue();
 	};	
@@ -6085,12 +6083,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.WindSpeed = function() {
 		Characteristic.call(this, 'Wind speed', '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41');
 		this.setProps({
-			format: Characteristic.Formats.FLOAT,
+			format: Formats.FLOAT,
 			unit: "km/h",
 			maxValue: 100,
 			minValue: 0,
 			minStep: 0.1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms: [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6100,8 +6098,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.WindDirection = function() {
 		Characteristic.call(this, 'Wind direction', '46f1284c-1912-421b-82f5-eb75008b167e');
 		this.setProps({
-			format: Characteristic.Formats.STRING,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.STRING,
+			perms: [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6111,8 +6109,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.WeatherCondition = function() {
 		Characteristic.call(this, 'Condition', 'cd65a9ab-85ad-494a-b2bd-2f380084134d');
 		this.setProps({
-			format: Characteristic.Formats.STRING,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.STRING,
+			perms: [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6122,12 +6120,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Visibility = function() {
 			Characteristic.call(this, 'Visibility', 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857');
 			this.setProps({
-				format: Characteristic.Formats.UINT8,
+				format: Formats.UINT8,
 				unit: "km",
 				maxValue: 200,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -6137,8 +6135,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Rain = function() {
 		Characteristic.call(this, 'Rain', 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7');
 		this.setProps({
-			format: Characteristic.Formats.BOOL,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.BOOL,
+			perms: [ Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6148,8 +6146,8 @@ function RegisterCustomCharacteristics() {
 	Characteristic.Snow = function() {
 		Characteristic.call(this, 'Snow', 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD');
 		this.setProps({
-			format: Characteristic.Formats.BOOL,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			format: Formats.BOOL,
+			perms: [ Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6159,12 +6157,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.MinimumTemperature = function() {
 		Characteristic.call(this, 'MinimumTemperature', '707B78CA-51AB-4DC9-8630-80A58F07E419');
 		this.setProps({
-			format: Characteristic.Formats.FLOAT,
-			unit: Characteristic.Units.CELSIUS,
+			format: Formats.FLOAT,
+			unit: Units.CELSIUS,
 			maxValue: 100,
 			minValue: -40,
 			minStep: 0.1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+			perms: [Perms.READ, Perms.NOTIFY],
 		});
 		this.value = this.getDefaultValue();
 	};
@@ -6174,12 +6172,12 @@ function RegisterCustomCharacteristics() {
 	Characteristic.NoiseLevel = function() {
 			Characteristic.call(this, 'Noise Level', 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5');
 			this.setProps({
-				format: Characteristic.Formats.UINT8,
+				format: Formats.UINT8,
 				unit: "dB",
 				maxValue: 1000,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -6189,11 +6187,11 @@ function RegisterCustomCharacteristics() {
 	Characteristic.NoiseQuality = function() {
 			Characteristic.call(this, 'Noise Quality', '627ea399-29d9-5dc8-9a02-08ae928f73d8');
 			this.setProps({
-				format: Characteristic.Formats.UINT8,
+				format: Formats.UINT8,
 				maxValue: 5,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -6211,11 +6209,11 @@ function RegisterCustomCharacteristics() {
 	Characteristic.SetDuration = function() {
 			Characteristic.call(this, 'Set Duration', '000000D3-0000-1000-8000-0026BB765291');
 			this.setProps({
-				format: Characteristic.Formats.UINT32,
+				format: Formats.UINT32,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.WRITE, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
@@ -6225,11 +6223,11 @@ function RegisterCustomCharacteristics() {
 	Characteristic.RemainingDuration = function() {
 			Characteristic.call(this, 'Remaining Duration', '000000D4-0000-1000-8000-0026BB765291');
 			this.setProps({
-				format: Characteristic.Formats.UINT32,
+				format: Formats.UINT32,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		};
