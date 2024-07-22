@@ -18,7 +18,6 @@
 
 let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen, Units, Formats, Perms, FakeGatoHistoryService;
 const fs = require('fs');
-const inherits = require('util').inherits;
 const myLogger = require('./lib/myLogger').myLogger;
 const express = require('express');
 
@@ -5835,290 +5834,335 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
 // -- Params --
 // -- Return : nothing
 function RegisterCustomCharacteristics() {
-	// Custom Services and Characteristics
-	Characteristic.TimeInterval = function() {
-		Characteristic.call(this, 'Time Interval', '2A6529B5-5825-4AF3-AD52-20288FBDA115');
-		this.setProps({
-			format : Formats.FLOAT,
-			unit : Units.SECONDS,
-			maxValue : 21600, // 12 hours
-			minValue : 0,
-			minStep : 900, // 15 min
-			perms : [Perms.READ, Perms.WRITE, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.TimeInterval, Characteristic);
-	Characteristic.TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+	// Custom Services and Characteristics	
+	class TimeInterval extends Characteristic {
+		constructor() {
+			super('Time Interval', TimeInterval.UUID);
+			this.setProps({
+				format : Formats.FLOAT,
+				unit : Units.SECONDS,
+				maxValue : 21600, // 12 hours
+				minValue : 0,
+				minStep : 900, // 15 min
+				perms : [Perms.READ, Perms.WRITE, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+	Characteristic.TimeInterval=TimeInterval;
 
-	Characteristic.CurrentPowerConsumption = function() {
-		Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format : Formats.UINT16,
-			unit : 'Watts',
-			maxValue : 100000,
-			minValue : -100000,
-			minStep : 1,
-			perms : [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.CurrentPowerConsumption, Characteristic);
-	Characteristic.CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
+	class CurrentPowerConsumption extends Characteristic {
+		constructor() {
+			super('Consumption', CurrentPowerConsumption.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				unit: 'Watts',
+				maxValue: 100000,
+				minValue: -100000,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.CurrentPowerConsumption=CurrentPowerConsumption;
 
-	Characteristic.TotalPowerConsumption = function() {
-		Characteristic.call(this, 'Total Consumption', 'E863F10C-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format : Formats.FLOAT, // Deviation from Eve Energy observed type
-			unit : 'kWh',
-			maxValue : 100000000000,
-			minValue : 0,
-			minStep : 0.001,
-			perms : [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.TotalPowerConsumption, Characteristic);
-	Characteristic.TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
+	class TotalPowerConsumption extends Characteristic {
+		constructor() {
+			super('Total Consumption', TotalPowerConsumption.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				unit: 'kWh',
+				maxValue: 100000000000,
+				minValue: 0,
+				minStep: 0.001,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.TotalPowerConsumption=TotalPowerConsumption;
 
-	Characteristic.UVIndex = function() {
-		Characteristic.call(this, 'UV Index', '05ba0fe0-b848-4226-906d-5b64272e05ce');
-		this.setProps({
-			format: Formats.UINT8,
-			maxValue: 10,
-			minValue: 0,
-			minStep: 1,
-			perms: [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.UVIndex, Characteristic);	
-	Characteristic.UVIndex.UUID = '05ba0fe0-b848-4226-906d-5b64272e05ce';
+	class UVIndex extends Characteristic {
+		constructor() {
+			super('UV Index', UVIndex.UUID);
+			this.setProps({
+				format: Formats.UINT8,
+				maxValue: 10,
+				minValue: 0,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	UVIndex.UUID = '05ba0fe0-b848-4226-906d-5b64272e05ce';
+	Characteristic.UVIndex=UVIndex;
 
-	Characteristic.AirPressure = function() {
-		Characteristic.call(this, 'Air Pressure', 'E863F10F-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT16,
-			unit: "hPa",
-			maxValue: 1100,
-			minValue: 700,
-			minStep: 1,
-			perms: [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.AirPressure, Characteristic);	
-	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+	class AirPressure extends Characteristic {
+		constructor() {
+			super('Air Pressure', AirPressure.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				unit: 'hPa',
+				maxValue: 1100,
+				minValue: 700,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.AirPressure=AirPressure;
 
 	// contacts helpers, need to identify
-	Characteristic.TimesOpened = function() {
-		Characteristic.call(this, 'TimesOpened', 'E863F129-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT32,
-			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.TimesOpened, Characteristic);
+	class TimesOpened extends Characteristic {
+		constructor() {
+			super('TimesOpened', TimesOpened.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.TimesOpened=TimesOpened;
 	
-	Characteristic.Char118 = function() {
-		Characteristic.call(this, 'Char118', 'E863F118-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT32,
-			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Char118.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Char118, Characteristic);
+	class Char118 extends Characteristic {
+		constructor() {
+			super('Char118', Char118.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Char118.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Char118=Char118;
 	
-	Characteristic.Char119 = function() {
-		Characteristic.call(this, 'Char119', 'E863F119-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT32,
-			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Char119.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Char119, Characteristic);
+	class Char119 extends Characteristic {
+		constructor() {
+			super('Char119', Char119.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Char119.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Char119=Char119;
 	
-	Characteristic.LastActivation = function() {
-		Characteristic.call(this, 'LastActivation', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT32,
-			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.LastActivation.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.LastActivation, Characteristic);	
+	class LastActivation extends Characteristic {
+		constructor() {
+			super('LastActivation', LastActivation.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	LastActivation.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.LastActivation=LastActivation;
 	
-	Characteristic.ResetTotal = function() {
-		Characteristic.call(this, 'ResetTotal', 'E863F112-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT32,
-			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.ResetTotal.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.ResetTotal, Characteristic);	
+	class ResetTotal extends Characteristic {
+		constructor() {
+			super('ResetTotal', ResetTotal.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	ResetTotal.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.ResetTotal=ResetTotal;
 	// / contacts helpers
 	
 	// Motion Helpers
-	Characteristic.Sensitivity = function() {
-		Characteristic.call(this, 'Sensitivity', 'E863F120-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT16,
-			maxValue: 7,
-			minValue: 0,
-			minStep: 1,
-			perms: [Perms.READ, Perms.WRITE],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Sensitivity.UUID = 'E863F120-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Sensitivity, Characteristic);
+	class Sensitivity extends Characteristic {
+		constructor() {
+			super('Sensitivity', Sensitivity.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				maxValue: 7,
+				minValue: 0,
+				minStep: 1,
+				perms: [Perms.READ, Perms.WRITE],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Sensitivity.UUID = 'E863F120-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Sensitivity=Sensitivity;
 
-	Characteristic.Duration = function() {
-		Characteristic.call(this, 'Duration', 'E863F12D-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT16,
-			maxValue: 3600,
-			minValue: 0,
-			minStep: 1,
-			perms: [Perms.READ, Perms.WRITE],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Duration.UUID = 'E863F12D-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Duration, Characteristic);
+	class Duration extends Characteristic {
+		constructor() {
+			super('Duration', Duration.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				maxValue: 3600,
+				minValue: 0,
+				minStep: 1,
+				perms: [Perms.READ, Perms.WRITE],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Duration.UUID = 'E863F12D-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Duration=Duration;
 	// /Motion Helpers
 	
 	
 	
-	Characteristic.GenericINT = function() {
-		Characteristic.call(this, 'ValueINT', '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263');
-		this.setProps({
-			format: Formats.INT,
-			minStep: 1,
-			perms: [ Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericINT.UUID = '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263';
-	inherits(Characteristic.GenericINT, Characteristic);	
+	class GenericINT extends Characteristic {
+		constructor() {
+			super('ValueINT', GenericINT.UUID);
+			this.setProps({
+				format: Formats.INT,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericINT.UUID = '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263';
+	Characteristic.GenericINT=GenericINT;
 	
-	Characteristic.GenericFLOAT = function() {
-		Characteristic.call(this, 'ValueFLOAT', '0168A695-70A7-4AF7-A800-417D30055719');
-		this.setProps({
-			format: Formats.FLOAT,
-			minStep: 0.01,
-			perms: [ Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericFLOAT.UUID = '0168A695-70A7-4AF7-A800-417D30055719';
-	inherits(Characteristic.GenericFLOAT, Characteristic);		
+	class GenericFLOAT extends Characteristic {
+		constructor() {
+			super('ValueFLOAT', GenericFLOAT.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				minStep: 0.01,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericFLOAT.UUID = '0168A695-70A7-4AF7-A800-417D30055719';
+	Characteristic.GenericFLOAT=GenericFLOAT;
 	
-	Characteristic.GenericBOOL = function() {
-		Characteristic.call(this, 'ValueBOOL', 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB');
-		this.setProps({
-			format: Formats.BOOL,
-			perms: [ Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericBOOL.UUID = 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB';
-	inherits(Characteristic.GenericBOOL, Characteristic);	
+	class GenericBOOL extends Characteristic {
+		constructor() {
+			super('ValueBOOL', GenericBOOL.UUID);
+			this.setProps({
+				format: Formats.BOOL,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericBOOL.UUID = 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB';
+	Characteristic.GenericBOOL=GenericBOOL;
 
-	Characteristic.GenericSTRING = function() {
-		Characteristic.call(this, 'ValueSTRING', 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1');
-		this.setProps({
-			format: Formats.STRING,
-			perms: [ Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericSTRING.UUID = 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1';
-	inherits(Characteristic.GenericSTRING, Characteristic);		
+	class GenericSTRING extends Characteristic {
+		constructor() {
+			super('ValueSTRING', GenericSTRING.UUID);
+			this.setProps({
+				format: Formats.STRING,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericSTRING.UUID = 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1';	
+	Characteristic.GenericSTRING=GenericSTRING;
 	
-	Characteristic.AQI = function() {
-		Characteristic.call(this, 'Index', '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263');
-		this.setProps({
-			format: Formats.INT,
-			unit: '',
-			minStep: 1,
-			perms: [ Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
-	inherits(Characteristic.AQI, Characteristic);	
+	class AQI extends Characteristic {
+		constructor() {
+			super('Index', AQI.UUID);
+			this.setProps({
+				format: Formats.INT,
+				unit: '',
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
+	Characteristic.AQI=AQI;
 
-	Characteristic.PPM = function() {
-		Characteristic.call(this, 'PPM', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.UINT16,
-			perms: [ Perms.READ, Perms.HIDDEN],
-		});
-		this.value = this.getDefaultValue();
-    };
-	Characteristic.PPM.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.PPM, Characteristic);	
+	class PPM extends Characteristic {
+		constructor() {
+			super('PPM', PPM.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				perms: [Perms.READ, Perms.HIDDEN],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	PPM.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.PPM=PPM;
 
-    Characteristic.AQExtraCharacteristic = function() {
-		Characteristic.call(this, 'AQX2', 'E863F132-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Formats.DATA,
-			perms: [ Perms.READ, Perms.HIDDEN],
-		});
-        this.value = this.getDefaultValue();
-	};	
-	Characteristic.AQExtraCharacteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.AQExtraCharacteristic, Characteristic);	
+	class AQExtraCharacteristic extends Characteristic {
+		constructor() {
+			super('AQX2', AQExtraCharacteristic.UUID);
+			this.setProps({
+				format: Formats.DATA,
+				perms: [Perms.READ, Perms.HIDDEN],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	AQExtraCharacteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.AQExtraCharacteristic=AQExtraCharacteristic;
 	
-	Characteristic.WindSpeed = function() {
-		Characteristic.call(this, 'Wind speed', '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41');
-		this.setProps({
-			format: Formats.FLOAT,
-			unit: "km/h",
-			maxValue: 100,
-			minValue: 0,
-			minStep: 0.1,
-			perms: [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.WindSpeed.UUID = '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41';
-	inherits(Characteristic.WindSpeed, Characteristic);
+	class WindSpeed extends Characteristic {
+		constructor() {
+			super('Wind speed', WindSpeed.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				unit: 'km/h',
+				maxValue: 100,
+				minValue: 0,
+				minStep: 0.1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	WindSpeed.UUID = '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41';
+	Characteristic.WindSpeed=WindSpeed;
 
-	Characteristic.WindDirection = function() {
-		Characteristic.call(this, 'Wind direction', '46f1284c-1912-421b-82f5-eb75008b167e');
-		this.setProps({
-			format: Formats.STRING,
-			perms: [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.WindDirection.UUID = '46f1284c-1912-421b-82f5-eb75008b167e';
-	inherits(Characteristic.WindDirection, Characteristic);
+	class WindDirection extends Characteristic {
+		constructor() {
+			super('Wind direction', WindDirection.UUID);
+			this.setProps({
+				format: Formats.STRING,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	WindDirection.UUID = '46f1284c-1912-421b-82f5-eb75008b167e';
+	Characteristic.WindDirection=WindDirection;
 
-	Characteristic.WeatherCondition = function() {
-		Characteristic.call(this, 'Condition', 'cd65a9ab-85ad-494a-b2bd-2f380084134d');
-		this.setProps({
-			format: Formats.STRING,
-			perms: [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.WeatherCondition.UUID = 'cd65a9ab-85ad-494a-b2bd-2f380084134d';
-	inherits(Characteristic.WeatherCondition, Characteristic);
+	class WeatherCondition extends Characteristic {
+		constructor() {
+			super('Condition', WeatherCondition.UUID);
+			this.setProps({
+				format: Formats.STRING,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	WeatherCondition.UUID = 'CD65A9AB-85AD-494A-B2BD-2F380084134D';
+	Characteristic.WeatherCondition=WeatherCondition;
 
-	Characteristic.Visibility = function() {
-			Characteristic.call(this, 'Visibility', 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857');
+	class Visibility extends Characteristic {
+		constructor() {
+			super('Visibility', Visibility.UUID);
 			this.setProps({
 				format: Formats.UINT8,
 				unit: "km",
@@ -6128,49 +6172,57 @@ function RegisterCustomCharacteristics() {
 				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
-	inherits(Characteristic.Visibility, Characteristic);
+		}
+	}
+	Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
+	Characteristic.Visibility=Visibility;
 	
-	Characteristic.Rain = function() {
-		Characteristic.call(this, 'Rain', 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7');
-		this.setProps({
-			format: Formats.BOOL,
-			perms: [ Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Rain.UUID = 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7';
-	inherits(Characteristic.Rain, Characteristic);
+	class Rain extends Characteristic {
+		constructor() {
+			super('Rain', Rain.UUID);
+			this.setProps({
+				format: Formats.BOOL,
+				perms: [ Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Rain.UUID = 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7';
+	Characteristic.Rain=Rain;
 	
-	Characteristic.Snow = function() {
-		Characteristic.call(this, 'Snow', 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD');
-		this.setProps({
-			format: Formats.BOOL,
-			perms: [ Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Snow.UUID = 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD';
-	inherits(Characteristic.Snow, Characteristic);
+	class Snow extends Characteristic {
+		constructor() {
+			super('Snow', Snow.UUID);
+			this.setProps({
+				format: Formats.BOOL,
+				perms: [ Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Snow.UUID = 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD';
+	Characteristic.Snow=Snow;
 	
-	Characteristic.MinimumTemperature = function() {
-		Characteristic.call(this, 'MinimumTemperature', '707B78CA-51AB-4DC9-8630-80A58F07E419');
-		this.setProps({
-			format: Formats.FLOAT,
-			unit: Units.CELSIUS,
-			maxValue: 100,
-			minValue: -40,
-			minStep: 0.1,
-			perms: [Perms.READ, Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.MinimumTemperature.UUID = '707B78CA-51AB-4DC9-8630-80A58F07E419';
-	inherits(Characteristic.MinimumTemperature, Characteristic);
+	class MinimumTemperature extends Characteristic {
+		constructor() {
+			super('MinimumTemperature', MinimumTemperature.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				unit: Units.CELSIUS,
+				maxValue: 100,
+				minValue: -40,
+				minStep: 0.1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	MinimumTemperature.UUID = '707B78CA-51AB-4DC9-8630-80A58F07E419';
+	Characteristic.MinimumTemperature=MinimumTemperature;
 	
-	Characteristic.NoiseLevel = function() {
-			Characteristic.call(this, 'Noise Level', 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5');
+	class NoiseLevel extends Characteristic {
+		constructor() {
+			super('Noise Level', NoiseLevel.UUID);
 			this.setProps({
 				format: Formats.UINT8,
 				unit: "dB",
@@ -6180,12 +6232,14 @@ function RegisterCustomCharacteristics() {
 				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.NoiseLevel.UUID = 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5';
-	inherits(Characteristic.NoiseLevel, Characteristic);
+		}
+	}
+	NoiseLevel.UUID = 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5';
+	Characteristic.NoiseLevel=NoiseLevel;
 	
-	Characteristic.NoiseQuality = function() {
-			Characteristic.call(this, 'Noise Quality', '627ea399-29d9-5dc8-9a02-08ae928f73d8');
+	class NoiseQuality extends Characteristic {
+		constructor() {
+			super('Noise Quality', NoiseQuality.UUID);
 			this.setProps({
 				format: Formats.UINT8,
 				maxValue: 5,
@@ -6194,20 +6248,21 @@ function RegisterCustomCharacteristics() {
 				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.NoiseQuality.UUID = '627ea399-29d9-5dc8-9a02-08ae928f73d8';
-	inherits(Characteristic.NoiseQuality, Characteristic);
+		}
+	}
+	NoiseQuality.UUID = '627ea399-29d9-5dc8-9a02-08ae928f73d8';
 	
-	Characteristic.NoiseQuality.UNKNOWN = 0;
-	Characteristic.NoiseQuality.SILENT = 1;
-	Characteristic.NoiseQuality.CALM = 2;
-	Characteristic.NoiseQuality.LIGHTLYNOISY = 3;
-	Characteristic.NoiseQuality.NOISY = 4;
-	Characteristic.NoiseQuality.TOONOISY = 5;
+	NoiseQuality.UNKNOWN = 0;
+	NoiseQuality.SILENT = 1;
+	NoiseQuality.CALM = 2;
+	NoiseQuality.LIGHTLYNOISY = 3;
+	NoiseQuality.NOISY = 4;
+	NoiseQuality.TOONOISY = 5;
+	Characteristic.NoiseQuality=NoiseQuality;
 	
-	
-	Characteristic.SetDuration = function() {
-			Characteristic.call(this, 'Set Duration', '000000D3-0000-1000-8000-0026BB765291');
+	class SetDuration extends Characteristic {
+		constructor() {
+			super('Set Duration', SetDuration.UUID);
 			this.setProps({
 				format: Formats.UINT32,
 				maxValue: 3600,
@@ -6216,12 +6271,14 @@ function RegisterCustomCharacteristics() {
 				perms: [Perms.READ, Perms.WRITE, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.SetDuration.UUID = '000000D3-0000-1000-8000-0026BB765291';
-	inherits(Characteristic.SetDuration, Characteristic);
+		}
+	}
+	SetDuration.UUID = '000000D3-0000-1000-8000-0026BB765291';
+	Characteristic.SetDuration=SetDuration;
 	
-	Characteristic.RemainingDuration = function() {
-			Characteristic.call(this, 'Remaining Duration', '000000D4-0000-1000-8000-0026BB765291');
+	class RemainingDuration extends Characteristic {
+		constructor() {
+			super('Remaining Duration', RemainingDuration.UUID);
 			this.setProps({
 				format: Formats.UINT32,
 				maxValue: 3600,
@@ -6230,9 +6287,10 @@ function RegisterCustomCharacteristics() {
 				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.RemainingDuration.UUID = '000000D4-0000-1000-8000-0026BB765291';
-	inherits(Characteristic.RemainingDuration, Characteristic);
+		}
+	}
+	RemainingDuration.UUID = '000000D4-0000-1000-8000-0026BB765291';
+	Characteristic.RemainingDuration=RemainingDuration;
 	
 	/**
 	 * FakeGato History Service
@@ -6244,107 +6302,110 @@ function RegisterCustomCharacteristics() {
 	 * Custom Service 'Power Monitor'
 	 */
 
-	Service.PowerMonitor = function(displayName, subtype) {
-		Service.call(this, displayName, '0EB29E08-C307-498E-8E1A-4EDC5FF70607', subtype);
-
-		// Required Characteristics
-		this.addCharacteristic(Characteristic.CurrentPowerConsumption);
-		this.addCharacteristic(Characteristic.TotalPowerConsumption);
-
-		// Optional Characteristics
-
-	};
-	inherits(Service.PowerMonitor, Service);
-	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+	class PowerMonitor extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, PowerMonitor.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.CurrentPowerConsumption);
+			this.addCharacteristic(Characteristic.TotalPowerConsumption);
+	
+			// Optional Characteristics
+		}
+	}
+	PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+	Service.PowerMonitor=PowerMonitor;
 	
 	/**
 	 * Custom Service 'Pressure Sensor'
 	 */
 
-	Service.PressureSensor = function(displayName, subtype) {
-		Service.call(this, displayName, 'E863F00A-079E-48FF-8F27-9C2605A29F52', subtype);
-
-		// Required Characteristics
-		this.addCharacteristic(Characteristic.AirPressure);
-
-		// Optional Characteristics
-
-	};
-	inherits(Service.PressureSensor, Service);
-	Service.PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+	class PressureSensor extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, PressureSensor.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.AirPressure);
+	
+			// Optional Characteristics
+		}
+	}
+	PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+	Service.PressureSensor=PressureSensor;
 	
 	/**
 	 * Custom Service 'Noise Sensor'
 	 */
 
-	Service.NoiseSensor = function(displayName, subtype) {
-		Service.call(this, displayName, '6237cefc-9f4d-54b2-8033-2eda0053b811', subtype);
-
-		// Required Characteristics
-		this.addCharacteristic(Characteristic.NoiseLevel);
-		this.addCharacteristic(Characteristic.NoiseQuality);
-		// Optional Characteristics
-
-	};
-	inherits(Service.NoiseSensor, Service);
-	Service.NoiseSensor.UUID = '6237cefc-9f4d-54b2-8033-2eda0053b811';
+	class NoiseSensor extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, NoiseSensor.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.NoiseLevel);
+			this.addCharacteristic(Characteristic.NoiseQuality);
+			// Optional Characteristics
+		}
+	}
+	NoiseSensor.UUID = '6237cefc-9f4d-54b2-8033-2eda0053b811';
+	Service.NoiseSensor=NoiseSensor;
 
 	/**
 	 * Custom Service 'Weather Service'
 	 */
 
-	Service.WeatherService = function(displayName, subtype) {
-		Service.call(this, displayName, 'E863F001-079E-48FF-8F27-9C2605A29F52', subtype);
-
-		// Required Characteristics
-		// this.addCharacteristic(Characteristic.CurrentTemperature);
-		// this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
-		// this.addCharacteristic(Characteristic.AirPressure);
-		this.addCharacteristic(Characteristic.WeatherCondition);
-
-		// Optional Characteristics
-		this.addOptionalCharacteristic(Characteristic.WindDirection);
-		this.addOptionalCharacteristic(Characteristic.WindSpeed);
-		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
-		this.addOptionalCharacteristic(Characteristic.UVIndex);
-		this.addOptionalCharacteristic(Characteristic.Rain);
-		this.addOptionalCharacteristic(Characteristic.Snow);
-		this.addOptionalCharacteristic(Characteristic.MinimumTemperature);
-	};
-	inherits(Service.WeatherService, Service);
-	Service.WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';	
+	class WeatherService extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, WeatherService.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.WeatherCondition);
+			
+			// Optional Characteristics
+			this.addOptionalCharacteristic(Characteristic.WindDirection);
+			this.addOptionalCharacteristic(Characteristic.WindSpeed);
+			// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
+			this.addOptionalCharacteristic(Characteristic.UVIndex);
+			this.addOptionalCharacteristic(Characteristic.Rain);
+			this.addOptionalCharacteristic(Characteristic.Snow);
+			this.addOptionalCharacteristic(Characteristic.MinimumTemperature);
+		}
+	}
+	WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';
+	Service.WeatherService=WeatherService;
 	
 	/**
 	 * Custom Service 'EveRoom Service'
 	 */
 
-	Service.EveRoomService = function(displayName, subtype) {
-		Service.call(this, displayName, '0000008D-0000-1000-8000-0026BB765291', subtype);
-
-		// Required Characteristics
-		// this.addCharacteristic(Characteristic.CurrentTemperature);
-		// this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
-		// this.addCharacteristic(Characteristic.AirPressure);
-		this.addCharacteristic(Characteristic.AirQuality);
-
-		// Optional Characteristics
-		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
-
-	};
-	inherits(Service.EveRoomService, Service);
-	Service.EveRoomService.UUID = '0000008D-0000-1000-8000-0026BB765291';	
+	class EveRoomService extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, EveRoomService.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.AirQuality);
+			// Optional Characteristics
+		}
+	}
+	EveRoomService.UUID = '0000008D-0000-1000-8000-0026BB765291';
+	Service.EveRoomService=EveRoomService;
 	
 	/**
 	 * Custom Service 'Custom Service'
 	 */
 
-	Service.CustomService = function(displayName, subtype) {
-		Service.call(this, displayName, 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7', subtype);
+	class CustomService extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, CustomService.UUID, subtype);
+			
+			// Required Characteristics
 
-		this.addOptionalCharacteristic(Characteristic.Name);
-	};
-	inherits(Service.CustomService, Service);	
-	Service.CustomService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
+			// Optional Characteristics
+			this.addOptionalCharacteristic(Characteristic.Name);
+		}
+	}
+	CustomService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
+	Service.CustomService=CustomService;
 	
 	// End of custom Services and Characteristics	
 }
