@@ -1195,7 +1195,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.battery.forEach((cmd) => {
 				if (!cmd.battery) {return;}
 				HBservice = {
-					controlService : new Service.BatteryService(eqLogic.name),
+					controlService : new Service.Battery(eqLogic.name),
 					characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery],
 				};
 				const Serv = HBservice.controlService;
@@ -6431,7 +6431,7 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	let service;
 	try {
 		const cachedValues = [];
-		const serviceList = accessory.services.filter((svc) => svc.UUID !== Service.AccessoryInformation.UUID && svc.UUID !== Service.BridgingState.UUID);
+		const serviceList = accessory.services.filter((svc) => svc.UUID !== Service.AccessoryInformation.UUID);
 	
 		serviceList.forEach((svc) => {
 			service=svc;
