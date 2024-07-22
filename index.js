@@ -18,7 +18,6 @@
 
 let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen, Units, Formats, Perms, FakeGatoHistoryService;
 const fs = require('fs');
-const inherits = require('util').inherits;
 const myLogger = require('./lib/myLogger').myLogger;
 const express = require('express');
 
