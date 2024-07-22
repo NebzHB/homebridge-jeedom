@@ -5851,6 +5851,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+	Characteristic.TimeInterval=TimeInterval;
 
 	class CurrentPowerConsumption extends Characteristic {
 		constructor() {
@@ -5867,6 +5868,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.CurrentPowerConsumption=CurrentPowerConsumption;
 
 	class TotalPowerConsumption extends Characteristic {
 		constructor() {
@@ -5883,6 +5885,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.TotalPowerConsumption=TotalPowerConsumption;
 
 	class UVIndex extends Characteristic {
 		constructor() {
@@ -5898,6 +5901,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	UVIndex.UUID = '05ba0fe0-b848-4226-906d-5b64272e05ce';
+	Characteristic.UVIndex=UVIndex;
 
 	class AirPressure extends Characteristic {
 		constructor() {
@@ -5914,6 +5918,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.AirPressure=AirPressure;
 
 	// contacts helpers, need to identify
 	class TimesOpened extends Characteristic {
@@ -5927,6 +5932,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.TimesOpened=TimesOpened;
 	
 	class Char118 extends Characteristic {
 		constructor() {
@@ -5939,6 +5945,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	Char118.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Char118=Char118;
 	
 	class Char119 extends Characteristic {
 		constructor() {
@@ -5951,6 +5958,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	Char119.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Char119=Char119;
 	
 	class LastActivation extends Characteristic {
 		constructor() {
@@ -5963,6 +5971,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	LastActivation.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.LastActivation=LastActivation;
 	
 	class ResetTotal extends Characteristic {
 		constructor() {
@@ -5975,6 +5984,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	ResetTotal.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.ResetTotal=ResetTotal;
 	// / contacts helpers
 	
 	// Motion Helpers
@@ -5992,6 +6002,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	Sensitivity.UUID = 'E863F120-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Sensitivity=Sensitivity;
 
 	class Duration extends Characteristic {
 		constructor() {
@@ -6007,6 +6018,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	Duration.UUID = 'E863F12D-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Duration=Duration;
 	// /Motion Helpers
 	
 	
@@ -6023,6 +6035,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	GenericINT.UUID = '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263';
+	Characteristic.GenericINT=GenericINT;
 	
 	class GenericFLOAT extends Characteristic {
 		constructor() {
@@ -6035,7 +6048,8 @@ function RegisterCustomCharacteristics() {
 			this.value = this.getDefaultValue();
 		}
 	}
-	GenericFLOAT.UUID = '0168A695-70A7-4AF7-A800-417D30055719';	
+	GenericFLOAT.UUID = '0168A695-70A7-4AF7-A800-417D30055719';
+	Characteristic.GenericFLOAT=GenericFLOAT;
 	
 	class GenericBOOL extends Characteristic {
 		constructor() {
@@ -6048,6 +6062,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	GenericBOOL.UUID = 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB';
+	Characteristic.GenericBOOL=GenericBOOL;
 
 	class GenericSTRING extends Characteristic {
 		constructor() {
@@ -6060,6 +6075,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	GenericSTRING.UUID = 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1';	
+	Characteristic.GenericSTRING=GenericSTRING;
 	
 	class AQI extends Characteristic {
 		constructor() {
@@ -6074,6 +6090,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
+	Characteristic.AQI=AQI;
 
 	class PPM extends Characteristic {
 		constructor() {
@@ -6086,6 +6103,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	PPM.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.PPM=PPM;
 
 	class AQExtraCharacteristic extends Characteristic {
 		constructor() {
@@ -6098,6 +6116,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	AQExtraCharacteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.AQExtraCharacteristic=AQExtraCharacteristic;
 	
 	class WindSpeed extends Characteristic {
 		constructor() {
@@ -6114,6 +6133,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	WindSpeed.UUID = '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41';
+	Characteristic.WindSpeed=WindSpeed;
 
 	class WindDirection extends Characteristic {
 		constructor() {
@@ -6126,6 +6146,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	WindDirection.UUID = '46f1284c-1912-421b-82f5-eb75008b167e';
+	Characteristic.WindDirection=WindDirection;
 
 	class WeatherCondition extends Characteristic {
 		constructor() {
@@ -6138,6 +6159,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	WeatherCondition.UUID = 'CD65A9AB-85AD-494A-B2BD-2F380084134D';
+	Characteristic.WeatherCondition=WeatherCondition;
 
 	class Visibility extends Characteristic {
 		constructor() {
@@ -6154,6 +6176,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
+	Characteristic.Visibility=Visibility;
 	
 	class Rain extends Characteristic {
 		constructor() {
@@ -6166,6 +6189,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	Rain.UUID = 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7';
+	Characteristic.Rain=Rain;
 	
 	class Snow extends Characteristic {
 		constructor() {
@@ -6178,6 +6202,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	Snow.UUID = 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD';
+	Characteristic.Snow=Snow;
 	
 	class MinimumTemperature extends Characteristic {
 		constructor() {
@@ -6194,6 +6219,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	MinimumTemperature.UUID = '707B78CA-51AB-4DC9-8630-80A58F07E419';
+	Characteristic.MinimumTemperature=MinimumTemperature;
 	
 	class NoiseLevel extends Characteristic {
 		constructor() {
@@ -6210,6 +6236,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	NoiseLevel.UUID = 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5';
+	Characteristic.NoiseLevel=NoiseLevel;
 	
 	class NoiseQuality extends Characteristic {
 		constructor() {
@@ -6232,6 +6259,7 @@ function RegisterCustomCharacteristics() {
 	NoiseQuality.LIGHTLYNOISY = 3;
 	NoiseQuality.NOISY = 4;
 	NoiseQuality.TOONOISY = 5;
+	Characteristic.NoiseQuality=NoiseQuality;
 	
 	class SetDuration extends Characteristic {
 		constructor() {
@@ -6247,6 +6275,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	SetDuration.UUID = '000000D3-0000-1000-8000-0026BB765291';
+	Characteristic.SetDuration=SetDuration;
 	
 	class RemainingDuration extends Characteristic {
 		constructor() {
@@ -6262,6 +6291,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	RemainingDuration.UUID = '000000D4-0000-1000-8000-0026BB765291';
+	Characteristic.RemainingDuration=RemainingDuration;
 	
 	/**
 	 * FakeGato History Service
@@ -6285,6 +6315,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+	Service.PowerMonitor=PowerMonitor;
 	
 	/**
 	 * Custom Service 'Pressure Sensor'
@@ -6301,6 +6332,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+	Service.PressureSensor=PressureSensor;
 	
 	/**
 	 * Custom Service 'Noise Sensor'
@@ -6317,6 +6349,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	NoiseSensor.UUID = '6237cefc-9f4d-54b2-8033-2eda0053b811';
+	Service.NoiseSensor=NoiseSensor;
 
 	/**
 	 * Custom Service 'Weather Service'
@@ -6340,6 +6373,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';
+	Service.WeatherService=WeatherService;
 	
 	/**
 	 * Custom Service 'EveRoom Service'
@@ -6355,6 +6389,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	EveRoomService.UUID = '0000008D-0000-1000-8000-0026BB765291';
+	Service.EveRoomService=EveRoomService;
 	
 	/**
 	 * Custom Service 'Custom Service'
@@ -6371,6 +6406,7 @@ function RegisterCustomCharacteristics() {
 		}
 	}
 	CustomService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
+	Service.CustomService=CustomService;
 	
 	// End of custom Services and Characteristics	
 }
