@@ -10,8 +10,8 @@
     "start": "echo \"Error: configure and run homebridge to start\" && exit 1"
   },
   "engines": {
-    "node": ">=10.17.0",
-    "homebridge": ">=0.4.38"
+    "node": "^18.0.0",
+    "homebridge": "^1.6.0 || ^2.0.0-beta.0"
   },
   "repository": {
     "type": "git",
