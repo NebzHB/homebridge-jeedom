@@ -6226,12 +6226,12 @@ function RegisterCustomCharacteristics() {
 	}
 	NoiseQuality.UUID = '627ea399-29d9-5dc8-9a02-08ae928f73d8';
 	
-	Characteristic.NoiseQuality.UNKNOWN = 0;
-	Characteristic.NoiseQuality.SILENT = 1;
-	Characteristic.NoiseQuality.CALM = 2;
-	Characteristic.NoiseQuality.LIGHTLYNOISY = 3;
-	Characteristic.NoiseQuality.NOISY = 4;
-	Characteristic.NoiseQuality.TOONOISY = 5;
+	NoiseQuality.UNKNOWN = 0;
+	NoiseQuality.SILENT = 1;
+	NoiseQuality.CALM = 2;
+	NoiseQuality.LIGHTLYNOISY = 3;
+	NoiseQuality.NOISY = 4;
+	NoiseQuality.TOONOISY = 5;
 	
 	class SetDuration extends Characteristic {
 		constructor() {
