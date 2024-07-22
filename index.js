@@ -5835,21 +5835,21 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
 // -- Params --
 // -- Return : nothing
 function RegisterCustomCharacteristics() {
-	// Custom Services and Characteristics	
-	class TimeInterval extends Characteristic {
-		constructor() {
-			super('Time Interval', TimeInterval.UUID);
-			this.setProps({
-				format : Formats.FLOAT,
-				unit : Units.SECONDS,
-				maxValue : 21600, // 12 hours
-				minValue : 0,
-				minStep : 900, // 15 min
-				perms : [Perms.READ, Perms.WRITE, Perms.NOTIFY],
-			});
-		}
-	}
-	TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+	// Custom Services and Characteristics
+	Characteristic.TimeInterval = function() {
+		Characteristic.call(this, 'Time Interval', '2A6529B5-5825-4AF3-AD52-20288FBDA115');
+		this.setProps({
+			format : Formats.FLOAT,
+			unit : Units.SECONDS,
+			maxValue : 21600, // 12 hours
+			minValue : 0,
+			minStep : 900, // 15 min
+			perms : [Perms.READ, Perms.WRITE, Perms.NOTIFY],
+		});
+		this.value = this.getDefaultValue();
+	};
+	inherits(Characteristic.TimeInterval, Characteristic);
+	Characteristic.TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
 
 	Characteristic.CurrentPowerConsumption = function() {
 		Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
@@ -5911,17 +5911,16 @@ function RegisterCustomCharacteristics() {
 	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
 
 	// contacts helpers, need to identify
-	class TimesOpened extends Characteristic {
-		constructor() {
-			super('TimesOpened', TimesOpened.UUID);
-			this.setProps({
-				format: Formats.UINT32,
-				perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
-			});
-			this.value = this.getDefaultValue();
-		}
-	}
-	TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.TimesOpened = function() {
+		Characteristic.call(this, 'TimesOpened', 'E863F129-079E-48FF-8F27-9C2605A29F52');
+		this.setProps({
+			format: Formats.UINT32,
+			perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
+		});
+		this.value = this.getDefaultValue();
+	};
+	Characteristic.TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
+	inherits(Characteristic.TimesOpened, Characteristic);
 	
 	Characteristic.Char118 = function() {
 		Characteristic.call(this, 'Char118', 'E863F118-079E-48FF-8F27-9C2605A29F52');
