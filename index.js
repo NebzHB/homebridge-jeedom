@@ -6414,7 +6414,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 			
 			if(!newAccessory.getService(service.controlService)){// not exist ?
 				this.log('|debug',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
-				newAccessory.addService(service.controlService);
+				newAccessory.addService(new service.controlService);
 				for (var i = 0; i < service.characteristics.length; i++) {
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
 					
