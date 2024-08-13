@@ -32,7 +32,7 @@ module.exports = {
     ],
     'comma-dangle': [
       'error',
-      'always-multiline'
+      'only-multiline'
     ],
     'comma-spacing': 'off',
     'comma-style': [
