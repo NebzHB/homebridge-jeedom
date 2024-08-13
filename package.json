@@ -8,7 +8,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "echo \"Error: configure and run homebridge to start\" && exit 1",
-    "lint:js": "eslint resources/*.js",
+    "lint:js": "eslint *.js",
     "lint": "npm run lint:js"
   },
   "engines": {
