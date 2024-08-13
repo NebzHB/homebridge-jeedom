@@ -1,17 +1,19 @@
 {
   "name": "@nebz/homebridge-jeedom",
-  "version": "v1.7.0",
-  "cust_serial": "0028",
+  "version": "v1.8.4",
+  "cust_serial": "0001",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
   "private":true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "echo \"Error: configure and run homebridge to start\" && exit 1"
+    "start": "echo \"Error: configure and run homebridge to start\" && exit 1",
+    "lint:js": "eslint *.js",
+    "lint": "npm run lint:js"
   },
   "engines": {
-    "node": ">=10.17.0",
-    "homebridge": ">=0.4.38"
+    "node": "^18.0.0",
+    "homebridge": "^1.6.0 || ^2.0.0-beta.0"
   },
   "repository": {
     "type": "git",
@@ -26,13 +28,11 @@
   ],
   "dependencies": {
     "async": "3.2.5",
-    "axios": "1.7.1",
+    "axios": "1.7.3",
     "express": "4.19.2",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
-    "@babel/core": ">=7.24.5",
-    "@babel/eslint-parser": "^7.24.5",
     "eslint": "^8.57.0"
   },
   "author": "Nebz <nebz@nebz.be>",

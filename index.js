@@ -16,20 +16,18 @@
 /* jshint esversion: 11,node: true,-W041: false */
 'use strict';
 
-let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen;
+let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen, Units, Formats, Perms, FakeGatoHistoryService;
 const fs = require('fs');
-const inherits = require('util').inherits;
 const myLogger = require('./lib/myLogger').myLogger;
 const express = require('express');
 
 const debug = {};
 debug.DEBUG = 100;
 debug.INFO = 200;
-debug.WARN = 300;
+debug.WARNING = 300;
 debug.ERROR = 400;
 debug.NO = 1000;
 let hasError = false;
-let FakeGatoHistoryService;
 let DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
@@ -39,6 +37,9 @@ module.exports = function(homebridge) {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 	Access = homebridge.hap.Access;
+	Units = homebridge.hap.Units;
+	Formats = homebridge.hap.Formats;
+	Perms = homebridge.hap.Perms;
 	AdaptiveLightingController = homebridge.hap.AdaptiveLightingController;
 	UUIDGen = homebridge.hap.uuid;
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
@@ -385,7 +386,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 		const endLog = '--== Homebridge est démarré et a intégré '+countA+' accessoire'+ (countA>1 ? 's' : '') +' ! ==--';
 		this.log(endLog);
 		if(countA >= 150) {this.log('error','!!! ATTENTION !!! Vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');}
-		else if(countA >= 140) {this.log('warn','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');}
+		else if(countA >= 140) {this.log('warning','!! Avertissement, vous avez '+countA+' accessoires + Jeedom et HomeKit en supporte 150 max au total !!');}
 		
 		this.log('debug','==START POLLING==');		
 		this.startPollingUpdate();
@@ -450,13 +451,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.brightness=cmd2.brightness;
 					}
 				});
-				if (Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière OFF"');}
-				if (!Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière ON"');}
-				if (!Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
-				if (Serv.infos.color && !Serv.actions.setcolor) {this.log('warn','Pas de type générique "Action/Lumière Couleur"');}
-				if (!Serv.infos.color && Serv.actions.setcolor) {this.log('warn','Pas de type générique "Info/Lumière Couleur"');}
-				if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {this.log('warn','Pas de type générique "Action/Lumière Température Couleur"');}
-				if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) {this.log('warn','Pas de type générique "Info/Lumière Température Couleur"');}
+				if (Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière OFF"');}
+				if (!Serv.actions.on && Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière ON"');}
+				if (!Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Lumière ON" et "Action/Lumière OFF"');}
+				if (Serv.infos.color && !Serv.actions.setcolor) {this.log('|warning','Pas de type générique "Action/Lumière Couleur"');}
+				if (!Serv.infos.color && Serv.actions.setcolor) {this.log('|warning','Pas de type générique "Info/Lumière Couleur"');}
+				if (Serv.infos.color_temp && !Serv.actions.setcolor_temp) {this.log('|warning','Pas de type générique "Action/Lumière Température Couleur"');}
+				if (!Serv.infos.color_temp && Serv.actions.setcolor_temp) {this.log('|warning','Pas de type générique "Info/Lumière Température Couleur"');}
 				
 				if(Serv.actions.slider) {
 					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
@@ -468,7 +469,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.Brightness);
 					Serv.addCharacteristic(Characteristic.Brightness);
 				} else {
-					this.log('info','La lumière n\'a pas de variateur');
+					this.log('|info','La lumière n\'a pas de variateur');
 				}
 				if(Serv.infos.color) {
 					LightType += "_RGB";
@@ -507,7 +508,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							LightType+=Serv.colorTempType;
 						}
 					} else {
-						this.log('error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
+						this.log('|error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
 						props.minValue = 0; // if not set in Jeedom it's 0
 						props.maxValue = 20000; // if not set in Jeedom it's 100
 					}
@@ -529,7 +530,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
 				
-				this.log('info','La lumière est du type :',LightType);
+				this.log('|info','La lumière est du type :',LightType);
 				Serv.LightType = LightType;
 				Serv.cmd_id = cmd.state.id;
 				Serv.eqID = eqLogic.id;
@@ -538,7 +539,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Lumière Etat"');
+				this.log('|warning','Pas de type générique "Info/Lumière Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -596,14 +597,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.VerTiltState = cmd2.VerTiltState;
 					}
 				});
-				if(Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Descendre"');}
-				if(!Serv.actions.up && Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warn','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');}
-				if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) {this.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');}
-				if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) {this.log('warn','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');}
-				if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {this.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
-				if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {this.log('warn','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
+				if(Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Volet Bouton Descendre"');}
+				if(!Serv.actions.up && Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Volet Bouton Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Volet Bouton Descendre" et "Action/Volet Bouton Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('|warning','Pas de type générique "Action/Volet Bouton Slider" et "Action/Volet Bouton Monter" et "Action/Volet Bouton Descendre"');}
+				if(Serv.actions.HorTiltSlider && !Serv.infos.HorTiltState) {this.log('|warning','Pas de type générique "Info/Volet Etat Inclinaison Horizontale" malgré l\'action "Action/Volet Slider Inclinaison Horizontale"');}
+				if(Serv.actions.VerTiltSlider && !Serv.infos.VerTiltState) {this.log('|warning','Pas de type générique "Info/Volet Etat Inclinaison Verticale" malgré l\'action "Action/Volet Slider Inclinaison Verticale"');}
+				if(!Serv.actions.HorTiltSlider && Serv.infos.HorTiltState) {this.log('|warning','Pas de type générique "Action/Volet Slider Inclinaison Horizontale" malgré l\'état "Info/Volet Etat Inclinaison Horizontale"');}
+				if(!Serv.actions.VerTiltSlider && Serv.infos.VerTiltState) {this.log('|warning','Pas de type générique "Action/Volet Slider Inclinaison Verticale" malgré l\'état "Info/Volet Etat Inclinaison Verticale"');}
 				Serv.minValue=0;
 				if(Serv.infos.state.subType == 'binary') {
 					Serv.maxValue=1;
@@ -638,7 +639,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.TargetHorizontalTiltAngle);
 					Serv.addCharacteristic(Characteristic.TargetHorizontalTiltAngle);
 					Serv.getCharacteristic(Characteristic.TargetHorizontalTiltAngle).setProps(props);
-					this.log('debug','Horizontal Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.HorTiltSlider.configuration));
+					this.log('|debug','Horizontal Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.HorTiltSlider.configuration));
 				}
 				
 				if(Serv.actions.VerTiltSlider) {
@@ -660,7 +661,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.TargetVerticalTiltAngle);
 					Serv.addCharacteristic(Characteristic.TargetVerticalTiltAngle);
 					Serv.getCharacteristic(Characteristic.TargetVerticalTiltAngle).setProps(props);
-					this.log('debug','Vertical Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.VerTiltSlider.configuration));
+					this.log('|debug','Vertical Slider props :'+JSON.stringify(props)+'/'+JSON.stringify(Serv.actions.VerTiltSlider.configuration));
 				}
 				
 				// add Active, Tampered and Defect Characteristics if needed
@@ -674,7 +675,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture" on regarde s\'il y a uniquement les boutons...');
+				this.log('|warning','Pas de type générique "Info/Volet Etat" ou "Info/Volet Etat Fermeture" on regarde s\'il y a uniquement les boutons...');
 				eqLogic.services.flap.forEach((cmd) => {
 					if (cmd.up) {
 						const SwitchName=cmd.up.name;
@@ -757,7 +758,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 				});
 				if(!HBservice) {
-					this.log('warn','Pas de type générique "Action/Volet Bouton Monter" ou "Action/Volet Bouton Descendre" ou "Action/Volet Bouton Stop"');
+					this.log('|warning','Pas de type générique "Action/Volet Bouton Monter" ou "Action/Volet Bouton Descendre" ou "Action/Volet Bouton Stop"');
 				} else {
 					HBservice = null;
 				}
@@ -789,10 +790,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				});
 				Serv.maxValue = 100; // if not set in Jeedom it's 100
 				Serv.minValue = 0; // if not set in Jeedom it's 0
-				if(Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
-				if(!Serv.actions.up && Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
-				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('warn','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');}
+				if(Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Descendre"');}
+				if(!Serv.actions.up && Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Descendre" et "Action/Fenêtre Motorisée Monter"');}
+				if(!Serv.actions.up && !Serv.actions.down && !Serv.actions.slider) {this.log('|warning','Pas de type générique "Action/Fenêtre Motorisée Slider" et "Action/Fenêtre Motorisée Monter" et "Action/Fenêtre Motorisée Descendre"');}
 				if(Serv.actions.slider) {
 					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
 						Serv.maxValue = parseInt(Serv.actions.slider.configuration.maxValue);
@@ -812,7 +813,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Fenêtre Motorisée Etat"');
+				this.log('|warning','Pas de type générique "Info/Fenêtre Motorisée Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -838,8 +839,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.inuse = cmd2.inuse;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Prise Bouton On"');}
-				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Prise Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Prise Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Prise Bouton Off"');}
 				// Test for AdminOnlyAccess, state need to have OwnerOnly attribute to True ou 1
 				if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
 				// add Active, Tampered and Defect Characteristics if needed
@@ -852,7 +853,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Prise Etat"');
+				this.log('|warning','Pas de type générique "Info/Prise Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -878,8 +879,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.off = cmd2.off;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Robinet Bouton On"');}
-				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Robinet Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Robinet Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Robinet Bouton Off"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -891,7 +892,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Robinet Etat"');
+				this.log('|warning','Pas de type générique "Info/Robinet Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -917,8 +918,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.off = cmd2.off;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Irrigation Bouton On"');}
-				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Irrigation Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Irrigation Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Irrigation Bouton Off"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -930,7 +931,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Irrigation Etat"');
+				this.log('|warning','Pas de type générique "Info/Irrigation Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -960,8 +961,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.remainingDuration = cmd2.remainingDuration;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Valve générique Bouton On"');}
-				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Valve générique Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Valve générique Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Valve générique Bouton Off"');}
 				
 				if(Serv.actions.setDuration) {
 					HBservice.characteristics.push(Characteristic.SetDuration);
@@ -982,7 +983,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Valve générique Etat"');
+				this.log('|warning','Pas de type générique "Info/Valve générique Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -1011,9 +1012,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.slider=cmd2.slider;
 					}
 				});
-				if (Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur OFF"');}
-				if (!Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur ON"');}
-				if (!Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Ventilateur ON" et "Action/Ventilateur OFF"');}
+				if (Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Ventilateur OFF"');}
+				if (!Serv.actions.on && Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Ventilateur ON"');}
+				if (!Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Ventilateur ON" et "Action/Ventilateur OFF"');}
 				
 				if(Serv.actions.slider) {
 					if(Serv.actions.slider.configuration && Serv.actions.slider.configuration.maxValue && parseInt(Serv.actions.slider.configuration.maxValue)) {
@@ -1025,13 +1026,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					HBservice.characteristics.push(Characteristic.RotationSpeed);
 					Serv.addCharacteristic(Characteristic.RotationSpeed);
 				} else {
-					this.log('info','Le ventilateur n\'a pas de variateur');
+					this.log('|info','Le ventilateur n\'a pas de variateur');
 				}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
 				
-				this.log('info','Le ventilateur est du type :',FanType+((maxPower)?','+maxPower:''));
+				this.log('|info','Le ventilateur est du type :',FanType+((maxPower)?','+maxPower:''));
 				Serv.FanType = FanType;
 				Serv.maxPower = maxPower;
 				Serv.cmd_id = cmd.state.id;
@@ -1041,7 +1042,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Ventilateur Etat"');
+				this.log('|warning','Pas de type générique "Info/Ventilateur Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -1051,7 +1052,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (!cmd.state) {return;}
 				let SwitchName = eqLogic.name;
 				if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
-					this.log('debug',"Switchs multiples dans même équipement, il y en a "+eqLogic.numSwitches);
+					this.log('|debug',"Switchs multiples dans même équipement, il y en a "+eqLogic.numSwitches);
 					SwitchName=cmd.state.name;
 				}
 				HBservice = {
@@ -1060,7 +1061,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				};
 				const Serv = HBservice.controlService;
 				if(cmd.state.generic_type == 'CAMERA_RECORD_STATE' || (cmd.state.generic_type == 'SWITCH_STATE' && eqLogic.numSwitches>1)) {
-					this.log('debug',"Nom du switch (multi) : "+SwitchName);
+					this.log('|debug',"Nom du switch (multi) : "+SwitchName);
 					Serv.getCharacteristic(Characteristic.On).displayName = SwitchName;
 					
 					Serv.ConfiguredName=SwitchName;
@@ -1091,8 +1092,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					}
 				});
-				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Interrupteur Bouton On"');}
-				if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Interrupteur Bouton Off"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton On"');}
+				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton Off"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -1114,7 +1115,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Interrupteur Etat"');
+				this.log('|warning','Pas de type générique "Info/Interrupteur Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -1147,7 +1148,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','La Commande Action associée doit être du type "Autre"');
+				this.log('|warning','La Commande Action associée doit être du type "Autre"');
 			} else {
 				HBservice = null;
 			}
@@ -1193,7 +1194,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			eqLogic.services.battery.forEach((cmd) => {
 				if (!cmd.battery) {return;}
 				HBservice = {
-					controlService : new Service.BatteryService(eqLogic.name),
+					controlService : new Service.Battery(eqLogic.name),
 					characteristics : [Characteristic.BatteryLevel,Characteristic.ChargingState,Characteristic.StatusLowBattery],
 				};
 				const Serv = HBservice.controlService;
@@ -1364,35 +1365,35 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					if(eqLogic.customizedValues.EXCELLENT && eqLogic.customizedValues.EXCELLENT != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.EXCELLENT] = parseInt(eqLogic.customizedValues.EXCELLENT);
 					} else {
-						this.log('warn',"Pas de config de la valeur 'Excellent', on la défini sur 50");
+						this.log('|warning',"Pas de config de la valeur 'Excellent', on la défini sur 50");
 						Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=50;
 					}
 					if(eqLogic.customizedValues.GOOD && eqLogic.customizedValues.GOOD != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.GOOD] = parseInt(eqLogic.customizedValues.GOOD);
 					} else {
-						this.log('warn',"Pas de config de la valeur 'Bon', on la défini sur 100");
+						this.log('|warning',"Pas de config de la valeur 'Bon', on la défini sur 100");
 						Serv.levelNum[Characteristic.AirQuality.GOOD]=100;
 					}
 					if(eqLogic.customizedValues.FAIR && eqLogic.customizedValues.FAIR != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.FAIR] = parseInt(eqLogic.customizedValues.FAIR);
 					} else {
-						this.log('warn',"Pas de config de la valeur 'Moyen', on la défini sur 150");
+						this.log('|warning',"Pas de config de la valeur 'Moyen', on la défini sur 150");
 						Serv.levelNum[Characteristic.AirQuality.FAIR]=150;
 					}
 					if(eqLogic.customizedValues.INFERIOR && eqLogic.customizedValues.INFERIOR != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.INFERIOR] = parseInt(eqLogic.customizedValues.INFERIOR);
 					} else {
-						this.log('warn',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
+						this.log('|warning',"Pas de config de la valeur 'Inférieur', on la défini sur 200");
 						Serv.levelNum[Characteristic.AirQuality.INFERIOR]=200;
 					}
 					if(eqLogic.customizedValues.POOR && eqLogic.customizedValues.POOR != "NOT") {
 						Serv.levelNum[Characteristic.AirQuality.POOR] = parseInt(eqLogic.customizedValues.POOR);
 					} else {
-						this.log('warn',"Pas de config de la valeur 'Faible', on la défini sur 1000");
+						this.log('|warning',"Pas de config de la valeur 'Faible', on la défini sur 1000");
 						Serv.levelNum[Characteristic.AirQuality.POOR]=1000;
 					}
 				} else if(this.myPlugin == "homebridge") {
-					this.log('warn',"Pas de config numérique des valeurs que qualité d'air");
+					this.log('|warning',"Pas de config numérique des valeurs que qualité d'air");
 				}
 
 				
@@ -1479,7 +1480,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (!cmd.presence) {return;}
 				let SensorName=eqLogic.name;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
+					this.log('|debug',"Detecteurs multiples dans même équipement, il y en a "+eqLogic.numDetector);
 					SensorName=cmd.presence.name;
 				}
 				HBservice = {
@@ -1488,7 +1489,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				};
 				const Serv = HBservice.controlService;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Nom du détecteur (multi) : "+SensorName);
+					this.log('|debug',"Nom du détecteur (multi) : "+SensorName);
 					Serv.getCharacteristic(Characteristic.MotionDetected).displayName = SensorName;
 					
 					Serv.ConfiguredName=SensorName;
@@ -1533,7 +1534,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (!cmd.occupancy) {return;}
 				let SensorName=eqLogic.name;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
+					this.log('|debug',"Detecteurs occupancy multiples dans même équipement, il y en a "+eqLogic.numDetector);
 					SensorName=cmd.occupancy.name;
 				}
 				HBservice = {
@@ -1542,7 +1543,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				};
 				const Serv = HBservice.controlService;
 				if(eqLogic.numDetector>1) {
-					this.log('debug',"Nom du détecteur (multi) : "+SensorName);
+					this.log('|debug',"Nom du détecteur (multi) : "+SensorName);
 					Serv.getCharacteristic(Characteristic.OccupancyDetected).displayName = SensorName;
 					
 					Serv.ConfiguredName=SensorName;
@@ -1587,7 +1588,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				var props = {};
 				var unite = '';
 				if(cmd.state.subType=="numeric") {
-					this.log('debug','Le générique',cmd.state.name,'est un numérique');
+					this.log('|debug','Le générique',cmd.state.name,'est un numérique');
 					// test if default value is Float or Int ?
 					var CharactToSet=Characteristic.GenericFLOAT;
 					var NumericGenericType='float';
@@ -1595,7 +1596,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						CharactToSet=Characteristic.GenericINT;
 						NumericGenericType='int';
 					}
-					this.log('debug','Sur base de sa valeur actuelle',cmd.state.currentValue,', on determine un type :',NumericGenericType);
+					this.log('|debug','Sur base de sa valeur actuelle',cmd.state.currentValue,', on determine un type :',NumericGenericType);
 					HBservice.characteristics.push(CharactToSet);
 					Serv.addCharacteristic(CharactToSet);
 					Serv.getCharacteristic(CharactToSet).displayName = cmd.state.name;
@@ -1612,16 +1613,16 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					}
 					if(Object.keys(props).length !== 0) {
-						this.log('debug','On lui set les props suivants :',props);
+						this.log('|debug','On lui set les props suivants :',props);
 						Serv.getCharacteristic(CharactToSet).setProps(props);
 					}
 				} else if (cmd.state.subType=="binary") {
-					this.log('debug','Le générique',cmd.state.name,'est un booléen');
+					this.log('|debug','Le générique',cmd.state.name,'est un booléen');
 					HBservice.characteristics.push(Characteristic.GenericBOOL);
 					Serv.addCharacteristic(Characteristic.GenericBOOL);
 					Serv.getCharacteristic(Characteristic.GenericBOOL).displayName = cmd.state.name;
 				} else if (cmd.state.subType=="string" || cmd.state.subType=="other") {
-					this.log('debug','Le générique',cmd.state.name,'est une chaîne');
+					this.log('|debug','Le générique',cmd.state.name,'est une chaîne');
 					HBservice.characteristics.push(Characteristic.GenericSTRING);
 					Serv.addCharacteristic(Characteristic.GenericSTRING);
 					Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
@@ -1629,7 +1630,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					unite = cmd.state.unite ? cmd.state.unite : '';
 					if(unite) {props.unit=unite;}
 					if(Object.keys(props).length !== 0) {
-						this.log('debug','On lui set les props suivants :',props);
+						this.log('|debug','On lui set les props suivants :',props);
 						Serv.getCharacteristic(Characteristic.GenericSTRING).setProps(props);
 					}
 				}					
@@ -1686,10 +1687,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.infos.mute=cmd2.mute;
 					}
 				});
-				if(!Serv.actions.set_volume) {this.log('warn','Pas de type générique "Action/Haut-Parleur Volume"');}
-				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur Mute"');}
-				if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur UnMute"');}
-				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('warn','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');}
+				if(!Serv.actions.set_volume) {this.log('|warning','Pas de type générique "Action/Haut-Parleur Volume"');}
+				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && Serv.actions.mute_off) {this.log('|warning','Pas de type générique "Action/Haut-Parleur Mute"');}
+				if(!Serv.actions.mute_toggle && Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('|warning','Pas de type générique "Action/Haut-Parleur UnMute"');}
+				if(!Serv.actions.mute_toggle && !Serv.actions.mute_on && !Serv.actions.mute_off) {this.log('|warning','Pas de type générique "Action/Haut-Parleur Toggle Mute" / "Action/Haut-Parleur Mute" / "Action/Haut-Parleur UnMute"');}
 				Serv.cmd_id = cmd.volume.id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
@@ -1697,7 +1698,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Haut-Parleur Volume"');
+				this.log('|warning','Pas de type générique "Info/Haut-Parleur Volume"');
 			} else {
 				HBservice = null;
 			}
@@ -1938,9 +1939,9 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.toggle = cmd2.toggle;
 					}
 				});
-				if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) {this.log('warn','Pas de type générique "Action/Portail ou garage bouton d\'ouverture"');}
-				if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
-				if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {this.log('warn','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
+				if(!Serv.actions.toggle && !Serv.actions.on && Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Portail ou garage bouton d\'ouverture"');}
+				if(!Serv.actions.toggle && Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Portail ou garage bouton de fermeture"');}
+				if(!Serv.actions.toggle && !Serv.actions.on && !Serv.actions.off) {this.log('|warning','Pas de type générique ""Action/Portail ou garage bouton toggle" / "Action/Portail ou garage bouton d\'ouverture" / "Action/Portail ou garage bouton de fermeture"');}
 								
 				if(eqLogic.customizedValues) {
 					Serv.customizedValues = eqLogic.customizedValues;
@@ -1956,7 +1957,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
+				this.log('|warning','Pas de type générique "Info/Garage état ouvrant" ou "Info/Portail état ouvrant"');
 			} else {
 				HBservice = null;
 			}
@@ -1980,8 +1981,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.actions.off = cmd2.off;
 					}
 				});
-				if(!Serv.actions.on) {this.log('warn','Pas de type générique "Action/Serrure Bouton Ouvrir"');}
-				// if(!Serv.actions.off) {this.log('warn','Pas de type générique "Action/Serrure Bouton Fermer"');}
+				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Serrure Bouton Ouvrir"');}
+				// if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Serrure Bouton Fermer"');}
 				
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
@@ -1993,7 +1994,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
-				this.log('warn','Pas de type générique "Info/Serrure Etat"');
+				this.log('|warning','Pas de type générique "Info/Serrure Etat"');
 			} else {
 				HBservice = null;
 			}
@@ -2039,7 +2040,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						if(buttonSingle[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);}
 						if(buttonDouble[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);}
 						if(buttonLong[b].trim() != '') {values.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);}
-						this.log('debug','ValidValues',values);
+						this.log('|debug','ValidValues',values);
 						Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 						
 						Serv.getCharacteristic(Characteristic.ServiceLabelIndex).updateValue(Serv.ServiceLabelIndex);
@@ -2069,7 +2070,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 					
 				} else {
-					this.log('warn',"Pas le même nombre de boutons pour chaque évènement (il doit y avoir le même nombre de ';')");
+					this.log('|warning',"Pas le même nombre de boutons pour chaque évènement (il doit y avoir le même nombre de ';')");
 				}
 			});
 		}		
@@ -2126,7 +2127,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 											Serv.cmd_id += Serv.infos.Long.id;
 										break;
 									}
-									this.log('debug','ValidValues 0 Mono',values);
+									this.log('|debug','ValidValues 0 Mono',values);
 									Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 
 									
@@ -2182,7 +2183,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 								Serv.infos.Long=cmdType.Long;
 								Serv.cmd_id += Serv.infos.Long.id;
 							}
-							this.log('debug','ValidValues '+b+' Mono',values);
+							this.log('|debug','ValidValues '+b+' Mono',values);
 							Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:values});
 
 							
@@ -2440,7 +2441,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermo.chauf.mode_id = splitted[0];
 						props.validValues.push(1);
 					} else {
-						this.log('warn','Pas de config du mode Chauffage');
+						this.log('|warning','Pas de config du mode Chauffage');
 					}
 					if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
 						Serv.thermo.clim = {};
@@ -2449,7 +2450,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermo.clim.mode_id = splitted[0];
 						props.validValues.push(2);
 					} else {
-						this.log('warn','Pas de config du mode Climatisation');
+						this.log('|warning','Pas de config du mode Climatisation');
 					}
 					if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
 						Serv.thermo.off = {};
@@ -2458,7 +2459,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermo.off.mode_id = splitted[0];
 					}
 				} else if(this.myPlugin == "homebridge") {
-					this.log('warn','Pas de config des modes du thermostat');
+					this.log('|warning','Pas de config des modes du thermostat');
 				}
 				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
 				props.validValues.push(3);
@@ -2553,7 +2554,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermoHC.chauf.mode_id = splitted[0];
 						props.validValues.push(1);
 					} else {
-						this.log('warn','Pas de config du mode Chauffage');
+						this.log('|warning','Pas de config du mode Chauffage');
 					}
 					if(eqLogic.thermoModes.Clim && eqLogic.thermoModes.Clim != "NOT") {
 						Serv.thermoHC.clim = {};
@@ -2562,7 +2563,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						Serv.thermoHC.clim.mode_id = splitted[0];
 						props.validValues.push(2);
 					} else {
-						this.log('warn','Pas de config du mode Climatisation');
+						this.log('|warning','Pas de config du mode Climatisation');
 					}
 					if(eqLogic.thermoModes.Off && eqLogic.thermoModes.Off != "NOT") {
 						Serv.thermoHC.off = {};
@@ -2572,7 +2573,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					}
 				}
 				else if(this.myPlugin == "homebridge") {
-						this.log('warn','Pas de config des modes du thermostatHC');
+						this.log('|warning','Pas de config des modes du thermostatHC');
 				}
 				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
 				props.validValues.push(3);
@@ -2659,7 +2660,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					});
 				});
 			} else {
-				this.log('warn','Vous utilisez le type générique Mode en dehors du plugin Mode !');	
+				this.log('|warning','Vous utilisez le type générique Mode en dehors du plugin Mode !');	
 			}
 		}
 		if (eqLogic.services.siren) {
@@ -2733,7 +2734,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						props.validValues.push(Characteristic.SecuritySystemTargetState.STAY_ARM);
 						Serv.hasAlarmModes=true;
 					} else {
-						this.log('warn','Pas de config du mode Domicile/Présence');
+						this.log('|warning','Pas de config du mode Domicile/Présence');
 					}
 					if(eqLogic.alarmModes.SetModeAbsent && eqLogic.alarmModes.SetModeAbsent != "NOT") {
 						Serv.alarm.away = {};
@@ -2743,7 +2744,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
 						Serv.hasAlarmModes=true;
 					} else {
-						this.log('warn','Pas de config du mode À distance/Absence');
+						this.log('|warning','Pas de config du mode À distance/Absence');
 					}
 					if(eqLogic.alarmModes.SetModeNuit && eqLogic.alarmModes.SetModeNuit != "NOT") {
 						Serv.alarm.night = {};
@@ -2753,12 +2754,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						props.validValues.push(Characteristic.SecuritySystemTargetState.NIGHT_ARM);
 						Serv.hasAlarmModes=true;
 					} else {
-						this.log('warn','Pas de config du mode Nuit');
+						this.log('|warning','Pas de config du mode Nuit');
 					}
 				}
 				if(this.myPlugin == "homebridge" && !Serv.hasAlarmModes) {
 					props.validValues.push(Characteristic.SecuritySystemTargetState.AWAY_ARM);
-					this.log('warn','Pas de config des modes de l\'alarme');
+					this.log('|warning','Pas de config des modes de l\'alarme');
 				}
 				props.validValues.push(Characteristic.SecuritySystemTargetState.DISARM);
 				Serv.getCharacteristic(Characteristic.SecuritySystemTargetState).setProps(props);
@@ -2772,7 +2773,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}
 
 		if (HBservices.length != 0) {
-			if (DEV_DEBUG) {this.log('debug','HBservices : '+JSON.stringify(HBservices));}
+			if (DEV_DEBUG) {this.log('|debug','HBservices : '+JSON.stringify(HBservices));}
 			createdAccessory = this.createAccessory(HBservices, eqLogic);
 			this.addAccessory(createdAccessory);
 			HBservices = [];
@@ -2884,7 +2885,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 		if (!jeedomAccessory) {
 			return;
 		}
-		if(!silence) {this.log('debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');}
+		if(!silence) {this.log('|debug',' Vérification d\'existance de l\'accessoire dans le cache Homebridge...');}
 		existingAccessory = this.existingAccessory(jeedomAccessory.UUID,silence);
 		if(existingAccessory)
 		{
@@ -2894,7 +2895,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 			existingAccessory.reviewed=true;
 		}
 		else if(!silence) {
-			this.log('│ KO : Accessoire Ignoré');
+			this.log('│  KO  : Accessoire Ignoré');
 		}
 	}
 	catch(e){
@@ -2917,7 +2918,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		if (!jeedomAccessory) {return;}
 		let isNewAccessory = false;
 		const services2Add = jeedomAccessory.services_add;
-		this.log('debug'," Vérification d'existance de l'accessoire dans le cache Homebridge...");
+		this.log('|debug'," Vérification d'existance de l'accessoire dans le cache Homebridge...");
 		HBAccessory = this.existingAccessory(jeedomAccessory.UUID);
 		if (!HBAccessory) {
 			this.log('│ Nouvel accessoire (' + jeedomAccessory.name + ')');
@@ -2941,10 +2942,6 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			const exec = require('child_process').exec;
 			exec('sudo rm -f '+this.pathHomebridgeConf+'*_persist.json');
 		}
-
-		// No more supported by HAP-NodeJS
-		// HBAccessory.reachable = true;
-		// HBAccessory.updateReachability(true);
 		
 		if(!isNewAccessory) {
 			const cachedValues=jeedomAccessory.delServices(HBAccessory);
@@ -2965,7 +2962,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			HBAccessory.context.eqLogic.loggingService.subtype = loggingServiceParams.subtype;
 			HBAccessory.context.eqLogic.loggingService.cmd_id = loggingServiceParams.cmd_id;
 			// HBAccessory.addService(HBAccessory.context.eqLogic.loggingService);
-			this.log('debug',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
+			this.log('|debug',' Ajout service History :'+HBAccessory.displayName+' subtype:'+HBAccessory.context.eqLogic.loggingService.subtype+' cmd_id:'+HBAccessory.context.eqLogic.loggingService.cmd_id+' UUID:'+HBAccessory.context.eqLogic.loggingService.UUID);
 		}
 										
 		if(HBAccessory.context.eqLogic.hasAdaptive) {
@@ -2977,10 +2974,10 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		
 		if (isNewAccessory) {
-			this.log('│ OK : Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│  OK  : Ajout de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.registerPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
 		}else{
-			this.log('│ OK : Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
+			this.log('│  OK  : Mise à jour de l\'accessoire (' + jeedomAccessory.name + ')');
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
 		HBAccessory.on('identify', (paired, callback) => {
@@ -3008,11 +3005,11 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence=false) {
 	try{
 		for (const key of Object.keys(this.accessories)) {
 			if (this.accessories[key].UUID == UUID) {
-				if(!silence) {this.log('debug',' Accessoire déjà existant dans le cache Homebridge');}
+				if(!silence) {this.log('|debug',' Accessoire déjà existant dans le cache Homebridge');}
 				return this.accessories[key];
 			}
 		}
-		if(!silence) {this.log('debug',' Accessoire non existant dans le cache Homebridge');}
+		if(!silence) {this.log('|debug',' Accessoire non existant dans le cache Homebridge');}
 		return null;
 	}
 	catch(e){
@@ -3175,7 +3172,26 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 							}
 						}
 					}
-					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+					if(value == 0) {
+						// if we want to turn the switch off
+						if(service.actions.off) {
+							this.command('turnOff', null, service);
+						} else if(service.actions.slider && service.LightType) {
+							this.command('setValueBright', 0, service);
+						} else {
+							this.command('turnOff', null, service);
+						}
+					} else {
+						// if we want to turn the switch on
+						const _doNothing=null;
+						if(service.actions.on) {
+							this.command('turnOn', null, service);
+						} else if(service.actions.slider && service.LightType) {
+							this.command('setValueBright', service.maxBright, service);
+						} else {
+							this.command('turnOn', null, service);
+						}
+					}
 				}
 			break;	
 			case Characteristic.Active.UUID :
@@ -5006,34 +5022,34 @@ function sanitizeValue(currentValue,characteristic) {
 	}
 	
 	switch(characteristic.props.format) {
-			case Characteristic.Formats.UINT8 :
-			case Characteristic.Formats.UINT16:
-			case Characteristic.Formats.UINT32 :
-			case Characteristic.Formats.UINT64 :
+			case Formats.UINT8 :
+			case Formats.UINT16:
+			case Formats.UINT32 :
+			case Formats.UINT64 :
 				val = parseInt(currentValue);
 				val = Math.abs(val); // unsigned
 				if(!val) {val = 0;}
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) {val = parseInt(characteristic.props.minValue);}
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) {val = parseInt(characteristic.props.maxValue);}		
 			break;
-			case Characteristic.Formats.INT :
+			case Formats.INT :
 				val = parseInt(currentValue);
 				if(!val) {val = 0;}
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseInt(characteristic.props.minValue)) {val = parseInt(characteristic.props.minValue);}
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseInt(characteristic.props.maxValue)) {val = parseInt(characteristic.props.maxValue);}	
 			break;
-			case Characteristic.Formats.FLOAT :
+			case Formats.FLOAT :
 				val = minStepRound(parseFloat(currentValue),characteristic);
 				if(!val) {val = 0.0;}
 				if(characteristic.props.minValue != null && characteristic.props.minValue != undefined && val < parseFloat(characteristic.props.minValue)) {val = parseFloat(characteristic.props.minValue);}
 				if(characteristic.props.maxValue != null && characteristic.props.maxValue != undefined && val > parseFloat(characteristic.props.maxValue)) {val = parseFloat(characteristic.props.maxValue);}	
 			break;
-			case Characteristic.Formats.BOOL :
+			case Formats.BOOL :
 				val = toBool(currentValue);
 				if(!val) {val = false;}
 			break;
-			case Characteristic.Formats.STRING :
-			case Characteristic.Formats.TLV8 :
+			case Formats.STRING :
+			case Formats.TLV8 :
 				if(currentValue !== undefined) {
 					val = currentValue.toString();
 				}
@@ -5818,404 +5834,463 @@ JeedomPlatform.prototype.syncColorCharacteristics = function(rgb, service) {
 // -- Params --
 // -- Return : nothing
 function RegisterCustomCharacteristics() {
-	// Custom Services and Characteristics
-	Characteristic.TimeInterval = function() {
-		Characteristic.call(this, 'Time Interval', '2A6529B5-5825-4AF3-AD52-20288FBDA115');
-		this.setProps({
-			format : Characteristic.Formats.FLOAT,
-			unit : Characteristic.Units.SECONDS,
-			maxValue : 21600, // 12 hours
-			minValue : 0,
-			minStep : 900, // 15 min
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.TimeInterval, Characteristic);
-	Characteristic.TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+	// Custom Services and Characteristics	
+	class TimeInterval extends Characteristic {
+		constructor() {
+			super('Time Interval', TimeInterval.UUID);
+			this.setProps({
+				format : Formats.FLOAT,
+				unit : Units.SECONDS,
+				maxValue : 21600, // 12 hours
+				minValue : 0,
+				minStep : 900, // 15 min
+				perms : [Perms.READ, Perms.WRITE, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	TimeInterval.UUID = '2A6529B5-5825-4AF3-AD52-20288FBDA115';
+	Characteristic.TimeInterval=TimeInterval;
 
-	Characteristic.CurrentPowerConsumption = function() {
-		Characteristic.call(this, 'Consumption', 'E863F10D-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format : Characteristic.Formats.UINT16,
-			unit : 'Watts',
-			maxValue : 100000,
-			minValue : -100000,
-			minStep : 1,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.CurrentPowerConsumption, Characteristic);
-	Characteristic.CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
+	class CurrentPowerConsumption extends Characteristic {
+		constructor() {
+			super('Consumption', CurrentPowerConsumption.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				unit: 'Watts',
+				maxValue: 100000,
+				minValue: -100000,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	CurrentPowerConsumption.UUID = 'E863F10D-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.CurrentPowerConsumption=CurrentPowerConsumption;
 
-	Characteristic.TotalPowerConsumption = function() {
-		Characteristic.call(this, 'Total Consumption', 'E863F10C-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format : Characteristic.Formats.FLOAT, // Deviation from Eve Energy observed type
-			unit : 'kWh',
-			maxValue : 100000000000,
-			minValue : 0,
-			minStep : 0.001,
-			perms : [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.TotalPowerConsumption, Characteristic);
-	Characteristic.TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
+	class TotalPowerConsumption extends Characteristic {
+		constructor() {
+			super('Total Consumption', TotalPowerConsumption.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				unit: 'kWh',
+				maxValue: 100000000000,
+				minValue: 0,
+				minStep: 0.001,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	TotalPowerConsumption.UUID = 'E863F10C-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.TotalPowerConsumption=TotalPowerConsumption;
 
-	Characteristic.UVIndex = function() {
-		Characteristic.call(this, 'UV Index', '05ba0fe0-b848-4226-906d-5b64272e05ce');
-		this.setProps({
-			format: Characteristic.Formats.UINT8,
-			maxValue: 10,
-			minValue: 0,
-			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.UVIndex, Characteristic);	
-	Characteristic.UVIndex.UUID = '05ba0fe0-b848-4226-906d-5b64272e05ce';
+	class UVIndex extends Characteristic {
+		constructor() {
+			super('UV Index', UVIndex.UUID);
+			this.setProps({
+				format: Formats.UINT8,
+				maxValue: 10,
+				minValue: 0,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	UVIndex.UUID = '05ba0fe0-b848-4226-906d-5b64272e05ce';
+	Characteristic.UVIndex=UVIndex;
 
-	Characteristic.AirPressure = function() {
-		Characteristic.call(this, 'Air Pressure', 'E863F10F-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT16,
-			unit: "hPa",
-			maxValue: 1100,
-			minValue: 700,
-			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	inherits(Characteristic.AirPressure, Characteristic);	
-	Characteristic.AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+	class AirPressure extends Characteristic {
+		constructor() {
+			super('Air Pressure', AirPressure.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				unit: 'hPa',
+				maxValue: 1100,
+				minValue: 700,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	AirPressure.UUID = 'E863F10F-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.AirPressure=AirPressure;
 
 	// contacts helpers, need to identify
-	Characteristic.TimesOpened = function() {
-		Characteristic.call(this, 'TimesOpened', 'E863F129-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.TimesOpened, Characteristic);
+	class TimesOpened extends Characteristic {
+		constructor() {
+			super('TimesOpened', TimesOpened.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	TimesOpened.UUID = 'E863F129-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.TimesOpened=TimesOpened;
 	
-	Characteristic.Char118 = function() {
-		Characteristic.call(this, 'Char118', 'E863F118-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Char118.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Char118, Characteristic);
+	class Char118 extends Characteristic {
+		constructor() {
+			super('Char118', Char118.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Char118.UUID = 'E863F118-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Char118=Char118;
 	
-	Characteristic.Char119 = function() {
-		Characteristic.call(this, 'Char119', 'E863F119-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Char119.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Char119, Characteristic);
+	class Char119 extends Characteristic {
+		constructor() {
+			super('Char119', Char119.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Char119.UUID = 'E863F119-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Char119=Char119;
 	
-	Characteristic.LastActivation = function() {
-		Characteristic.call(this, 'LastActivation', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.LastActivation.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.LastActivation, Characteristic);	
+	class LastActivation extends Characteristic {
+		constructor() {
+			super('LastActivation', LastActivation.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	LastActivation.UUID = 'E863F11A-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.LastActivation=LastActivation;
 	
-	Characteristic.ResetTotal = function() {
-		Characteristic.call(this, 'ResetTotal', 'E863F112-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT32,
-			perms: [ Characteristic.Perms.WRITE, Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.ResetTotal.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.ResetTotal, Characteristic);	
+	class ResetTotal extends Characteristic {
+		constructor() {
+			super('ResetTotal', ResetTotal.UUID);
+			this.setProps({
+				format: Formats.UINT32,
+				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	ResetTotal.UUID = 'E863F112-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.ResetTotal=ResetTotal;
 	// / contacts helpers
 	
 	// Motion Helpers
-	Characteristic.Sensitivity = function() {
-		Characteristic.call(this, 'Sensitivity', 'E863F120-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT16,
-			maxValue: 7,
-			minValue: 0,
-			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Sensitivity.UUID = 'E863F120-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Sensitivity, Characteristic);
+	class Sensitivity extends Characteristic {
+		constructor() {
+			super('Sensitivity', Sensitivity.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				maxValue: 7,
+				minValue: 0,
+				minStep: 1,
+				perms: [Perms.READ, Perms.WRITE],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Sensitivity.UUID = 'E863F120-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Sensitivity=Sensitivity;
 
-	Characteristic.Duration = function() {
-		Characteristic.call(this, 'Duration', 'E863F12D-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT16,
-			maxValue: 3600,
-			minValue: 0,
-			minStep: 1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Duration.UUID = 'E863F12D-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.Duration, Characteristic);
+	class Duration extends Characteristic {
+		constructor() {
+			super('Duration', Duration.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				maxValue: 3600,
+				minValue: 0,
+				minStep: 1,
+				perms: [Perms.READ, Perms.WRITE],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Duration.UUID = 'E863F12D-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.Duration=Duration;
 	// /Motion Helpers
 	
 	
 	
-	Characteristic.GenericINT = function() {
-		Characteristic.call(this, 'ValueINT', '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263');
-		this.setProps({
-			format: Characteristic.Formats.INT,
-			minStep: 1,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericINT.UUID = '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263';
-	inherits(Characteristic.GenericINT, Characteristic);	
-	
-	Characteristic.GenericFLOAT = function() {
-		Characteristic.call(this, 'ValueFLOAT', '0168A695-70A7-4AF7-A800-417D30055719');
-		this.setProps({
-			format: Characteristic.Formats.FLOAT,
-			minStep: 0.01,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericFLOAT.UUID = '0168A695-70A7-4AF7-A800-417D30055719';
-	inherits(Characteristic.GenericFLOAT, Characteristic);		
-	
-	Characteristic.GenericBOOL = function() {
-		Characteristic.call(this, 'ValueBOOL', 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB');
-		this.setProps({
-			format: Characteristic.Formats.BOOL,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericBOOL.UUID = 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB';
-	inherits(Characteristic.GenericBOOL, Characteristic);	
-
-	Characteristic.GenericSTRING = function() {
-		Characteristic.call(this, 'ValueSTRING', 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1');
-		this.setProps({
-			format: Characteristic.Formats.STRING,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.GenericSTRING.UUID = 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1';
-	inherits(Characteristic.GenericSTRING, Characteristic);		
-	
-	Characteristic.AQI = function() {
-		Characteristic.call(this, 'Index', '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263');
-		this.setProps({
-			format: Characteristic.Formats.INT,
-			unit: '',
-			minStep: 1,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
-	inherits(Characteristic.AQI, Characteristic);	
-
-	Characteristic.PPM = function() {
-		Characteristic.call(this, 'PPM', 'E863F10B-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.UINT16,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN],
-		});
-		this.value = this.getDefaultValue();
-    };
-	Characteristic.PPM.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.PPM, Characteristic);	
-
-    Characteristic.AQExtraCharacteristic = function() {
-		Characteristic.call(this, 'AQX2', 'E863F132-079E-48FF-8F27-9C2605A29F52');
-		this.setProps({
-			format: Characteristic.Formats.DATA,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.HIDDEN],
-		});
-        this.value = this.getDefaultValue();
-	};	
-	Characteristic.AQExtraCharacteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
-	inherits(Characteristic.AQExtraCharacteristic, Characteristic);	
-	
-	Characteristic.WindSpeed = function() {
-		Characteristic.call(this, 'Wind speed', '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41');
-		this.setProps({
-			format: Characteristic.Formats.FLOAT,
-			unit: "km/h",
-			maxValue: 100,
-			minValue: 0,
-			minStep: 0.1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.WindSpeed.UUID = '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41';
-	inherits(Characteristic.WindSpeed, Characteristic);
-
-	Characteristic.WindDirection = function() {
-		Characteristic.call(this, 'Wind direction', '46f1284c-1912-421b-82f5-eb75008b167e');
-		this.setProps({
-			format: Characteristic.Formats.STRING,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.WindDirection.UUID = '46f1284c-1912-421b-82f5-eb75008b167e';
-	inherits(Characteristic.WindDirection, Characteristic);
-
-	Characteristic.WeatherCondition = function() {
-		Characteristic.call(this, 'Condition', 'cd65a9ab-85ad-494a-b2bd-2f380084134d');
-		this.setProps({
-			format: Characteristic.Formats.STRING,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.WeatherCondition.UUID = 'cd65a9ab-85ad-494a-b2bd-2f380084134d';
-	inherits(Characteristic.WeatherCondition, Characteristic);
-
-	Characteristic.Visibility = function() {
-			Characteristic.call(this, 'Visibility', 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857');
+	class GenericINT extends Characteristic {
+		constructor() {
+			super('ValueINT', GenericINT.UUID);
 			this.setProps({
-				format: Characteristic.Formats.UINT8,
+				format: Formats.INT,
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericINT.UUID = '2ACF6D35-4FBF-4688-8787-6D5C4BA3A263';
+	Characteristic.GenericINT=GenericINT;
+	
+	class GenericFLOAT extends Characteristic {
+		constructor() {
+			super('ValueFLOAT', GenericFLOAT.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				minStep: 0.01,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericFLOAT.UUID = '0168A695-70A7-4AF7-A800-417D30055719';
+	Characteristic.GenericFLOAT=GenericFLOAT;
+	
+	class GenericBOOL extends Characteristic {
+		constructor() {
+			super('ValueBOOL', GenericBOOL.UUID);
+			this.setProps({
+				format: Formats.BOOL,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericBOOL.UUID = 'D8E3301A-CD20-4AAB-8F70-F80789E6ADCB';
+	Characteristic.GenericBOOL=GenericBOOL;
+
+	class GenericSTRING extends Characteristic {
+		constructor() {
+			super('ValueSTRING', GenericSTRING.UUID);
+			this.setProps({
+				format: Formats.STRING,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	GenericSTRING.UUID = 'EB19CE11-01F4-47DD-B7DA-B81C0640A5C1';	
+	Characteristic.GenericSTRING=GenericSTRING;
+	
+	class AQI extends Characteristic {
+		constructor() {
+			super('Index', AQI.UUID);
+			this.setProps({
+				format: Formats.INT,
+				unit: '',
+				minStep: 1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	AQI.UUID = '2ACF6D35-4FBF-4689-8787-6D5C4BA3A263';
+	Characteristic.AQI=AQI;
+
+	class PPM extends Characteristic {
+		constructor() {
+			super('PPM', PPM.UUID);
+			this.setProps({
+				format: Formats.UINT16,
+				perms: [Perms.READ, Perms.HIDDEN],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	PPM.UUID = 'E863F10B-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.PPM=PPM;
+
+	class AQExtraCharacteristic extends Characteristic {
+		constructor() {
+			super('AQX2', AQExtraCharacteristic.UUID);
+			this.setProps({
+				format: Formats.DATA,
+				perms: [Perms.READ, Perms.HIDDEN],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	AQExtraCharacteristic.UUID = 'E863F132-079E-48FF-8F27-9C2605A29F52';
+	Characteristic.AQExtraCharacteristic=AQExtraCharacteristic;
+	
+	class WindSpeed extends Characteristic {
+		constructor() {
+			super('Wind speed', WindSpeed.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				unit: 'km/h',
+				maxValue: 100,
+				minValue: 0,
+				minStep: 0.1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	WindSpeed.UUID = '49C8AE5A-A3A5-41AB-BF1F-12D5654F9F41';
+	Characteristic.WindSpeed=WindSpeed;
+
+	class WindDirection extends Characteristic {
+		constructor() {
+			super('Wind direction', WindDirection.UUID);
+			this.setProps({
+				format: Formats.STRING,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	WindDirection.UUID = '46f1284c-1912-421b-82f5-eb75008b167e';
+	Characteristic.WindDirection=WindDirection;
+
+	class WeatherCondition extends Characteristic {
+		constructor() {
+			super('Condition', WeatherCondition.UUID);
+			this.setProps({
+				format: Formats.STRING,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	WeatherCondition.UUID = 'CD65A9AB-85AD-494A-B2BD-2F380084134D';
+	Characteristic.WeatherCondition=WeatherCondition;
+
+	class Visibility extends Characteristic {
+		constructor() {
+			super('Visibility', Visibility.UUID);
+			this.setProps({
+				format: Formats.UINT8,
 				unit: "km",
 				maxValue: 200,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
-	inherits(Characteristic.Visibility, Characteristic);
+		}
+	}
+	Visibility.UUID = 'd24ecc1e-6fad-4fb5-8137-5af88bd5e857';
+	Characteristic.Visibility=Visibility;
 	
-	Characteristic.Rain = function() {
-		Characteristic.call(this, 'Rain', 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7');
-		this.setProps({
-			format: Characteristic.Formats.BOOL,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Rain.UUID = 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7';
-	inherits(Characteristic.Rain, Characteristic);
-	
-	Characteristic.Snow = function() {
-		Characteristic.call(this, 'Snow', 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD');
-		this.setProps({
-			format: Characteristic.Formats.BOOL,
-			perms: [ Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.Snow.UUID = 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD';
-	inherits(Characteristic.Snow, Characteristic);
-	
-	Characteristic.MinimumTemperature = function() {
-		Characteristic.call(this, 'MinimumTemperature', '707B78CA-51AB-4DC9-8630-80A58F07E419');
-		this.setProps({
-			format: Characteristic.Formats.FLOAT,
-			unit: Characteristic.Units.CELSIUS,
-			maxValue: 100,
-			minValue: -40,
-			minStep: 0.1,
-			perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
-		});
-		this.value = this.getDefaultValue();
-	};
-	Characteristic.MinimumTemperature.UUID = '707B78CA-51AB-4DC9-8630-80A58F07E419';
-	inherits(Characteristic.MinimumTemperature, Characteristic);
-	
-	Characteristic.NoiseLevel = function() {
-			Characteristic.call(this, 'Noise Level', 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5');
+	class Rain extends Characteristic {
+		constructor() {
+			super('Rain', Rain.UUID);
 			this.setProps({
-				format: Characteristic.Formats.UINT8,
+				format: Formats.BOOL,
+				perms: [ Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Rain.UUID = 'F14EB1AD-E000-4EF4-A54F-0CF07B2E7BE7';
+	Characteristic.Rain=Rain;
+	
+	class Snow extends Characteristic {
+		constructor() {
+			super('Snow', Snow.UUID);
+			this.setProps({
+				format: Formats.BOOL,
+				perms: [ Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	Snow.UUID = 'F14EB1AD-E000-4CE6-BD0E-384F9EC4D5DD';
+	Characteristic.Snow=Snow;
+	
+	class MinimumTemperature extends Characteristic {
+		constructor() {
+			super('MinimumTemperature', MinimumTemperature.UUID);
+			this.setProps({
+				format: Formats.FLOAT,
+				unit: Units.CELSIUS,
+				maxValue: 100,
+				minValue: -40,
+				minStep: 0.1,
+				perms: [Perms.READ, Perms.NOTIFY],
+			});
+			this.value = this.getDefaultValue();
+		}
+	}
+	MinimumTemperature.UUID = '707B78CA-51AB-4DC9-8630-80A58F07E419';
+	Characteristic.MinimumTemperature=MinimumTemperature;
+	
+	class NoiseLevel extends Characteristic {
+		constructor() {
+			super('Noise Level', NoiseLevel.UUID);
+			this.setProps({
+				format: Formats.UINT8,
 				unit: "dB",
 				maxValue: 1000,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.NoiseLevel.UUID = 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5';
-	inherits(Characteristic.NoiseLevel, Characteristic);
+		}
+	}
+	NoiseLevel.UUID = 'b3bbfabc-d78c-5b8d-948c-5dac1ee2cde5';
+	Characteristic.NoiseLevel=NoiseLevel;
 	
-	Characteristic.NoiseQuality = function() {
-			Characteristic.call(this, 'Noise Quality', '627ea399-29d9-5dc8-9a02-08ae928f73d8');
+	class NoiseQuality extends Characteristic {
+		constructor() {
+			super('Noise Quality', NoiseQuality.UUID);
 			this.setProps({
-				format: Characteristic.Formats.UINT8,
+				format: Formats.UINT8,
 				maxValue: 5,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.NoiseQuality.UUID = '627ea399-29d9-5dc8-9a02-08ae928f73d8';
-	inherits(Characteristic.NoiseQuality, Characteristic);
+		}
+	}
+	NoiseQuality.UUID = '627ea399-29d9-5dc8-9a02-08ae928f73d8';
 	
-	Characteristic.NoiseQuality.UNKNOWN = 0;
-	Characteristic.NoiseQuality.SILENT = 1;
-	Characteristic.NoiseQuality.CALM = 2;
-	Characteristic.NoiseQuality.LIGHTLYNOISY = 3;
-	Characteristic.NoiseQuality.NOISY = 4;
-	Characteristic.NoiseQuality.TOONOISY = 5;
+	NoiseQuality.UNKNOWN = 0;
+	NoiseQuality.SILENT = 1;
+	NoiseQuality.CALM = 2;
+	NoiseQuality.LIGHTLYNOISY = 3;
+	NoiseQuality.NOISY = 4;
+	NoiseQuality.TOONOISY = 5;
+	Characteristic.NoiseQuality=NoiseQuality;
 	
-	
-	Characteristic.SetDuration = function() {
-			Characteristic.call(this, 'Set Duration', '000000D3-0000-1000-8000-0026BB765291');
+	class SetDuration extends Characteristic {
+		constructor() {
+			super('Set Duration', SetDuration.UUID);
 			this.setProps({
-				format: Characteristic.Formats.UINT32,
+				format: Formats.UINT32,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.WRITE, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.SetDuration.UUID = '000000D3-0000-1000-8000-0026BB765291';
-	inherits(Characteristic.SetDuration, Characteristic);
+		}
+	}
+	SetDuration.UUID = '000000D3-0000-1000-8000-0026BB765291';
+	Characteristic.SetDuration=SetDuration;
 	
-	Characteristic.RemainingDuration = function() {
-			Characteristic.call(this, 'Remaining Duration', '000000D4-0000-1000-8000-0026BB765291');
+	class RemainingDuration extends Characteristic {
+		constructor() {
+			super('Remaining Duration', RemainingDuration.UUID);
 			this.setProps({
-				format: Characteristic.Formats.UINT32,
+				format: Formats.UINT32,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
+				perms: [Perms.READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
-		};
-	Characteristic.RemainingDuration.UUID = '000000D4-0000-1000-8000-0026BB765291';
-	inherits(Characteristic.RemainingDuration, Characteristic);
+		}
+	}
+	RemainingDuration.UUID = '000000D4-0000-1000-8000-0026BB765291';
+	Characteristic.RemainingDuration=RemainingDuration;
 	
 	/**
 	 * FakeGato History Service
@@ -6227,107 +6302,110 @@ function RegisterCustomCharacteristics() {
 	 * Custom Service 'Power Monitor'
 	 */
 
-	Service.PowerMonitor = function(displayName, subtype) {
-		Service.call(this, displayName, '0EB29E08-C307-498E-8E1A-4EDC5FF70607', subtype);
-
-		// Required Characteristics
-		this.addCharacteristic(Characteristic.CurrentPowerConsumption);
-		this.addCharacteristic(Characteristic.TotalPowerConsumption);
-
-		// Optional Characteristics
-
-	};
-	inherits(Service.PowerMonitor, Service);
-	Service.PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+	class PowerMonitor extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, PowerMonitor.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.CurrentPowerConsumption);
+			this.addCharacteristic(Characteristic.TotalPowerConsumption);
+	
+			// Optional Characteristics
+		}
+	}
+	PowerMonitor.UUID = '0EB29E08-C307-498E-8E1A-4EDC5FF70607';
+	Service.PowerMonitor=PowerMonitor;
 	
 	/**
 	 * Custom Service 'Pressure Sensor'
 	 */
 
-	Service.PressureSensor = function(displayName, subtype) {
-		Service.call(this, displayName, 'E863F00A-079E-48FF-8F27-9C2605A29F52', subtype);
-
-		// Required Characteristics
-		this.addCharacteristic(Characteristic.AirPressure);
-
-		// Optional Characteristics
-
-	};
-	inherits(Service.PressureSensor, Service);
-	Service.PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+	class PressureSensor extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, PressureSensor.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.AirPressure);
+	
+			// Optional Characteristics
+		}
+	}
+	PressureSensor.UUID = 'E863F00A-079E-48FF-8F27-9C2605A29F52';
+	Service.PressureSensor=PressureSensor;
 	
 	/**
 	 * Custom Service 'Noise Sensor'
 	 */
 
-	Service.NoiseSensor = function(displayName, subtype) {
-		Service.call(this, displayName, '6237cefc-9f4d-54b2-8033-2eda0053b811', subtype);
-
-		// Required Characteristics
-		this.addCharacteristic(Characteristic.NoiseLevel);
-		this.addCharacteristic(Characteristic.NoiseQuality);
-		// Optional Characteristics
-
-	};
-	inherits(Service.NoiseSensor, Service);
-	Service.NoiseSensor.UUID = '6237cefc-9f4d-54b2-8033-2eda0053b811';
+	class NoiseSensor extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, NoiseSensor.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.NoiseLevel);
+			this.addCharacteristic(Characteristic.NoiseQuality);
+			// Optional Characteristics
+		}
+	}
+	NoiseSensor.UUID = '6237cefc-9f4d-54b2-8033-2eda0053b811';
+	Service.NoiseSensor=NoiseSensor;
 
 	/**
 	 * Custom Service 'Weather Service'
 	 */
 
-	Service.WeatherService = function(displayName, subtype) {
-		Service.call(this, displayName, 'E863F001-079E-48FF-8F27-9C2605A29F52', subtype);
-
-		// Required Characteristics
-		// this.addCharacteristic(Characteristic.CurrentTemperature);
-		// this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
-		// this.addCharacteristic(Characteristic.AirPressure);
-		this.addCharacteristic(Characteristic.WeatherCondition);
-
-		// Optional Characteristics
-		this.addOptionalCharacteristic(Characteristic.WindDirection);
-		this.addOptionalCharacteristic(Characteristic.WindSpeed);
-		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
-		this.addOptionalCharacteristic(Characteristic.UVIndex);
-		this.addOptionalCharacteristic(Characteristic.Rain);
-		this.addOptionalCharacteristic(Characteristic.Snow);
-		this.addOptionalCharacteristic(Characteristic.MinimumTemperature);
-	};
-	inherits(Service.WeatherService, Service);
-	Service.WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';	
+	class WeatherService extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, WeatherService.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.WeatherCondition);
+			
+			// Optional Characteristics
+			this.addOptionalCharacteristic(Characteristic.WindDirection);
+			this.addOptionalCharacteristic(Characteristic.WindSpeed);
+			// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
+			this.addOptionalCharacteristic(Characteristic.UVIndex);
+			this.addOptionalCharacteristic(Characteristic.Rain);
+			this.addOptionalCharacteristic(Characteristic.Snow);
+			this.addOptionalCharacteristic(Characteristic.MinimumTemperature);
+		}
+	}
+	WeatherService.UUID = 'E863F001-079E-48FF-8F27-9C2605A29F52';
+	Service.WeatherService=WeatherService;
 	
 	/**
 	 * Custom Service 'EveRoom Service'
 	 */
 
-	Service.EveRoomService = function(displayName, subtype) {
-		Service.call(this, displayName, '0000008D-0000-1000-8000-0026BB765291', subtype);
-
-		// Required Characteristics
-		// this.addCharacteristic(Characteristic.CurrentTemperature);
-		// this.addCharacteristic(Characteristic.CurrentRelativeHumidity);
-		// this.addCharacteristic(Characteristic.AirPressure);
-		this.addCharacteristic(Characteristic.AirQuality);
-
-		// Optional Characteristics
-		// this.addOptionalCharacteristic(Characteristic.WeatherCondition);
-
-	};
-	inherits(Service.EveRoomService, Service);
-	Service.EveRoomService.UUID = '0000008D-0000-1000-8000-0026BB765291';	
+	class EveRoomService extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, EveRoomService.UUID, subtype);
+			
+			// Required Characteristics
+			this.addCharacteristic(Characteristic.AirQuality);
+			// Optional Characteristics
+		}
+	}
+	EveRoomService.UUID = '0000008D-0000-1000-8000-0026BB765291';
+	Service.EveRoomService=EveRoomService;
 	
 	/**
 	 * Custom Service 'Custom Service'
 	 */
 
-	Service.CustomService = function(displayName, subtype) {
-		Service.call(this, displayName, 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7', subtype);
+	class CustomService extends Service {
+		constructor(displayName, subtype) {
+			super(displayName, CustomService.UUID, subtype);
+			
+			// Required Characteristics
 
-		this.addOptionalCharacteristic(Characteristic.Name);
-	};
-	inherits(Service.CustomService, Service);	
-	Service.CustomService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
+			// Optional Characteristics
+			this.addOptionalCharacteristic(Characteristic.Name);
+		}
+	}
+	CustomService.UUID = 'BF0477D3-699A-42F1-BF98-04FCCFE5C8E7';
+	Service.CustomService=CustomService;
 	
 	// End of custom Services and Characteristics	
 }
@@ -6370,7 +6448,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 			service = services[s];
 			
 			if(!newAccessory.getService(service.controlService)){// not exist ?
-				this.log('debug',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
+				this.log('|debug',' Ajout service :'+service.controlService.displayName+' subtype:'+service.controlService.subtype+' cmd_id:'+service.controlService.cmd_id+' UUID:'+service.controlService.UUID);
 				newAccessory.addService(service.controlService);
 				for (var i = 0; i < service.characteristics.length; i++) {
 					characteristic = service.controlService.getCharacteristic(service.characteristics[i]);
@@ -6390,7 +6468,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 						characteristic.props.minStep = 0.01;
 					}
 					this.platform.bindCharacteristicEvents(characteristic, service.controlService);
-					this.log('debug','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
+					this.log('|debug','    Caractéristique :'+characteristic.displayName+' valeur initiale:'+characteristic.value);
 				}
 			} else {
 				this.log('debug','On essaye d\'ajouter un service mais il existe déjà : ',service.controlService);
@@ -6414,13 +6492,13 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	let service;
 	try {
 		const cachedValues = [];
-		const serviceList = accessory.services.filter((svc) => svc.UUID !== Service.AccessoryInformation.UUID && svc.UUID !== Service.BridgingState.UUID);
+		const serviceList = accessory.services.filter((svc) => svc.UUID !== Service.AccessoryInformation.UUID);
 	
 		serviceList.forEach((svc) => {
 			service=svc;
-			this.log('debug', ' Suppression service :' + service.displayName + ' subtype:' + service.subtype + ' UUID:' + service.UUID);
+			this.log('|debug', ' Suppression service :' + service.displayName + ' subtype:' + service.subtype + ' UUID:' + service.UUID);
 			service.characteristics.forEach((c) => {
-				this.log('debug', '    Caractéristique :' + c.displayName + ' valeur cache:' + c.value);
+				this.log('|debug', '    Caractéristique :' + c.displayName + ' valeur cache:' + c.value);
 				cachedValues[service.subtype + c.displayName] = c.value;
 			});
 			accessory.removeService(service);
