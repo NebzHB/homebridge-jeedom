@@ -27,7 +27,7 @@
     "Siri"
   ],
   "dependencies": {
-    "async": "3.2.5",
+    "async": "3.2.6",
     "axios": "1.7.4",
     "express": "4.19.2",
     "fakegato-history": "NebzHB/fakegato-history#master"
