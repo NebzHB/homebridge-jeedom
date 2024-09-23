@@ -4557,23 +4557,23 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						cmd.generic_type == 'BARRIER_STATE') {
 						targetValueToTest=cmd.currentValue.toString();
 						switch(targetValueToTest) {
-								case (customizedValues.OPEN ?? 255).toString() :
+								case customizedValues.OPEN.toString() :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";	
 								break;
-								case (customizedValues.CLOSED ?? 0).toString() :
+								case customizedValues.CLOSED.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case (customizedValues.OPENING ?? 254).toString() :
+								case customizedValues.OPENING.toString() :
 									returnValue=Characteristic.TargetDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
-								case (customizedValues.CLOSING ?? 252).toString() :
+								case customizedValues.CLOSING.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case (customizedValues.STOPPED ?? 253).toString() :
+								case customizedValues.STOPPED.toString() :
 									returnValue=Characteristic.TargetDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
@@ -4594,23 +4594,23 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						cmd.generic_type == 'BARRIER_STATE') {
 						currentValueToTest=cmd.currentValue.toString();
 						switch(currentValueToTest) {
-								case (customizedValues.OPEN ?? 255).toString() :
+								case customizedValues.OPEN.toString() :
 									returnValue=Characteristic.CurrentDoorState.OPEN; // 0
 									HRreturnValue="OPEN";
 								break;
-								case (customizedValues.CLOSED ?? 0).toString() :
+								case customizedValues.CLOSED.toString() :
 									returnValue=Characteristic.CurrentDoorState.CLOSED; // 1
 									HRreturnValue="CLOSED";
 								break;
-								case (customizedValues.OPENING ?? 254).toString() :
+								case customizedValues.OPENING.toString() :
 									returnValue=Characteristic.CurrentDoorState.OPENING; // 2
 									HRreturnValue="OPENING";
 								break;
-								case (customizedValues.CLOSING ?? 252).toString() :
+								case customizedValues.CLOSING.toString() :
 									returnValue=Characteristic.CurrentDoorState.CLOSING; // 3
 									HRreturnValue="CLOSING";
 								break;
-								case (customizedValues.STOPPED ?? 253).toString() :
+								case customizedValues.STOPPED.toString() :
 									returnValue=Characteristic.CurrentDoorState.STOPPED; // 4
 									HRreturnValue="STOPPED";
 								break;
