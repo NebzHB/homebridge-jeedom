@@ -4019,7 +4019,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;	
 			case Characteristic.LeakDetected.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'FLOOD' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'FLOOD' || cmd.generic_type == 'WATER_LEAK') && cmd.id == service.cmd_id) {
 						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						returnValue = toBool(cmd.currentValue);
 						if(returnValue === false) {
