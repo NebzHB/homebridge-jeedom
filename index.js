@@ -3068,7 +3068,7 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, service) {
 	try{
 		/* if (characteristic.UUID != Characteristic.PositionState.UUID) { */this.updateSubscriptions.push({service, characteristic});// }
-		if (characteristic.props.perms.includes('pw')) {
+		if (characteristic.props.perms.includes(Perms.PAIRED_WRITE)) {
 			characteristic.on('set', (value, callback, context) => {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
 					this.log('info','[Commande d\'Homekit]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
@@ -5844,7 +5844,7 @@ function RegisterCustomCharacteristics() {
 				maxValue : 21600, // 12 hours
 				minValue : 0,
 				minStep : 900, // 15 min
-				perms : [Perms.READ, Perms.WRITE, Perms.NOTIFY],
+				perms : [Perms.PAIRED_READ, Perms.PAIRED_WRITE, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5861,7 +5861,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 100000,
 				minValue: -100000,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5878,7 +5878,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 100000000000,
 				minValue: 0,
 				minStep: 0.001,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5894,7 +5894,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 10,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5911,7 +5911,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 1100,
 				minValue: 700,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5925,7 +5925,7 @@ function RegisterCustomCharacteristics() {
 			super('TimesOpened', TimesOpened.UUID);
 			this.setProps({
 				format: Formats.UINT32,
-				perms: [ Perms.WRITE, Perms.READ, Perms.NOTIFY],
+				perms: [ Perms.PAIRED_WRITE, Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5938,7 +5938,7 @@ function RegisterCustomCharacteristics() {
 			super('Char118', Char118.UUID);
 			this.setProps({
 				format: Formats.UINT32,
-				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_WRITE, Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5951,7 +5951,7 @@ function RegisterCustomCharacteristics() {
 			super('Char119', Char119.UUID);
 			this.setProps({
 				format: Formats.UINT32,
-				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_WRITE, Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5964,7 +5964,7 @@ function RegisterCustomCharacteristics() {
 			super('LastActivation', LastActivation.UUID);
 			this.setProps({
 				format: Formats.UINT32,
-				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_WRITE, Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5977,7 +5977,7 @@ function RegisterCustomCharacteristics() {
 			super('ResetTotal', ResetTotal.UUID);
 			this.setProps({
 				format: Formats.UINT32,
-				perms: [Perms.WRITE, Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_WRITE, Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -5995,7 +5995,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 7,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.WRITE],
+				perms: [Perms.PAIRED_READ, Perms.PAIRED_WRITE],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6011,7 +6011,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.WRITE],
+				perms: [Perms.PAIRED_READ, Perms.PAIRED_WRITE],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6028,7 +6028,7 @@ function RegisterCustomCharacteristics() {
 			this.setProps({
 				format: Formats.INT,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6042,7 +6042,7 @@ function RegisterCustomCharacteristics() {
 			this.setProps({
 				format: Formats.FLOAT,
 				minStep: 0.01,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6055,7 +6055,7 @@ function RegisterCustomCharacteristics() {
 			super('ValueBOOL', GenericBOOL.UUID);
 			this.setProps({
 				format: Formats.BOOL,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6068,7 +6068,7 @@ function RegisterCustomCharacteristics() {
 			super('ValueSTRING', GenericSTRING.UUID);
 			this.setProps({
 				format: Formats.STRING,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6083,7 +6083,7 @@ function RegisterCustomCharacteristics() {
 				format: Formats.INT,
 				unit: '',
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6096,7 +6096,7 @@ function RegisterCustomCharacteristics() {
 			super('PPM', PPM.UUID);
 			this.setProps({
 				format: Formats.UINT16,
-				perms: [Perms.READ, Perms.HIDDEN],
+				perms: [Perms.PAIRED_READ, Perms.HIDDEN],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6109,7 +6109,7 @@ function RegisterCustomCharacteristics() {
 			super('AQX2', AQExtraCharacteristic.UUID);
 			this.setProps({
 				format: Formats.DATA,
-				perms: [Perms.READ, Perms.HIDDEN],
+				perms: [Perms.PAIRED_READ, Perms.HIDDEN],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6126,7 +6126,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 100,
 				minValue: 0,
 				minStep: 0.1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6139,7 +6139,7 @@ function RegisterCustomCharacteristics() {
 			super('Wind direction', WindDirection.UUID);
 			this.setProps({
 				format: Formats.STRING,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6152,7 +6152,7 @@ function RegisterCustomCharacteristics() {
 			super('Condition', WeatherCondition.UUID);
 			this.setProps({
 				format: Formats.STRING,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6169,7 +6169,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 200,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6182,7 +6182,7 @@ function RegisterCustomCharacteristics() {
 			super('Rain', Rain.UUID);
 			this.setProps({
 				format: Formats.BOOL,
-				perms: [ Perms.READ, Perms.NOTIFY],
+				perms: [ Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6195,7 +6195,7 @@ function RegisterCustomCharacteristics() {
 			super('Snow', Snow.UUID);
 			this.setProps({
 				format: Formats.BOOL,
-				perms: [ Perms.READ, Perms.NOTIFY],
+				perms: [ Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6212,7 +6212,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 100,
 				minValue: -40,
 				minStep: 0.1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6229,7 +6229,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 1000,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6245,7 +6245,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 5,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6268,7 +6268,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.WRITE, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.PAIRED_WRITE, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
@@ -6284,7 +6284,7 @@ function RegisterCustomCharacteristics() {
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
-				perms: [Perms.READ, Perms.NOTIFY],
+				perms: [Perms.PAIRED_READ, Perms.NOTIFY],
 			});
 			this.value = this.getDefaultValue();
 		}
