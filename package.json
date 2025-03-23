@@ -1,6 +1,6 @@
 {
   "name": "@nebz/homebridge-jeedom",
-  "version": "v1.8.5",
+  "version": "v1.8.6",
   "cust_serial": "0001",
   "description": "Homebridge plugin for Jeedom ",
   "main": "index.js",
@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "async": "3.2.6",
-    "axios": "1.7.7",
+    "axios": "1.8.3",
     "express": "5.0.1",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
