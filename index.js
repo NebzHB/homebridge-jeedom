@@ -4152,8 +4152,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						break;
 					}
 				}
-				hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
-				returnValue = Math.round(hsv.h);
+				if(typeof returnValue == "string") {
+					hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
+					returnValue = Math.round(hsv.h);
+				} else {
+					returnValue = undefined;
+				}
 			break;
 			case Characteristic.Saturation.UUID :
 				for (const cmd of cmdList) {
@@ -4162,8 +4166,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						break;
 					}
 				}
-				hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
-				returnValue = Math.round(hsv.s);
+				if(typeof returnValue == "string") {
+					hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
+					returnValue = Math.round(hsv.s);
+				} else {
+					returnValue = undefined;
+				}
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
