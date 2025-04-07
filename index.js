@@ -93,6 +93,7 @@ function JeedomPlatform(logger, config, api) {
 		}
 		
 		this.app = express();
+		this.app.set("query parser", "extended");
 		this.app.get('/config', this.ConfigCMD.bind(this));
 		this.app.use((err, req, res, _next) => {
 			res.type('json');
@@ -4152,8 +4153,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						break;
 					}
 				}
-				hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
-				returnValue = Math.round(hsv.h);
+				if(typeof returnValue == "string") {
+					hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
+					returnValue = Math.round(hsv.h);
+				} else {
+					returnValue = undefined;
+				}
 			break;
 			case Characteristic.Saturation.UUID :
 				for (const cmd of cmdList) {
@@ -4162,8 +4167,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						break;
 					}
 				}
-				hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
-				returnValue = Math.round(hsv.s);
+				if(typeof returnValue == "string") {
+					hsv = this.updateHomeKitColorFromJeedom(returnValue, service);
+					returnValue = Math.round(hsv.s);
+				} else {
+					returnValue = undefined;
+				}
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
