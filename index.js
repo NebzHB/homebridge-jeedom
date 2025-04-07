@@ -93,6 +93,7 @@ function JeedomPlatform(logger, config, api) {
 		}
 		
 		this.app = express();
+		this.app.set("query parser", "extended");
 		this.app.get('/config', this.ConfigCMD.bind(this));
 		this.app.use((err, req, res, _next) => {
 			res.type('json');
