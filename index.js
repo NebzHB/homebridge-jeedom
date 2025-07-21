@@ -2482,7 +2482,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if (!cmd.setpointH) {return;}
 				HBservice = {
 					controlService : new Service.HeaterCooler(eqLogic.name),
-					characteristics : [Characteristic.CurrentTemperature, Characteristic.CoolingThresholdTemperature, Characteristic.HeatingThresholdTemperature, Characteristic.CurrentHeaterCoolerState, Characteristic.TargetHeaterCoolerState],
+					characteristics : [Characteristic.CurrentTemperature, Characteristic.CoolingThresholdTemperature, Characteristic.HeatingThresholdTemperature, Characteristic.CurrentHeaterCoolerState, Characteristic.TargetHeaterCoolerState, Characteristic.Active],
 				};
 				const Serv = HBservice.controlService;
 				Serv.eqLogic=eqLogic;
@@ -2577,7 +2577,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						this.log('|warning','Pas de config des modes du thermostatHC');
 				}
 				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
-				props.validValues.push(3);
+				//props.validValues.push(3);
 				Serv.getCharacteristic(Characteristic.TargetHeaterCoolerState).setProps(props);
 				Serv.cmd_id = cmd.setpointH.id;
 				Serv.eqID = eqLogic.id;
