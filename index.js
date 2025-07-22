@@ -2577,7 +2577,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						this.log('|warning','Pas de config des modes du thermostatHC');
 				}
 				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
-				//props.validValues.push(3);
+				// props.validValues.push(3);
 				Serv.getCharacteristic(Characteristic.TargetHeaterCoolerState).setProps(props);
 				Serv.cmd_id = cmd.setpointH.id;
 				Serv.eqID = eqLogic.id;
