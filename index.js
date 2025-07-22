@@ -3696,9 +3696,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			case Characteristic.InUse.UUID :
-			case Characteristic.Active.UUID :
 				for (const cmd of cmdList) {
 					if ((cmd.generic_type == 'FAUCET_STATE' || cmd.generic_type == 'IRRIG_STATE' || cmd.generic_type == 'VALVE_STATE') && cmd.id == service.cmd_id) {
+						returnValue = cmd.currentValue;
+						break;
+					}
+				}
+			break;
+			case Characteristic.Active.UUID :
+				for (const cmd of cmdList) {
+					if ((cmd.generic_type == 'FAUCET_STATE' || cmd.generic_type == 'IRRIG_STATE' || cmd.generic_type == 'VALVE_STATE' || cmd.generic_type == 'THERMOSTAT_HC_STATE') && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
