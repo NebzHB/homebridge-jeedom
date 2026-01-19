@@ -29,7 +29,7 @@
   "dependencies": {
     "async": "3.2.6",
     "axios": "1.13.2",
-    "express": "5.1.0",
+    "express": "5.2.1",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
