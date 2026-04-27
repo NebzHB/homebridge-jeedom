@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "async": "3.2.6",
-    "axios": "1.13.5",
+    "axios": "1.15.2",
     "express": "5.2.1",
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
