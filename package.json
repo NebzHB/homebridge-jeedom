@@ -20,6 +20,7 @@
     "url": "https://github.com/NebzHB/homebridge-jeedom.git"
   },
   "keywords": [
+    "homebridge-plugin",
     "Jeedom",
     "homekit",
     "z-wave",
