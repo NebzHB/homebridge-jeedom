@@ -16,7 +16,7 @@
 /* jshint esversion: 11,node: true,-W041: false */
 'use strict';
 
-let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen, Units, Formats, Perms, FakeGatoHistoryService;
+let Access, Accessory, Service, Characteristic, AdaptiveLightingController, UUIDGen, Units, Formats, Perms, FakeGatoHistoryService, HapStatusError, HAPStatus;
 const fs = require('fs');
 const myLogger = require('./lib/myLogger').myLogger;
 const express = require('express');
@@ -42,6 +42,8 @@ module.exports = function(homebridge) {
 	Perms = homebridge.hap.Perms;
 	AdaptiveLightingController = homebridge.hap.AdaptiveLightingController;
 	UUIDGen = homebridge.hap.uuid;
+	HapStatusError = homebridge.hap.HapStatusError;
+	HAPStatus = homebridge.hap.HAPStatus;
 	FakeGatoHistoryService = require('fakegato-history')(homebridge);
 	RegisterCustomCharacteristics();
 	homebridge.registerPlatform('homebridge-jeedom', 'Jeedom', JeedomPlatform, true);
@@ -85,7 +87,6 @@ function JeedomPlatform(logger, config, api) {
 			this.log('error',"Adresse Jeedom non configurée, Veuillez la configurer avant de relancer.");
 			process.exit(1);
 		} else if(config.url.indexOf('https') !== -1) {
-			process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 			this.log('error',"Adresse Jeedom utilise https en interne, non supporté mais on essaie :"+config.url);	
 			// process.exit(1);
 		} else {
@@ -3069,26 +3070,25 @@ JeedomPlatform.prototype.bindCharacteristicEvents = function(characteristic, ser
 	try{
 		/* if (characteristic.UUID != Characteristic.PositionState.UUID) { */this.updateSubscriptions.push({service, characteristic});// }
 		if (characteristic.props.perms.includes(Perms.PAIRED_WRITE)) {
-			characteristic.on('set', (value, callback, context) => {
+			characteristic.onSet((value, context) => {
 				if (context !== 'fromJeedom' && context !== 'fromSetValue') { // from Homekit
 					this.log('info','[Commande d\'Homekit]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+characteristic.value+'->'+value,'\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
 					this.setAccessoryValue(value,characteristic,service);
 				} else {
 					this.log('info','[Commande de Jeedom]','Nom:'+characteristic.displayName+'('+characteristic.UUID+'):'+value,'\t\t\t\t\t|||context:'+JSON.stringify(context),'characteristic:'+JSON.stringify(characteristic));
 				}
-				callback();
 			});
 		}
-		characteristic.on('get', (callback) => {
+		characteristic.onGet(() => {
 			let returnValue = this.getAccessoryValue(characteristic, service);
 			if(returnValue !== undefined && returnValue !== 'no_response') {
 				returnValue = sanitizeValue(returnValue,characteristic);
 				this.log('info','[Demande d\'Homekit]','Nom:'+service.displayName+'>'+characteristic.displayName+'='+characteristic.value,'('+returnValue+')','\t\t\t\t\t|||characteristic:'+JSON.stringify(characteristic));
-				callback(undefined, returnValue);
+				return returnValue;
 			} else if(returnValue === 'no_response') {
-				callback('no_response');
+				throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
 			} else {
-				callback();
+				return null;
 			}
 		});
 		
