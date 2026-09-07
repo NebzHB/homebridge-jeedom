@@ -6,6 +6,6 @@ Homebridge plugin for Jeedom.
 
 | Branch | Build |
 |---|---|
-| `beta` | [![Build (beta)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml/badge.svg?branch=beta)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml?query=branch%3Abeta) |
 | `alpha` | [![Build (alpha)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml/badge.svg?branch=alpha)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml?query=branch%3Aalpha) |
+| `beta` | [![Build (beta)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml/badge.svg?branch=beta)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml?query=branch%3Abeta) |
 | `master` | [![Build (master)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/NebzHB/homebridge-jeedom/actions/workflows/build.yml?query=branch%3Amaster) |
