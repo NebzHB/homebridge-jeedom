@@ -4,6 +4,10 @@ on:
     branches: [ beta ]
   pull_request:
     branches: [ beta ]
+
+permissions:
+  contents: read
+
 jobs:
   njsscan:
     runs-on: ubuntu-latest
