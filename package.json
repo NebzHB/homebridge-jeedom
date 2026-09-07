@@ -33,7 +33,7 @@
     "fakegato-history": "NebzHB/fakegato-history#master"
   },
   "devDependencies": {
-    "@eslint/js": "^10.10.0",
+    "@eslint/js": "^10.0.1",
     "eslint": "^10.10.0",
     "globals": "^17.12.0"
   },
