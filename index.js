@@ -3040,15 +3040,6 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 			return;
 		}
 		
-		for (let s = 0; s < accessory.services.length; s++) {
-			const service = accessory.services[s];
-			for (let i = 0; i < service.characteristics.length; i++) {
-				const characteristic = service.characteristics[i];
-				if (characteristic.props.needsBinding) {
-					this.bindCharacteristicEvents(characteristic, service);
-				}
-			}
-		}
 		this.log('debug','Accessoire en cache: ' + accessory.displayName);
 		this.accessories[accessory.UUID] = accessory;
 		// accessory.reachable = true;
@@ -5841,8 +5832,8 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					this.log('info','[Commande envoyée à HomeKit]',logMessage);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 				}
-			} else {return;}
-		} 
+			} else {continue;}
+		}
 	}
 };
 
@@ -6540,8 +6531,7 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 					if(cachedValue != undefined && cachedValue != null){
 						characteristic.updateValue(sanitizeValue(cachedValue,characteristic), undefined, 'fromCache');
 					}
-					
-					characteristic.props.needsBinding = true;
+
 					if (characteristic.UUID && characteristic.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
 						characteristic.props.minValue = 0;
 					}
