@@ -1587,7 +1587,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
 				
 				var props = {};
-				var unite = '';
 				if(cmd.state.subType=="numeric") {
 					this.log('|debug','Le générique',cmd.state.name,'est un numérique');
 					// test if default value is Float or Int ?
@@ -1602,7 +1601,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.addCharacteristic(CharactToSet);
 					Serv.getCharacteristic(CharactToSet).displayName = cmd.state.name;
 					
-					unite = cmd.state.unite ? cmd.state.unite : '';
+					const unite = cmd.state.unite ? cmd.state.unite : '';
 					if(unite) {props.unit=unite;}
 					if(cmd.state.configuration) {
 						if(NumericGenericType=='float'){
@@ -1628,7 +1627,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					Serv.addCharacteristic(Characteristic.GenericSTRING);
 					Serv.getCharacteristic(Characteristic.GenericSTRING).displayName = cmd.state.name;
 					
-					unite = cmd.state.unite ? cmd.state.unite : '';
+					const unite = cmd.state.unite ? cmd.state.unite : '';
 					if(unite) {props.unit=unite;}
 					if(Object.keys(props).length !== 0) {
 						this.log('|debug','On lui set les props suivants :',props);
@@ -2617,7 +2616,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				eqLogic.services.mode.forEach((cmd) => {
 					if (!cmd.set_state) {return;}
 					cmd.set_state.forEach((set_action) => {
-						var ModeName = "";
+						var ModeName;
 						if(set_action.name.toLowerCase().includes('mode') || set_action.name.toLowerCase().includes('modo')) {
 							ModeName = set_action.name;
 						} else {
