@@ -2341,8 +2341,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 							HBservice.characteristics.push(Characteristic.Visibility);
 							Serv.addCharacteristic(Characteristic.Visibility);
 							Serv.getCharacteristic(Characteristic.Visibility).displayName = cmd2.visibility.name;
-							
-							const unite = Serv.infos.wind_speed.unite ? Serv.infos.wind_speed.unite : '';
+
+							const unite = Serv.infos.visibility.unite ? Serv.infos.visibility.unite : '';
 							if(unite) {
 								const props = {};
 								props.unit=unite;
