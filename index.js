@@ -6339,6 +6339,7 @@ function RegisterCustomCharacteristics() {
 			super('Set Duration', SetDuration.UUID);
 			this.setProps({
 				format: Formats.UINT32,
+				unit: Units.SECONDS,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
@@ -6355,6 +6356,7 @@ function RegisterCustomCharacteristics() {
 			super('Remaining Duration', RemainingDuration.UUID);
 			this.setProps({
 				format: Formats.UINT32,
+				unit: Units.SECONDS,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
