@@ -1155,7 +1155,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}		
-		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
+		if (eqLogic.services.power) {
 			eqLogic.services.power.forEach((cmd) => {
 				if (!cmd.power) {return;}
 				HBservice = {
@@ -3402,10 +3402,12 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 								action = 'setValue';
 								const oldValue = value;
 								value = percentageToRange(value, service.minValue, service.maxValue); // transform from percentage to scale
-								if(value > service.infos.state) {
+								if(value > service.infos.state.currentValue) {
 									service.Moving=Characteristic.PositionState.INCREASING;
-								} else if (value != service.infos.state) {
+								} else if (value != service.infos.state.currentValue) {
 									service.Moving=Characteristic.PositionState.DECREASING;
+								} else {
+									service.Moving=Characteristic.PositionState.STOPPED;
 								}
 								service.TargetValue=oldValue;
 								this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
@@ -3427,9 +3429,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						action = 'setValue';
 						const oldValue = value;
 						value = percentageToRange(value, service.minValue, service.maxValue); // transform from percentage to scale
-						if(value > service.infos.state) {
+						if(value > service.infos.state.currentValue) {
 							service.Moving=Characteristic.PositionState.INCREASING;
-						} else if (value != service.infos.state) {
+						} else if (value != service.infos.state.currentValue) {
 							service.Moving=Characteristic.PositionState.DECREASING;
 						} else {
 							service.Moving=Characteristic.PositionState.STOPPED;
@@ -4707,7 +4709,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							returnValue = returnValue > (service.maxValue-5) ? service.maxValue : returnValue; // >95% is 100% in home (flaps need yearly tunning)
 						}
 
-						if(Math.abs(returnValue - service.TargetValue) <= calculateTolerance(service.maxValue)) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
+						if(Math.abs(returnValue - service.TargetValue) <= calculateTolerance(service.minValue, service.maxValue)) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
 						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
 						this.log('debug','---------update Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
@@ -4721,7 +4723,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						}
 						returnValue = 100-returnValue; // invert percentage
 						
-						if(Math.abs(returnValue - service.TargetValue) <= calculateTolerance(service.maxValue)) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
+						if(Math.abs(returnValue - service.TargetValue) <= calculateTolerance(service.minValue, service.maxValue)) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
 						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
 						this.log('debug','---------update Inverted Blinds Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
@@ -4730,7 +4732,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						returnValue = parseInt(cmd.currentValue);
 						returnValue = rangeToPercentage(returnValue, service.minValue, service.maxValue);
 
-						if(Math.abs(returnValue - service.TargetValue) <= calculateTolerance(service.maxValue)) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
+						if(Math.abs(returnValue - service.TargetValue) <= calculateTolerance(service.minValue, service.maxValue)) {service.Moving=Characteristic.PositionState.STOPPED; returnValue=service.TargetValue;}
 						else if (service.TargetValue !== undefined && service.Moving===Characteristic.PositionState.STOPPED) {service.TargetValue=undefined;}
 						this.log('debug','---------update WindowMoto Value(refresh):',returnValue,'% soit',cmd.currentValue,' / ',service.maxValue,' : ',positionStateLabel(service.Moving));
 						break;
@@ -4961,15 +4963,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			case Characteristic.TotalPowerConsumption.UUID :
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == service.infos.consumption.id) {
-						if(service.infos.consumption.unite && service.infos.consumption.unite.toLowerCase() == 'wh') {
-							returnValue = Math.round(cmd.currentValue)/1000;
-						} else {
-							returnValue = cmd.currentValue;
+				if (service.infos.consumption) {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'CONSUMPTION' && cmd.id == service.infos.consumption.id) {
+							if(service.infos.consumption.unite && service.infos.consumption.unite.toLowerCase() == 'wh') {
+								returnValue = Math.round(cmd.currentValue)/1000;
+							} else {
+								returnValue = cmd.currentValue;
+							}
+							break;
 						}
-						break;
 					}
+				} else {
+					returnValue = undefined;
 				}
 			break;
 			// Used ?
@@ -6339,6 +6345,7 @@ function RegisterCustomCharacteristics() {
 			super('Set Duration', SetDuration.UUID);
 			this.setProps({
 				format: Formats.UINT32,
+				unit: Units.SECONDS,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
@@ -6355,6 +6362,7 @@ function RegisterCustomCharacteristics() {
 			super('Remaining Duration', RemainingDuration.UUID);
 			this.setProps({
 				format: Formats.UINT32,
+				unit: Units.SECONDS,
 				maxValue: 3600,
 				minValue: 0,
 				minStep: 1,
@@ -6586,9 +6594,13 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 	}
 };
 
-// calculate the tolerance for ranges
-function calculateTolerance(max) {
-	return max === 0 ? 0 : Math.floor((max - 1) / 100);
+// calculate the tolerance (in percentage) on a cover/flap position vs its target, to consider it "arrived" (handles motor drift)
+function calculateTolerance(min, max) {
+	const TOLERANCE_PERCENT = 1; // nominal tolerance %, adjust here if needed
+	const span = max - min;
+	if (!span) {return 0;}
+	const rawTolerance = Math.max(1, Math.round(span * TOLERANCE_PERCENT / 100)); // at least 1 raw unit
+	return (rawTolerance / span) * 100; // back to percentage scale, the unit the comparison uses
 }
 
 // convert range to percentage
