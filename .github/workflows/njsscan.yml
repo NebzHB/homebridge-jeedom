@@ -4,15 +4,19 @@ on:
     branches: [ beta ]
   pull_request:
     branches: [ beta ]
+
+permissions:
+  contents: read
+
 jobs:
   njsscan:
     runs-on: ubuntu-latest
     name: njsscan check
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
     - name: nodejsscan scan
       id: njsscan
-      uses: ajinabraham/njsscan-action@master
+      uses: ajinabraham/njsscan-action@v9
       with:
         args: '.'
