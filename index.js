@@ -3402,10 +3402,12 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 								action = 'setValue';
 								const oldValue = value;
 								value = percentageToRange(value, service.minValue, service.maxValue); // transform from percentage to scale
-								if(value > service.infos.state) {
+								if(value > service.infos.state.currentValue) {
 									service.Moving=Characteristic.PositionState.INCREASING;
-								} else if (value != service.infos.state) {
+								} else if (value != service.infos.state.currentValue) {
 									service.Moving=Characteristic.PositionState.DECREASING;
+								} else {
+									service.Moving=Characteristic.PositionState.STOPPED;
 								}
 								service.TargetValue=oldValue;
 								this.log('debug','---------set WindowMoto Value:',oldValue,'% soit ',value,'/',service.maxValue,' : ',positionStateLabel(service.Moving));
@@ -3427,9 +3429,9 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						action = 'setValue';
 						const oldValue = value;
 						value = percentageToRange(value, service.minValue, service.maxValue); // transform from percentage to scale
-						if(value > service.infos.state) {
+						if(value > service.infos.state.currentValue) {
 							service.Moving=Characteristic.PositionState.INCREASING;
-						} else if (value != service.infos.state) {
+						} else if (value != service.infos.state.currentValue) {
 							service.Moving=Characteristic.PositionState.DECREASING;
 						} else {
 							service.Moving=Characteristic.PositionState.STOPPED;
