@@ -1155,7 +1155,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}		
-		if (eqLogic.services.power || (eqLogic.services.power && eqLogic.services.consumption)) {
+		if (eqLogic.services.power) {
 			eqLogic.services.power.forEach((cmd) => {
 				if (!cmd.power) {return;}
 				HBservice = {
