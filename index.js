@@ -4961,15 +4961,19 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			case Characteristic.TotalPowerConsumption.UUID :
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'CONSUMPTION' && cmd.id == service.infos.consumption.id) {
-						if(service.infos.consumption.unite && service.infos.consumption.unite.toLowerCase() == 'wh') {
-							returnValue = Math.round(cmd.currentValue)/1000;
-						} else {
-							returnValue = cmd.currentValue;
+				if (service.infos.consumption) {
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'CONSUMPTION' && cmd.id == service.infos.consumption.id) {
+							if(service.infos.consumption.unite && service.infos.consumption.unite.toLowerCase() == 'wh') {
+								returnValue = Math.round(cmd.currentValue)/1000;
+							} else {
+								returnValue = cmd.currentValue;
+							}
+							break;
 						}
-						break;
 					}
+				} else {
+					returnValue = undefined;
 				}
 			break;
 			// Used ?
