@@ -5084,8 +5084,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					}
 				} else { // Doorbell
 					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'SWITCH_STATELESS_SINGLE' && cmd.id == service.infos.Single.id) {
-							returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
+						if (cmd.generic_type == 'DOORBELL_STATE' && cmd.id == service.infos.Single.id) {
+							// Only report SINGLE_PRESS when doorbell value is 1 (pressed)
+							if (toBool(cmd.currentValue)) {
+								returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
+							}
 							break;
 						}
 					}
