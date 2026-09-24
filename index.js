@@ -1157,7 +1157,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 		}		
 		if (eqLogic.services.Doorbell) {
 			eqLogic.services.Doorbell.forEach((cmd) => {
-				if (!cmd.Button || cmd.Button.subType != 'other') {return;}
+				if (!cmd.Button) {return;}
 				const DoorbellName=cmd.Button.name;
 				HBservice = {
 					controlService : new Service.Doorbell(DoorbellName),
