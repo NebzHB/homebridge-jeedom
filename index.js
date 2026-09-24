@@ -1155,6 +1155,39 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservice = null;
 			}
 		}		
+		if (eqLogic.services.Doorbell) {
+			eqLogic.services.Doorbell.forEach((cmd) => {
+				if (!cmd.Button || cmd.Button.subType != 'other') {return;}
+				const DoorbellName=cmd.Button.name;
+				HBservice = {
+					controlService : new Service.Doorbell(DoorbellName),
+					characteristics : [Characteristic.ProgrammableSwitchEvent,Characteristic.ConfiguredName],
+				};
+				const Serv = HBservice.controlService;
+				Serv.eqLogic=eqLogic;
+				Serv.actions={};
+				Serv.infos={};
+				Serv.actions.Push = cmd.Button;
+				Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).displayName = DoorbellName;
+				
+				Serv.ConfiguredName=DoorbellName;
+				Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(DoorbellName);
+				
+				// add Active, Tampered and Defect Characteristics if needed
+				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
+				
+				Serv.cmd_id = cmd.Button.id;
+				Serv.eqID = eqLogic.id;
+				Serv.subtype = Serv.subtype || '';
+				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				HBservices.push(HBservice);
+			});
+			if(!HBservice) {
+				this.log('|warning','La Commande Action associée doit être du type "Autre"');
+			} else {
+				HBservice = null;
+			}
+		}	
 		if (eqLogic.services.power) {
 			eqLogic.services.power.forEach((cmd) => {
 				if (!cmd.power) {return;}
@@ -5038,6 +5071,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							break;
 						} else if (cmd.generic_type == 'SWITCH_STATELESS_LONG' && cmd.id == service.infos.Long.id) {
 							returnValue = Characteristic.ProgrammableSwitchEvent.LONG_PRESS; // 2
+							break;
+						}
+					}
+				} else { // Doorbell
+					for (const cmd of cmdList) {
+						if (cmd.generic_type == 'SWITCH_STATELESS_SINGLE' && cmd.id == service.infos.Single.id) {
+							returnValue = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS; // 0
 							break;
 						}
 					}
