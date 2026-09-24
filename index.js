@@ -1167,15 +1167,23 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				Serv.eqLogic=eqLogic;
 				Serv.actions={};
 				Serv.infos={};
+				Serv.type='Doorbell'; // Mark as doorbell for proper handling
 				Serv.actions.Push = cmd.Button;
+
+				// Configure infos.Single with the button command for GetState handling
+				Serv.infos.Single = cmd.Button;
+
 				Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).displayName = DoorbellName;
-				
+
 				Serv.ConfiguredName=DoorbellName;
 				Serv.getCharacteristic(Characteristic.ConfiguredName).setValue(DoorbellName);
-				
+
+				// Set valid values for the ProgrammableSwitchEvent (doorbell only supports single press)
+				Serv.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({validValues:[Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS]});
+
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-				
+
 				Serv.cmd_id = cmd.Button.id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
