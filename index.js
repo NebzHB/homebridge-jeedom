@@ -1168,7 +1168,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				Serv.actions={};
 				Serv.infos={};
 				Serv.type='Doorbell'; // Mark as doorbell for proper handling
-				Serv.actions.Push = cmd.Button;
 
 				// Configure infos.Single with the button command for GetState handling
 				Serv.infos.Single = cmd.Button;
@@ -5082,7 +5081,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							break;
 						}
 					}
-				} else { // Doorbell
+				} else if (service.type == 'Doorbell') {
 					for (const cmd of cmdList) {
 						if (cmd.generic_type == 'DOORBELL_STATE' && cmd.id == service.infos.Single.id) {
 							// Only report SINGLE_PRESS when doorbell value is 1 (pressed)
