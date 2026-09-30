@@ -331,18 +331,13 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					device.object_id != null && 
 					device.sendToHomebridge != '0') {
 
-					this.AccessoireCreateHomebridge(
-						this.jeedomClient.ParseGenericType(
-							device, 
-							this.jeedomClient.getDeviceCmdFromCache(device.id)
-						)
-					);
+					this.AccessoireCreateHomebridge(device);
 				}
 				else
 				{
 					this.log('debug','eqLogic > '+JSON.stringify(device).replace("\n",''));
 					this.log('┌──── ' + this.rooms[device.object_id] + ' > ' +device.name+((device.pseudo)?' > pseudo: '+device.pseudo:'')+' ('+device.id+')');
-					var Messg= '│ Accessoire ';
+					let Messg= '│ Accessoire ';
 					Messg += device.isVisible == '1' ? 'visible' : 'invisible';
 					Messg += device.isEnable == '1' ? ', activé' : ', désactivé';
 					Messg += device.object_id != null ? '' : ', pas dans une pièce';
@@ -357,12 +352,12 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				
 			});
 		}
-		var countA=0;
+		let countA=0;
 		if(!hasError)
 		{
 			this.log('┌────RAMASSE-MIETTES─────');
 			this.log('│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))');
-			var hasDeleted = false;
+			let hasDeleted = false;
 			for (const a in this.accessories) 
 			{
 				if (this.accessories.hasOwnProperty(a)) {
@@ -402,9 +397,10 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 // -- AccessoireCreateHomebridge
 // -- Desc : Prepare the service list
 // -- Params --
-// -- eqLogic : eqLogics from jeedom (and cmd's)
+// -- device : eqLogics from jeedom (and cmd's)
 // -- Return : nothing
-JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
+JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
+	const eqLogic = this.jeedomClient.ParseGenericType(device);
 	var createdAccessory;
 	try {
 		var HBservices = [];
