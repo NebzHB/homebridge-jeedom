@@ -122,6 +122,10 @@ function JeedomPlatform(logger, config, api) {
 		}
 		if (api) {
 			this.api = api;
+			this.useMatter = Boolean(api.isMatterAvailable && api.isMatterAvailable() &&
+				api.isMatterEnabled && api.isMatterEnabled()) &&
+				config.matterEnabled === true;
+			if (this.useMatter) {this.matter = require('./lib/matter.js').createHelper(this, toBool);}
 			this.api.on('didFinishLaunching',() => {
 				/** Listen **/
 				let port=0;
@@ -406,6 +410,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 		var HBservices = [];
 		var HBservice = null;	
 		const eqServicesCopy = eqLogic.services;
+		var matterAccessories = [];
 		this.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
 		this.log('┌──── ' + this.rooms[eqLogic.object_id] + ' > ' + eqLogic.name +((eqLogic.pseudo)?' > pseudo: '+eqLogic.pseudo:'')+ ' (' + eqLogic.id + ')');
 		eqLogic.origName=eqLogic.name;
@@ -843,11 +848,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-				
+
 				Serv.cmd_id = cmd.state.id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
@@ -1092,14 +1098,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				});
 				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton On"');}
 				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton Off"');}
-				
+
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-				
+
 				Serv.cmd_id = cmd.state.id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, SwitchName));}
 				
 				if(this.fakegato && !eqLogic.hasLogging) {
 					// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
@@ -2814,6 +2821,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 			createdAccessory = this.createAccessory(HBservices, eqLogic);
 			this.addAccessory(createdAccessory);
 			HBservices = [];
+			if (this.useMatter && matterAccessories.length) {this.matter.registerAccessories(matterAccessories);}
 		}
 		else
 		{
@@ -5883,6 +5891,9 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				} else {
 					this.log('info','[Commande envoyée à HomeKit]',logMessage);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
+					if(this.useMatter && subCharact.UUID == Characteristic.On.UUID) {
+						this.matter.pushOnOffState(subService, returnValue);
+					}
 				}
 			} else {continue;}
 		}
