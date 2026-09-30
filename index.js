@@ -5877,22 +5877,22 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				subCharact.updateValue(new Error('no_response'), undefined, 'fromJeedom');
 			} else if(returnValue !== undefined) {
 				returnValue = sanitizeValue(returnValue,subCharact);
-				const logMessage = 'Cause de modif: "' + (infoFound && infoFound.name ? infoFound.name + '" (' + updateID + ')' : '') + (statusFound && statusFound.name ? statusFound.name + '" (' + updateID + ')' : '') + ' Envoi valeur:' + returnValue + ' dans ' + subCharact.displayName;
+				const logMessage = 'Cause de modif: "' + (infoFound && infoFound.name ? infoFound.name + '" (' + updateID + ')' : '') + (statusFound && statusFound.name ? statusFound.name + '" (' + updateID + ')' : '') + ' Envoi valeur:' + returnValue;
 				if(infoFound !== -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
 					if(!this.settingLight) { // and it's not currently being modified
-						this.log('info','[Commande envoyée à HomeKit]',logMessage);
+						this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 					} else if(DEV_DEBUG) {this.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else if(infoFound !== -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
 					if(!this.settingFan) { // and it's not currently being modified
-						this.log('info','[Commande envoyée à HomeKit]',logMessage);
+						this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 					} else if(DEV_DEBUG) {this.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else {
-					this.log('info','[Commande envoyée à HomeKit]',logMessage);
+					this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 					if(this.useMatter && subCharact.UUID == Characteristic.On.UUID) {
-						this.matter.pushOnOffState(subService, returnValue);
+						this.matter.pushOnOffState(subService, returnValue, logMessage);
 					}
 				}
 			} else {continue;}
