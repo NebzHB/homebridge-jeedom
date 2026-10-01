@@ -3672,7 +3672,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							returnValue = true;
 						break;
 					}
-					if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+					if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 						service.eqLogic.loggingService.addEntry({
 							time: Math.round(new Date().valueOf() / 1000),
 							status: ((returnValue)?1:0),
