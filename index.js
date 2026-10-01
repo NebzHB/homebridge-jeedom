@@ -125,7 +125,7 @@ function JeedomPlatform(logger, config, api) {
 			this.useMatter = Boolean(api.isMatterAvailable && api.isMatterAvailable() &&
 				api.isMatterEnabled && api.isMatterEnabled()) &&
 				config.matterEnabled === true;
-			if (this.useMatter) {this.matter = require('./lib/matter.js').createHelper(this, toBool);}
+			if (this.useMatter) {this.matter = require('./lib/matter.js').createHelper(this);}
 			this.api.on('didFinishLaunching',() => {
 				/** Listen **/
 				let port=0;
@@ -853,7 +853,20 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
-				if(this.useMatter) {matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, eqLogic.name));}
+				if(this.useMatter) {
+					if(eqLogic.services.power) {
+						eqLogic.services.power.forEach((cmd2) => {
+							if (cmd2.power) {Serv.infos.power = cmd2.power;}
+						});
+					}
+					if(eqLogic.services.consumption) {
+						eqLogic.services.consumption.forEach((cmd2) => {
+							if (cmd2.consumption) {Serv.infos.consumption = cmd2.consumption;}
+						});
+					}
+					matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, eqLogic.name));
+					eqLogic.matterServ = Serv;
+				}
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
@@ -4991,7 +5004,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			// Consumption
 			case Characteristic.CurrentPowerConsumption.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'POWER' && cmd.id == service.cmd_id) {
+					if (cmd.generic_type == 'POWER' && service.infos.power && cmd.id == service.infos.power.id) {
 						returnValue = cmd.currentValue;
 						if(service.infos.power && service.infos.power.unite && service.infos.power.unite.toLowerCase() == 'kw') {
 							returnValue = Math.round(cmd.currentValue*1000);
@@ -5893,6 +5906,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 					if(this.useMatter && subCharact.UUID == Characteristic.On.UUID) {
 						this.matter.pushOnOffState(subService, returnValue, logMessage);
+					} else if(this.useMatter && subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
+						this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
+					} else if(this.useMatter && subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
+						this.matter.pushEnergyState(subService.eqLogic.matterServ, returnValue, logMessage);
 					}
 				}
 			} else {continue;}
