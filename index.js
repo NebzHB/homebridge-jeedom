@@ -235,6 +235,7 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 	try{
 
 		if (scenarios) {
+			var matterAccessories = [];
 			scenarios.sort((a, b) => {
 				// reorder by room name asc and name asc
 				const aC = this.rooms[a.object_id] + a.name;
@@ -278,7 +279,9 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 
 					scenario.eqType_name = "Scenario";
 					scenario.logicalId = "";
-					
+					scenario.origName = scenario.name;
+					if(this.useMatter) {matterAccessories.push(this.matter.buildOnOffAccessory(scenario, Serv, scenario.name));}
+
 					const createdAccessory = this.createAccessory([HBservice], scenario);
 					this.addAccessory(createdAccessory);
 					this.log('└─────────');
@@ -305,9 +308,10 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 				}
 				
 			});
-			
+			if (this.useMatter && matterAccessories.length) {this.matter.registerAccessories(matterAccessories);}
+
 		}
-	} 
+	}
 	catch(e) {
 		this.log('error','Erreur de la fonction JeedomScenarios2HomeKitAccessories :',e);
 		console.error(e.stack);
