@@ -1794,7 +1794,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 					eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildTemperatureAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1824,7 +1825,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 					eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildHumidityAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -5924,6 +5926,10 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							this.matter.pushOccupancyState(subService, returnValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
 							this.matter.pushContactState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentTemperature.UUID) {
+							this.matter.pushTemperatureState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
+							this.matter.pushHumidityState(subService, returnValue, logMessage);
 						}
 					}
 				}
