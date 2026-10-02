@@ -28,13 +28,12 @@ Ces restrictions viennent de l'app Apple Maison et de sa gestion de Matter, pas 
 - Interrupteurs (qui sont des prises)
 - Présence et Occupation (même type en matter)
 - capteur de contact (porte + fenetre)
-- température et humidité (dans des équipements jeedom différents)
+- température et humidité
 - luminosité (illumination, éclairement)
 - fumée (smoke)
 - innondation, fuite d'eau (leak/flood)
 
 #### Todo
-- température et humidité (dans le même équipement jeedom)
 - Volets et BSO
 - Thermostats
 - Ventilateurs
