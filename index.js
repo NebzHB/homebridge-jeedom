@@ -1880,6 +1880,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildSmokeAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1907,6 +1909,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildLeakAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1980,6 +1984,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 
 					eqLogic.hasLogging=true;
 				}
+				if(this.useMatter) {matterAccessories.push(this.matter.buildBrightnessAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -5930,6 +5935,12 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							this.matter.pushTemperatureState(subService, returnValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
 							this.matter.pushHumidityState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
+							this.matter.pushBrightnessState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.SmokeDetected.UUID) {
+							this.matter.pushSmokeState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.LeakDetected.UUID) {
+							this.matter.pushLeakState(subService, returnValue, logMessage);
 						}
 					}
 				}
