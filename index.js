@@ -1586,7 +1586,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildMotionAccessory(eqLogic, Serv, SensorName));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1628,10 +1629,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {matterAccessories.push(this.matter.buildOccupancyAccessory(eqLogic, Serv, SensorName));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
-		}		
+		}
 		if (eqLogic.services.generic) {
 			eqLogic.services.generic.forEach((cmd) => {
 				if (!cmd.state) {return;}
@@ -1943,7 +1945,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 					eqLogic.loggingService = {type:"door", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildContactAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -5908,12 +5911,20 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				} else {
 					this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					if(this.useMatter && subCharact.UUID == Characteristic.On.UUID) {
-						this.matter.pushOnOffState(subService, returnValue, logMessage);
-					} else if(this.useMatter && subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
-						this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
-					} else if(this.useMatter && subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
-						this.matter.pushEnergyState(subService.eqLogic.matterServ, returnValue, logMessage);
+					if(this.useMatter) {
+						if(subCharact.UUID == Characteristic.On.UUID) {
+							this.matter.pushOnOffState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
+							this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
+							this.matter.pushEnergyState(subService.eqLogic.matterServ, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
+							this.matter.pushMotionState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
+							this.matter.pushOccupancyState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
+							this.matter.pushContactState(subService, returnValue, logMessage);
+						}
 					}
 				}
 			} else {continue;}
