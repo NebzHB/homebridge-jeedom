@@ -3741,7 +3741,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							break;
 						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
-							if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 								service.eqLogic.loggingService.addEntry({
 									time: Math.round(new Date().valueOf() / 1000),
 									status: ((returnValue)?1:0),
@@ -3862,7 +3862,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								ppm: returnValue,
@@ -3879,7 +3879,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if(service.infos.Index && service.infos.Index.unite && service.infos.Index.unite.toLowerCase() == 'ppb') { // unit should be µg/m3 if it's ppb, multiply it by 4.57
 							returnValue = parseInt(returnValue*4.57);
 						}
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								voc: returnValue,
@@ -3951,7 +3951,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						} else {
 							returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						}
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							/* if(returnValue === Characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
 								service.eqLogic.numberOpened++;
 							} */
@@ -3969,7 +3969,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								lux: returnValue,
@@ -3987,7 +3987,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						(cmd.generic_type == 'WEATHER_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							if (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE') {
 								service.eqLogic.loggingService.addEntry({
 									time: Math.round(new Date().valueOf() / 1000),
@@ -4013,7 +4013,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						(cmd.generic_type == 'WEATHER_HUMIDITY' && cmd.id == service.infos.humidity.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								humidity: returnValue,
@@ -4029,7 +4029,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						(cmd.generic_type == 'WEATHER_PRESSURE' && cmd.id == service.infos.pressure.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								pressure: returnValue,
@@ -4111,7 +4111,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
 						// returnValue = parseInt(service.invertBinary)==0 ? !toBool(cmd.currentValue) : toBool(cmd.currentValue); // invertBinary ? 
 						returnValue = toBool(cmd.currentValue);
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								status: returnValue?1:0,
@@ -4668,7 +4668,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								setTemp : returnValue,
@@ -5023,7 +5023,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if(service.infos.power && service.infos.power.unite && service.infos.power.unite.toLowerCase() == 'kw') {
 							returnValue = Math.round(cmd.currentValue*1000);
 						}
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								power: returnValue,
