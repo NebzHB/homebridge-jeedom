@@ -31,4 +31,17 @@ Ces restrictions viennent de l'app Apple Maison et de sa gestion de Matter, pas 
 - température et humidité
 - luminosité (illumination, éclairement)
 - fumée (smoke)
-- leak/flood (innondation)
+- leak/flood (innondation, fuite d'eau)
+
+#### Todo
+- Volets et BSO
+- Thermostats
+- Ventilateurs
+- Serrures
+- Qualité d'air (PM2.5 PM10)
+- Capteur CO
+- Lumières (on/off, dimmable, température couleur, couleur)
+- Robot Aspirateurs
+- Interrupteurs programmables (Multi-Valeur et Binaire)
+- Bouton Push
+- Batterie (peut-etre uniquement sur smoke, pas vu autre part)
