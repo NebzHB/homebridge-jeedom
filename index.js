@@ -869,7 +869,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 						});
 					}
 					matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, eqLogic.name));
-					eqLogic.matterServ = Serv;
+					//eqLogic.matterServ = Serv;
+					Object.defineProperty(eqLogic, 'matterServ', { value: Serv, enumerable: false, writable: true, configurable: true });
 				}
 				HBservices.push(HBservice);
 			});
