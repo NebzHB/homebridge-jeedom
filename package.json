@@ -24,7 +24,9 @@
     "Jeedom",
     "homekit",
     "z-wave",
-    "Siri"
+    "Siri",
+    "supports-hap",
+    "supports-matter"
   ],
   "dependencies": {
     "async": "3.2.6",
