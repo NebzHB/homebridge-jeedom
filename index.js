@@ -5904,6 +5904,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 			if (returnValue === 'no_response') {
 				subCharact.updateValue(new Error('no_response'), undefined, 'fromJeedom');
 			} else if(returnValue !== undefined) {
+				const originalValue=returnValue;
 				returnValue = sanitizeValue(returnValue,subCharact);
 				const logMessage = 'Cause de modif: "' + (infoFound && infoFound.name ? infoFound.name + '" (' + updateID + ')' : '') + (statusFound && statusFound.name ? statusFound.name + '" (' + updateID + ')' : '') + ' Envoi valeur:' + returnValue;
 				if(infoFound !== -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
@@ -5925,7 +5926,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
 							this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
-							this.matter.pushEnergyState(subService.eqLogic.matterServ, returnValue, logMessage);
+							this.matter.pushEnergyState(subService.eqLogic.matterServ, originalValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
 							this.matter.pushMotionState(subService, returnValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
