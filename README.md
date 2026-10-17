@@ -32,7 +32,7 @@ Ces restrictions viennent de l'app Apple Maison et de sa gestion de Matter, pas 
 - luminosité (illumination, éclairement)
 - fumée (smoke)
 - innondation, fuite d'eau (leak/flood)
-- Batterie : le cluster Matter `powerSource` (niveau en % + alerte de niveau bas, et état de charge si l'équipement a une commande `BATTERY_CHARGING`, sinon il reste "inconnu" ; en charge avec un niveau > 80 % est publié comme "pleine charge") est ajouté à chaque accessoire Matter dont l'équipement Jeedom a une commande batterie (type générique `BATTERY`). Chaque accessoire d'un même équipement est une tuile distincte dans Maison, la batterie apparaît donc sur chacune d'elles.
+- Batterie : le cluster Matter `powerSource` (niveau en % + alerte de niveau bas, et état de charge si l'équipement a une commande `BATTERY_CHARGING`, sinon il reste "inconnu" ; en charge avec un niveau > 95 % est publié comme "pleine charge") est ajouté à chaque accessoire Matter dont l'équipement Jeedom a une commande batterie (type générique `BATTERY`). Chaque accessoire d'un même équipement est une tuile distincte dans Maison, la batterie apparaît donc sur chacune d'elles.
 
 #### Todo
 - Volets et BSO
