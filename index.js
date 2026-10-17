@@ -5952,6 +5952,8 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 							this.matter.pushBatteryPercentState(subService, returnValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.StatusLowBattery.UUID) {
 							this.matter.pushBatteryChargeLevelState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.ChargingState.UUID) {
+							this.matter.pushBatteryChargeState(subService, returnValue, logMessage);
 						}
 					}
 				}
