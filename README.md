@@ -24,6 +24,7 @@ Ces restrictions viennent de l'app Apple Maison et de sa gestion de Matter, pas 
 ### Types supportés jusqu'ici
 
 - Prise et consommation instantanée (voir dernière restiction)
+- Énergie : sur une prise, la consommation cumulée (`CONSOMMATION`) est envoyée en énergie importée et la production cumulée (type générique `PRODUCTION`) en énergie exportée. Sans commande `PRODUCTION`, une consommation négative est envoyée en énergie exportée.
 - Scenarios (qui sont des prises)
 - Interrupteurs (qui sont des prises)
 - Présence et Occupation (même type en matter)

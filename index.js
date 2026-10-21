@@ -869,6 +869,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 							if (cmd2.consumption) {Serv.infos.consumption = cmd2.consumption;}
 						});
 					}
+					if(eqLogic.services.production) {
+						eqLogic.services.production.forEach((cmd2) => {
+							if (cmd2.production) {Serv.infos.production = cmd2.production;}
+						});
+					}
 					matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, eqLogic.name));
 					// eqLogic.matterServ = Serv;
 					Object.defineProperty(eqLogic, 'matterServ', {value: Serv, enumerable: false, writable: true, configurable: true});
@@ -1236,6 +1241,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 					eqServicesCopy.consumption.forEach((cmd2) => {
 						if (cmd2.consumption) {
 							Serv.infos.consumption=cmd2.consumption;
+						}
+					});
+				}
+				if(eqServicesCopy.production) { // no HomeKit characteristic, kept so that its updates reach the Matter exported energy
+					eqServicesCopy.production.forEach((cmd2) => {
+						if (cmd2.production) {
+							Serv.infos.production=cmd2.production;
 						}
 					});
 				}
@@ -5935,7 +5947,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 						} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
 							this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
-							this.matter.pushEnergyState(subService.eqLogic.matterServ, originalValue, logMessage);
+							this.matter.pushEnergyState(subService.eqLogic.matterServ, logMessage);
 						} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
 							this.matter.pushMotionState(subService, returnValue, logMessage);
 						} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
