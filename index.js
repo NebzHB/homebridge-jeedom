@@ -381,6 +381,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				}
 			}
 			if(!hasDeleted) {this.log('│ Rien à supprimer');}
+			if(this.useMatter) {this.matter.sweepStaleCached();} // Matter accessories restored from the Matter cache but not built this run
 			this.log('└────────────────────────');
 		}
 		else
@@ -3101,6 +3102,12 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence=false) {
 // -- Params --
 // -- accessory : the accessory to configure
 // -- Return : nothing
+// -- configureMatterAccessory
+// -- Desc : called by Homebridge for each Matter accessory restored from its cache (the Matter counterpart of configureAccessory)
+JeedomPlatform.prototype.configureMatterAccessory = function(accessory) {
+	if(this.useMatter) {this.matter.rememberCached(accessory);}
+};
+
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
 		// this.log('debug',JSON.stringify(accessory).replace("\n",""));
