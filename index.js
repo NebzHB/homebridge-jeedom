@@ -2864,7 +2864,6 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 		this.log('error','Erreur de la fonction AccessoireCreateHomebridge :',e);
 		console.error(e.stack);
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [this.existingAccessory(createdAccessory.UUID,true)]);
-		// if(this.useMatter) {this.api.matter.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', matterAccessories);}
 		hasError=true;
 	}		
 };
@@ -3068,7 +3067,6 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		console.error(e.stack);
 		// unregister the accessory before quitting (avoid cache or persist corruption)
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);
-		// if(this.useMatter) {this.api.matter.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [HBAccessory]);}
 		hasError=true;
 	}
 };
@@ -3117,7 +3115,6 @@ JeedomPlatform.prototype.configureAccessory = function(accessory) {
 			this.log('debug','L\'accessoire est invalide, on le retire du cache Homebridge :',accessory.displayName);
 			try {
 				this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);
-				// if(this.useMatter) {this.api.matter.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);}
 			} catch (e) {
 				this.log('error',"#45 Impossible de supprimer l'accessoire !" , e);
 			}
@@ -6686,7 +6683,6 @@ JeedomBridgedAccessory.prototype.addServices = function(newAccessory,services,ca
 		this.log('error','Erreur de la fonction addServices :',e,JSON.stringify(service.controlService));
 		console.error(e.stack);
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [newAccessory]);
-		// if(this.useMatter) {this.api.matter.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [newAccessory]);}
 		hasError=true;
 	}
 };
@@ -6717,7 +6713,6 @@ JeedomBridgedAccessory.prototype.delServices = function(accessory) {
 		this.log('error','Erreur de la fonction delServices :',e,JSON.stringify(service));
 		console.error(e.stack);
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);
-		// if(this.useMatter) {this.api.matter.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [accessory]);}
 		hasError=true;
 	}
 };
