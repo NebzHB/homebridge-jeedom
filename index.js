@@ -2965,7 +2965,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 		{
 			if(!silence) {this.log('│ Suppression de l\'accessoire (' + jeedomAccessory.name + ')');}
 			this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
-			// if(this.useMatter) {this.api.matter.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);}
+			if(this.useMatter) {this.matter.unregisterForAccessory(existingAccessory);} // its Matter accessories are found from the cached services' subtypes
 			delete this.accessories[jeedomAccessory.UUID];
 			existingAccessory.reviewed=true;
 		}
@@ -2978,7 +2978,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 		console.error(e.stack);
 		// force to unregister the accessory before quitting (avoid cache or persist corruption)
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
-		// if(this.useMatter) {this.api.matter.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);}
+		if(this.useMatter) {this.matter.unregisterForAccessory(existingAccessory);}
 		hasError=true;
 	}
 };
