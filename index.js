@@ -3933,7 +3933,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.CarbonMonoxideDetected.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'CO' && cmd.id == service.cmd_id) {
+					if ((cmd.generic_type == 'CO' || cmd.generic_type == 'CO_ALARM') && cmd.id == service.cmd_id) {
 						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
 						returnValue = toBool(cmd.currentValue);
 						if(returnValue === false) {
