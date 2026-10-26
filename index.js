@@ -30,6 +30,7 @@ debug.NO = 1000;
 let hasError = false;
 let DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
+const CO_ALARM_THRESHOLD_PPM = 50; // sans commande CO Alarme, l'alarme CO est déduite du niveau en ppm (premier seuil d'alarme de la norme EN 50291)
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
 
 module.exports = function(homebridge) {
@@ -1340,8 +1341,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 			});
 		}		
 		if (eqLogic.services.CO) {
-			eqLogic.services.CO.forEach((cmd) => {
-				if (!cmd.CO) {return;}
+			// CO_ALARM = alarme binaire, CO = niveau en ppm. Un capteur par alarme (le niveau ppm sur le premier),
+			// sans alarme un capteur par niveau ppm, l'alarme étant alors déduite du seuil CO_ALARM_THRESHOLD_PPM.
+			const coAlarms = eqLogic.services.CO.filter((cmd) => cmd.COalarm).map((cmd) => cmd.COalarm);
+			const coLevels = eqLogic.services.CO.filter((cmd) => cmd.CO).map((cmd) => cmd.CO);
+			const coSensors = (coAlarms.length) ? coAlarms.map((alarm, i) => ({alarm, level: (i === 0) ? coLevels[0] : undefined})) : coLevels.map((level) => ({level}));
+			coSensors.forEach(({alarm, level}) => {
 				HBservice = {
 					controlService : new Service.CarbonMonoxideSensor(eqLogic.name),
 					characteristics : [Characteristic.CarbonMonoxideDetected],
@@ -1350,9 +1355,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqLogic=eqLogic;
 				Serv.actions={};
 				Serv.infos={};
-				Serv.infos.CO=cmd.CO;
+				if(alarm) {Serv.infos.COalarm=alarm;}
+				if(level) {
+					Serv.infos.CO=level;
+					HBservice.characteristics.push(Characteristic.CarbonMonoxideLevel);
+					Serv.addCharacteristic(Characteristic.CarbonMonoxideLevel);
+				}
 				
-				Serv.cmd_id = cmd.CO.id;
+				Serv.cmd_id = (alarm || level).id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = 'CO';
 				Serv.subtype = Serv.subtype || '';
@@ -3933,14 +3943,21 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.CarbonMonoxideDetected.UUID :
 				for (const cmd of cmdList) {
-					if ((cmd.generic_type == 'CO' || cmd.generic_type == 'CO_ALARM') && cmd.id == service.cmd_id) {
-						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
-						returnValue = toBool(cmd.currentValue);
-						if(returnValue === false) {
-							returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
-						} else {
-							returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
-						}					
+					if (service.infos.COalarm && cmd.generic_type == 'CO_ALARM' && cmd.id == service.infos.COalarm.id) {
+						returnValue = toBool(cmd.currentValue) ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+						break;
+					} else if (!service.infos.COalarm && service.infos.CO && cmd.generic_type == 'CO' && cmd.id == service.infos.CO.id) {
+						const ppm = parseFloat(cmd.currentValue);
+						returnValue = (!isNaN(ppm) && ppm >= CO_ALARM_THRESHOLD_PPM) ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+						break;
+					}
+				}
+			break;
+			case Characteristic.CarbonMonoxideLevel.UUID :
+				for (const cmd of cmdList) {
+					if (service.infos.CO && cmd.generic_type == 'CO' && cmd.id == service.infos.CO.id) {
+						returnValue = parseFloat(cmd.currentValue);
+						if (isNaN(returnValue)) {returnValue = 0;}
 						break;
 					}
 				}
