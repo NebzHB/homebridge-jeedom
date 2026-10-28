@@ -1559,6 +1559,34 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
+			// PM2.5 sans indice AQI sur l'équipement : la qualité d'air est déduite du PM2.5,
+			// seuils fixes de l'indice européen EAQI (révision 2024) : bon <= 5, correct <= 15, moyen <= 50, mauvais <= 90, au-delà très / extrêmement mauvais
+			if (!eqLogic.services.AirQuality.some((cmd) => cmd.Index)) {
+				eqLogic.services.AirQuality.forEach((cmd) => {
+					if (!cmd.PM25) {return;}
+					HBservice = {
+						controlService : new Service.AirQualitySensor(eqLogic.name),
+						characteristics : [Characteristic.AirQuality, Characteristic.PM2_5Density],
+					};
+					const Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.PM25=cmd.PM25;
+					Serv.addCharacteristic(Characteristic.PM2_5Density);
+					Serv.levelNum=[];
+					Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=5;
+					Serv.levelNum[Characteristic.AirQuality.GOOD]=15;
+					Serv.levelNum[Characteristic.AirQuality.FAIR]=50;
+					Serv.levelNum[Characteristic.AirQuality.INFERIOR]=90;
+					Serv.levelNum[Characteristic.AirQuality.POOR]=Infinity;
+					Serv.cmd_id = cmd.PM25.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-PM25';
+					HBservices.push(HBservice);
+					HBservice = null;
+				});
+			}
 		} 	
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach((cmd) => {
@@ -3833,8 +3861,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.AirQuality.UUID :
 				for (const cmd of cmdList) {
-					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2' || cmd.generic_type == 'AIRQUALITY_CUSTOM') && cmd.id == service.cmd_id) {
-						returnValue = parseInt(cmd.currentValue);
+					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2' || cmd.generic_type == 'AIRQUALITY_CUSTOM' || cmd.generic_type == 'AIRQUALITY_PM25') && cmd.id == service.cmd_id) {
+						returnValue = (cmd.generic_type == 'AIRQUALITY_PM25') ? parseFloat(cmd.currentValue) : parseInt(cmd.currentValue);
 						if(Array.isArray(service.levelNum)) {
 							if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
 								returnValue = Characteristic.AirQuality.EXCELLENT;
