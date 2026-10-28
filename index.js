@@ -3975,8 +3975,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;	
 			case Characteristic.PM2_5Density.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'AIRQUALITY_PM25' && cmd.id == service.cmd_id) {
-						returnValue = parseInt(cmd.currentValue);
+					if (cmd.generic_type == 'AIRQUALITY_PM25' && service.infos.PM25 && cmd.id == service.infos.PM25.id) { // service.cmd_id est l'indice AQI
+						returnValue = parseFloat(cmd.currentValue);
+						if (isNaN(returnValue)) {returnValue = undefined;}
 						break;
 					}
 				}
