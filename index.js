@@ -518,8 +518,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 						}
 					} else {
 						this.log('|error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
-						props.minValue = 0; // if not set in Jeedom it's 0
-						props.maxValue = 20000; // if not set in Jeedom it's 100
+						// sans min/max on garde la plage HomeKit par défaut (140 → 500 mireds), 0 → 20000 n'a pas de sens
 					}
 					const unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
 					if(unite) {props.unit=unite;}
