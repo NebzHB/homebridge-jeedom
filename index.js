@@ -4261,7 +4261,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			// Lights
 			case Characteristic.Hue.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_COLOR') {
+					if (cmd.generic_type == 'LIGHT_COLOR' && service.infos.color && cmd.id == service.infos.color.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -4275,7 +4275,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.Saturation.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_COLOR') {
+					if (cmd.generic_type == 'LIGHT_COLOR' && service.infos.color && cmd.id == service.infos.color.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -4289,7 +4289,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_COLOR_TEMP') {
+					if (cmd.generic_type == 'LIGHT_COLOR_TEMP' && service.infos.color_temp && cmd.id == service.infos.color_temp.id) {
 						if(service.colorTempType=="kelvin") {
 							returnValue = parseInt(1000000/cmd.currentValue);
 						} else {
