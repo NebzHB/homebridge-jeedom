@@ -4290,10 +4290,13 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'LIGHT_COLOR_TEMP') {
-						if(service.colorTempType=="kelvin") {
-							returnValue = parseInt(1000000/cmd.currentValue);
+						const colorTemp = parseFloat(cmd.currentValue);
+						if(isNaN(colorTemp) || colorTemp <= 0) {
+							returnValue = undefined; // pas de valeur exploitable (vide ou 0, ex : ampoule en mode couleur) : 1000000/0 donnerait NaN
+						} else if(service.colorTempType=="kelvin") {
+							returnValue = parseInt(1000000/colorTemp);
 						} else {
-							returnValue = cmd.currentValue;
+							returnValue = colorTemp;
 						}
 						break;
 					}
