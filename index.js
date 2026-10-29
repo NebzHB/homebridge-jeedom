@@ -6015,6 +6015,8 @@ JeedomPlatform.prototype.pushToMatter = function(subCharact, subService, returnV
 		this.matter.pushLightLevelState(subService, returnValue, logMessage);
 	} else if(subCharact.UUID == Characteristic.ColorTemperature.UUID) {
 		this.matter.pushLightCtState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.Hue.UUID) { // a color change updates Hue and Saturation : pushed once, from Hue (both are read again)
+		this.matter.pushLightColorState(subService, logMessage);
 	} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
 		this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
 	} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
