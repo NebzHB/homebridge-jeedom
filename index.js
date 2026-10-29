@@ -544,6 +544,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {
+					const matterLight = this.matter.buildLightAccessory(eqLogic, Serv, eqLogic.name);
+					if(matterLight) {matterAccessories.push(matterLight);}
+				}
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
@@ -5979,6 +5983,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					if(!this.settingLight) { // and it's not currently being modified
 						this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
+						if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage);}
 					} else if(DEV_DEBUG) {this.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else if(infoFound !== -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
 					if(!this.settingFan) { // and it's not currently being modified
@@ -5988,40 +5993,52 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				} else {
 					this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					if(this.useMatter) {
-						if(subCharact.UUID == Characteristic.On.UUID) {
-							this.matter.pushOnOffState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
-							this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
-							this.matter.pushEnergyState(subService.eqLogic.matterServ, logMessage);
-						} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
-							this.matter.pushMotionState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
-							this.matter.pushOccupancyState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
-							this.matter.pushContactState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentTemperature.UUID) {
-							this.matter.pushTemperatureState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
-							this.matter.pushHumidityState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
-							this.matter.pushBrightnessState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.SmokeDetected.UUID) {
-							this.matter.pushSmokeState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.LeakDetected.UUID) {
-							this.matter.pushLeakState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.BatteryLevel.UUID) {
-							this.matter.pushBatteryPercentState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.StatusLowBattery.UUID) {
-							this.matter.pushBatteryChargeLevelState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.ChargingState.UUID) {
-							this.matter.pushBatteryChargeState(subService, returnValue, logMessage);
-						}
-					}
+					if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage);}
 				}
 			} else {continue;}
 		}
+	}
+};
+
+// -- pushToMatter
+// -- Desc : forward to Matter a value just sent to HomeKit; each push is a no-op when the service has no Matter accessory
+// -- Params --
+// -- subCharact : the HomeKit characteristic updated
+// -- subService : its service
+// -- returnValue : the sanitized value sent to HomeKit
+// -- logMessage : the "cause" text of the HomeKit log
+// -- Return : nothing
+JeedomPlatform.prototype.pushToMatter = function(subCharact, subService, returnValue, logMessage) {
+	if(subCharact.UUID == Characteristic.On.UUID) {
+		this.matter.pushOnOffState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.Brightness.UUID) {
+		this.matter.pushLightLevelState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
+		this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
+		this.matter.pushEnergyState(subService.eqLogic.matterServ, logMessage);
+	} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
+		this.matter.pushMotionState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
+		this.matter.pushOccupancyState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
+		this.matter.pushContactState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.CurrentTemperature.UUID) {
+		this.matter.pushTemperatureState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
+		this.matter.pushHumidityState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
+		this.matter.pushBrightnessState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.SmokeDetected.UUID) {
+		this.matter.pushSmokeState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.LeakDetected.UUID) {
+		this.matter.pushLeakState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.BatteryLevel.UUID) {
+		this.matter.pushBatteryPercentState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.StatusLowBattery.UUID) {
+		this.matter.pushBatteryChargeLevelState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.ChargingState.UUID) {
+		this.matter.pushBatteryChargeState(subService, returnValue, logMessage);
 	}
 };
 
