@@ -30,6 +30,7 @@ debug.NO = 1000;
 let hasError = false;
 let DEV_DEBUG=false;
 const GenericAssociated = ['GENERIC_INFO','SHOCK','RAIN_CURRENT','RAIN_TOTAL','WIND_SPEED','WIND_DIRECTION','MODE_STATE'];
+const CO_ALARM_THRESHOLD_PPM = 50; // sans commande CO Alarme, l'alarme CO est déduite du niveau en ppm (premier seuil d'alarme de la norme EN 50291)
 const PushButtonAssociated = ['PUSH_BUTTON','CAMERA_UP','CAMERA_DOWN','CAMERA_LEFT','CAMERA_RIGHT','CAMERA_ZOOM','CAMERA_DEZOOM','CAMERA_PRESET','FLAP_UP','FLAP_DOWN','FLAP_STOP'];
 
 module.exports = function(homebridge) {
@@ -122,6 +123,10 @@ function JeedomPlatform(logger, config, api) {
 		}
 		if (api) {
 			this.api = api;
+			this.useMatter = Boolean(api.isMatterAvailable && api.isMatterAvailable() &&
+				api.isMatterEnabled && api.isMatterEnabled()) &&
+				config.matterEnabled === true;
+			if (this.useMatter) {this.matter = require('./lib/matter.js').createHelper(this);}
 			this.api.on('didFinishLaunching',() => {
 				/** Listen **/
 				let port=0;
@@ -231,6 +236,7 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 	try{
 
 		if (scenarios) {
+			var matterAccessories = [];
 			scenarios.sort((a, b) => {
 				// reorder by room name asc and name asc
 				const aC = this.rooms[a.object_id] + a.name;
@@ -274,7 +280,9 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 
 					scenario.eqType_name = "Scenario";
 					scenario.logicalId = "";
-					
+					scenario.origName = scenario.name;
+					if(this.useMatter) {matterAccessories.push(this.matter.buildOnOffAccessory(scenario, Serv, scenario.name));}
+
 					const createdAccessory = this.createAccessory([HBservice], scenario);
 					this.addAccessory(createdAccessory);
 					this.log('└─────────');
@@ -301,9 +309,10 @@ JeedomPlatform.prototype.JeedomScenarios2HomeKitAccessories = function(scenarios
 				}
 				
 			});
-			
+			if (this.useMatter && matterAccessories.length) {this.matter.registerAccessories(matterAccessories);}
+
 		}
-	} 
+	}
 	catch(e) {
 		this.log('error','Erreur de la fonction JeedomScenarios2HomeKitAccessories :',e);
 		console.error(e.stack);
@@ -331,18 +340,13 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 					device.object_id != null && 
 					device.sendToHomebridge != '0') {
 
-					this.AccessoireCreateHomebridge(
-						this.jeedomClient.ParseGenericType(
-							device, 
-							this.jeedomClient.getDeviceCmdFromCache(device.id)
-						)
-					);
+					this.AccessoireCreateHomebridge(device);
 				}
 				else
 				{
 					this.log('debug','eqLogic > '+JSON.stringify(device).replace("\n",''));
 					this.log('┌──── ' + this.rooms[device.object_id] + ' > ' +device.name+((device.pseudo)?' > pseudo: '+device.pseudo:'')+' ('+device.id+')');
-					var Messg= '│ Accessoire ';
+					let Messg= '│ Accessoire ';
 					Messg += device.isVisible == '1' ? 'visible' : 'invisible';
 					Messg += device.isEnable == '1' ? ', activé' : ', désactivé';
 					Messg += device.object_id != null ? '' : ', pas dans une pièce';
@@ -357,12 +361,12 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				
 			});
 		}
-		var countA=0;
+		let countA=0;
 		if(!hasError)
 		{
 			this.log('┌────RAMASSE-MIETTES─────');
 			this.log('│ (Suppression des accessoires qui sont dans le cache mais plus dans jeedom (peut provenir de renommage ou changement de pièce))');
-			var hasDeleted = false;
+			let hasDeleted = false;
 			for (const a in this.accessories) 
 			{
 				if (this.accessories.hasOwnProperty(a)) {
@@ -378,6 +382,7 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 				}
 			}
 			if(!hasDeleted) {this.log('│ Rien à supprimer');}
+			if(this.useMatter) {this.matter.sweepStaleCached();} // Matter accessories restored from the Matter cache but not built this run
 			this.log('└────────────────────────');
 		}
 		else
@@ -402,14 +407,16 @@ JeedomPlatform.prototype.JeedomDevices2HomeKitAccessories = function(devices) {
 // -- AccessoireCreateHomebridge
 // -- Desc : Prepare the service list
 // -- Params --
-// -- eqLogic : eqLogics from jeedom (and cmd's)
+// -- device : eqLogics from jeedom (and cmd's)
 // -- Return : nothing
-JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
+JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
+	const eqLogic = this.jeedomClient.ParseGenericType(device);
 	var createdAccessory;
 	try {
 		var HBservices = [];
 		var HBservice = null;	
 		const eqServicesCopy = eqLogic.services;
+		var matterAccessories = [];
 		this.log('debug','eqLogic > '+JSON.stringify(eqLogic).replace("\n",''));
 		this.log('┌──── ' + this.rooms[eqLogic.object_id] + ' > ' + eqLogic.name +((eqLogic.pseudo)?' > pseudo: '+eqLogic.pseudo:'')+ ' (' + eqLogic.id + ')');
 		eqLogic.origName=eqLogic.name;
@@ -511,8 +518,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					} else {
 						this.log('|error','"Action/Lumière Température Couleur" doit avoir un minimum et un maximum !');
-						props.minValue = 0; // if not set in Jeedom it's 0
-						props.maxValue = 20000; // if not set in Jeedom it's 100
+						// sans min/max on garde la plage HomeKit par défaut (140 → 500 mireds), 0 → 20000 n'a pas de sens
 					}
 					const unite = Serv.infos.color_temp.unite ? Serv.infos.color_temp.unite : '';
 					if(unite) {props.unit=unite;}
@@ -847,11 +853,31 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				if(Serv.infos.state.OwnerOnly) {Serv.getCharacteristic(Characteristic.On).setProps({adminOnlyAccess: [Access.WRITE]});}
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-				
+
 				Serv.cmd_id = cmd.state.id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {
+					if(eqLogic.services.power) {
+						eqLogic.services.power.forEach((cmd2) => {
+							if (cmd2.power) {Serv.infos.power = cmd2.power;}
+						});
+					}
+					if(eqLogic.services.consumption) {
+						eqLogic.services.consumption.forEach((cmd2) => {
+							if (cmd2.consumption) {Serv.infos.consumption = cmd2.consumption;}
+						});
+					}
+					if(eqLogic.services.production) {
+						eqLogic.services.production.forEach((cmd2) => {
+							if (cmd2.production) {Serv.infos.production = cmd2.production;}
+						});
+					}
+					matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, eqLogic.name));
+					// eqLogic.matterServ = Serv;
+					Object.defineProperty(eqLogic, 'matterServ', {value: Serv, enumerable: false, writable: true, configurable: true});
+				}
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
@@ -1096,14 +1122,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				});
 				if(!Serv.actions.on) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton On"');}
 				if(!Serv.actions.off) {this.log('|warning','Pas de type générique "Action/Interrupteur Bouton Off"');}
-				
+
 				// add Active, Tampered and Defect Characteristics if needed
 				HBservice=this.createStatusCharact(HBservice,eqServicesCopy);
-				
+
 				Serv.cmd_id = cmd.state.id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {matterAccessories.push(this.matter.buildOnOffAccessory(eqLogic, Serv, SwitchName));}
 				
 				if(this.fakegato && !eqLogic.hasLogging) {
 					// HBservice.characteristics.push(Characteristic.Sensitivity,Characteristic.Duration,Characteristic.LastActivation);
@@ -1217,6 +1244,13 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 						}
 					});
 				}
+				if(eqServicesCopy.production) { // no HomeKit characteristic, kept so that its updates reach the Matter exported energy
+					eqServicesCopy.production.forEach((cmd2) => {
+						if (cmd2.production) {
+							Serv.infos.production=cmd2.production;
+						}
+					});
+				}
 				
 				Serv.cmd_id = cmd.power.id;
 				Serv.eqID = eqLogic.id;
@@ -1306,8 +1340,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			});
 		}		
 		if (eqLogic.services.CO) {
-			eqLogic.services.CO.forEach((cmd) => {
-				if (!cmd.CO) {return;}
+			// CO_ALARM = alarme binaire, CO = niveau en ppm. Un capteur par alarme (le niveau ppm sur le premier),
+			// sans alarme un capteur par niveau ppm, l'alarme étant alors déduite du seuil CO_ALARM_THRESHOLD_PPM.
+			const coAlarms = eqLogic.services.CO.filter((cmd) => cmd.COalarm).map((cmd) => cmd.COalarm);
+			const coLevels = eqLogic.services.CO.filter((cmd) => cmd.CO).map((cmd) => cmd.CO);
+			const coSensors = (coAlarms.length) ? coAlarms.map((alarm, i) => ({alarm, level: (i === 0) ? coLevels[0] : undefined})) : coLevels.map((level) => ({level}));
+			coSensors.forEach(({alarm, level}) => {
 				HBservice = {
 					controlService : new Service.CarbonMonoxideSensor(eqLogic.name),
 					characteristics : [Characteristic.CarbonMonoxideDetected],
@@ -1316,9 +1354,14 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				Serv.eqLogic=eqLogic;
 				Serv.actions={};
 				Serv.infos={};
-				Serv.infos.CO=cmd.CO;
+				if(alarm) {Serv.infos.COalarm=alarm;}
+				if(level) {
+					Serv.infos.CO=level;
+					HBservice.characteristics.push(Characteristic.CarbonMonoxideLevel);
+					Serv.addCharacteristic(Characteristic.CarbonMonoxideLevel);
+				}
 				
-				Serv.cmd_id = cmd.CO.id;
+				Serv.cmd_id = (alarm || level).id;
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = 'CO';
 				Serv.subtype = Serv.subtype || '';
@@ -1516,6 +1559,34 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
+			// PM2.5 sans indice AQI sur l'équipement : la qualité d'air est déduite du PM2.5,
+			// seuils fixes de l'indice européen EAQI (révision 2024) : bon <= 5, correct <= 15, moyen <= 50, mauvais <= 90, au-delà très / extrêmement mauvais
+			if (!eqLogic.services.AirQuality.some((cmd) => cmd.Index)) {
+				eqLogic.services.AirQuality.forEach((cmd) => {
+					if (!cmd.PM25) {return;}
+					HBservice = {
+						controlService : new Service.AirQualitySensor(eqLogic.name),
+						characteristics : [Characteristic.AirQuality, Characteristic.PM2_5Density],
+					};
+					const Serv = HBservice.controlService;
+					Serv.eqLogic=eqLogic;
+					Serv.actions={};
+					Serv.infos={};
+					Serv.infos.PM25=cmd.PM25;
+					Serv.addCharacteristic(Characteristic.PM2_5Density);
+					Serv.levelNum=[];
+					Serv.levelNum[Characteristic.AirQuality.EXCELLENT]=5;
+					Serv.levelNum[Characteristic.AirQuality.GOOD]=15;
+					Serv.levelNum[Characteristic.AirQuality.FAIR]=50;
+					Serv.levelNum[Characteristic.AirQuality.INFERIOR]=90;
+					Serv.levelNum[Characteristic.AirQuality.POOR]=Infinity;
+					Serv.cmd_id = cmd.PM25.id;
+					Serv.eqID = eqLogic.id;
+					Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-PM25';
+					HBservices.push(HBservice);
+					HBservice = null;
+				});
+			}
 		} 	
 		if (eqLogic.services.presence) {
 			eqLogic.services.presence.forEach((cmd) => {
@@ -1566,7 +1637,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildMotionAccessory(eqLogic, Serv, SensorName));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1608,10 +1680,11 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {matterAccessories.push(this.matter.buildOccupancyAccessory(eqLogic, Serv, SensorName));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
-		}		
+		}
 		if (eqLogic.services.generic) {
 			eqLogic.services.generic.forEach((cmd) => {
 				if (!cmd.state) {return;}
@@ -1772,7 +1845,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					eqLogic.loggingService ={type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildTemperatureAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1802,7 +1876,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					eqLogic.loggingService = {type:"weather", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildHumidityAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1856,6 +1931,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildSmokeAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1883,6 +1960,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildLeakAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1923,7 +2002,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 					eqLogic.loggingService = {type:"door", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 					eqLogic.hasLogging=true;
 				}
-				
+
+				if(this.useMatter) {matterAccessories.push(this.matter.buildContactAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -1955,6 +2035,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 
 					eqLogic.hasLogging=true;
 				}
+				if(this.useMatter) {matterAccessories.push(this.matter.buildBrightnessAccessory(eqLogic, Serv, eqLogic.name));}
 				HBservices.push(HBservice);
 				HBservice = null;
 			});
@@ -2818,6 +2899,7 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(eqLogic) {
 			createdAccessory = this.createAccessory(HBservices, eqLogic);
 			this.addAccessory(createdAccessory);
 			HBservices = [];
+			if (this.useMatter && matterAccessories.length) {this.matter.registerAccessories(matterAccessories);}
 		}
 		else
 		{
@@ -2932,6 +3014,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 		{
 			if(!silence) {this.log('│ Suppression de l\'accessoire (' + jeedomAccessory.name + ')');}
 			this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
+			if(this.useMatter) {this.matter.unregisterForAccessory(existingAccessory);} // its Matter accessories are found from the cached services' subtypes
 			delete this.accessories[jeedomAccessory.UUID];
 			existingAccessory.reviewed=true;
 		}
@@ -2944,6 +3027,7 @@ JeedomPlatform.prototype.delAccessory = function(jeedomAccessory,silence=false) 
 		console.error(e.stack);
 		// force to unregister the accessory before quitting (avoid cache or persist corruption)
 		this.api.unregisterPlatformAccessories('homebridge-jeedom', 'Jeedom', [existingAccessory]);
+		if(this.useMatter) {this.matter.unregisterForAccessory(existingAccessory);}
 		hasError=true;
 	}
 };
@@ -3065,6 +3149,12 @@ JeedomPlatform.prototype.existingAccessory = function(UUID,silence=false) {
 // -- Params --
 // -- accessory : the accessory to configure
 // -- Return : nothing
+// -- configureMatterAccessory
+// -- Desc : called by Homebridge for each Matter accessory restored from its cache (the Matter counterpart of configureAccessory)
+JeedomPlatform.prototype.configureMatterAccessory = function(accessory) {
+	if(this.useMatter) {this.matter.rememberCached(accessory);}
+};
+
 JeedomPlatform.prototype.configureAccessory = function(accessory) {
 	try{
 		// this.log('debug',JSON.stringify(accessory).replace("\n",""));
@@ -3651,7 +3741,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							returnValue = true;
 						break;
 					}
-					if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+					if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 						service.eqLogic.loggingService.addEntry({
 							time: Math.round(new Date().valueOf() / 1000),
 							status: ((returnValue)?1:0),
@@ -3710,7 +3800,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 							break;
 						} else if ((cmd.generic_type == "SWITCH_STATE" || cmd.generic_type == "CAMERA_RECORD_STATE") && cmd.id == service.cmd_id) {
 							returnValue = cmd.currentValue;
-							if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+							if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 								service.eqLogic.loggingService.addEntry({
 									time: Math.round(new Date().valueOf() / 1000),
 									status: ((returnValue)?1:0),
@@ -3771,8 +3861,8 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.AirQuality.UUID :
 				for (const cmd of cmdList) {
-					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2' || cmd.generic_type == 'AIRQUALITY_CUSTOM') && cmd.id == service.cmd_id) {
-						returnValue = parseInt(cmd.currentValue);
+					if ((cmd.generic_type == 'AIRQUALITY_INDEX' || cmd.generic_type == 'CO2' || cmd.generic_type == 'AIRQUALITY_CUSTOM' || cmd.generic_type == 'AIRQUALITY_PM25') && cmd.id == service.cmd_id) {
+						returnValue = (cmd.generic_type == 'AIRQUALITY_PM25') ? parseFloat(cmd.currentValue) : parseInt(cmd.currentValue);
 						if(Array.isArray(service.levelNum)) {
 							if(returnValue >= 0 && returnValue <= service.levelNum[Characteristic.AirQuality.EXCELLENT]) {
 								returnValue = Characteristic.AirQuality.EXCELLENT;
@@ -3831,7 +3921,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'CO2' && cmd.id == service.cmd_id) {
 						returnValue = parseInt(cmd.currentValue);
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								ppm: returnValue,
@@ -3848,7 +3938,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						if(service.infos.Index && service.infos.Index.unite && service.infos.Index.unite.toLowerCase() == 'ppb') { // unit should be µg/m3 if it's ppb, multiply it by 4.57
 							returnValue = parseInt(returnValue*4.57);
 						}
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								voc: returnValue,
@@ -3880,14 +3970,21 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.CarbonMonoxideDetected.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'CO' && cmd.id == service.cmd_id) {
-						// returnValue = parseInt(service.invertBinary)==0 ? toBool(cmd.currentValue) : !toBool(cmd.currentValue); // invertBinary ? // no need to invert
-						returnValue = toBool(cmd.currentValue);
-						if(returnValue === false) {
-							returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
-						} else {
-							returnValue = Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
-						}					
+					if (service.infos.COalarm && cmd.generic_type == 'CO_ALARM' && cmd.id == service.infos.COalarm.id) {
+						returnValue = toBool(cmd.currentValue) ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+						break;
+					} else if (!service.infos.COalarm && service.infos.CO && cmd.generic_type == 'CO' && cmd.id == service.infos.CO.id) {
+						const ppm = parseFloat(cmd.currentValue);
+						returnValue = (!isNaN(ppm) && ppm >= CO_ALARM_THRESHOLD_PPM) ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+						break;
+					}
+				}
+			break;
+			case Characteristic.CarbonMonoxideLevel.UUID :
+				for (const cmd of cmdList) {
+					if (service.infos.CO && cmd.generic_type == 'CO' && cmd.id == service.infos.CO.id) {
+						returnValue = parseFloat(cmd.currentValue);
+						if (isNaN(returnValue)) {returnValue = 0;}
 						break;
 					}
 				}
@@ -3905,8 +4002,9 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;	
 			case Characteristic.PM2_5Density.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'AIRQUALITY_PM25' && cmd.id == service.cmd_id) {
-						returnValue = parseInt(cmd.currentValue);
+					if (cmd.generic_type == 'AIRQUALITY_PM25' && service.infos.PM25 && cmd.id == service.infos.PM25.id) { // service.cmd_id est l'indice AQI
+						returnValue = parseFloat(cmd.currentValue);
+						if (isNaN(returnValue)) {returnValue = undefined;}
 						break;
 					}
 				}
@@ -3920,7 +4018,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						} else {
 							returnValue = Characteristic.ContactSensorState.CONTACT_DETECTED;
 						}
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							/* if(returnValue === Characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
 								service.eqLogic.numberOpened++;
 							} */
@@ -3938,7 +4036,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'BRIGHTNESS' && cmd.id == service.cmd_id) {
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								lux: returnValue,
@@ -3956,7 +4054,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						(cmd.generic_type == 'WEATHER_TEMPERATURE' && cmd.id == service.infos.temperature.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							if (cmd.generic_type == 'TEMPERATURE' || cmd.generic_type == 'WEATHER_TEMPERATURE') {
 								service.eqLogic.loggingService.addEntry({
 									time: Math.round(new Date().valueOf() / 1000),
@@ -3982,7 +4080,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						(cmd.generic_type == 'WEATHER_HUMIDITY' && cmd.id == service.infos.humidity.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								humidity: returnValue,
@@ -3998,7 +4096,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						(cmd.generic_type == 'WEATHER_PRESSURE' && cmd.id == service.infos.pressure.id)) {
 						
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								pressure: returnValue,
@@ -4080,7 +4178,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					if (cmd.generic_type == 'PRESENCE' && cmd.id == service.cmd_id) {
 						// returnValue = parseInt(service.invertBinary)==0 ? !toBool(cmd.currentValue) : toBool(cmd.currentValue); // invertBinary ? 
 						returnValue = toBool(cmd.currentValue);
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								status: returnValue?1:0,
@@ -4191,7 +4289,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			// Lights
 			case Characteristic.Hue.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_COLOR') {
+					if (cmd.generic_type == 'LIGHT_COLOR' && service.infos.color && cmd.id == service.infos.color.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -4205,7 +4303,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.Saturation.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_COLOR') {
+					if (cmd.generic_type == 'LIGHT_COLOR' && service.infos.color && cmd.id == service.infos.color.id) {
 						returnValue = cmd.currentValue;
 						break;
 					}
@@ -4219,11 +4317,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.ColorTemperature.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'LIGHT_COLOR_TEMP') {
-						if(service.colorTempType=="kelvin") {
-							returnValue = parseInt(1000000/cmd.currentValue);
+					if (cmd.generic_type == 'LIGHT_COLOR_TEMP' && service.infos.color_temp && cmd.id == service.infos.color_temp.id) {
+						const colorTemp = parseFloat(cmd.currentValue);
+						if(isNaN(colorTemp) || colorTemp <= 0) {
+							returnValue = undefined; // pas de valeur exploitable (vide ou 0, ex : ampoule en mode couleur) : 1000000/0 donnerait NaN
+						} else if(service.colorTempType=="kelvin") {
+							returnValue = parseInt(1000000/colorTemp);
 						} else {
-							returnValue = cmd.currentValue;
+							returnValue = colorTemp;
 						}
 						break;
 					}
@@ -4637,7 +4738,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
 						returnValue = cmd.currentValue;
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								setTemp : returnValue,
@@ -4987,12 +5088,12 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			// Consumption
 			case Characteristic.CurrentPowerConsumption.UUID :
 				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'POWER' && cmd.id == service.cmd_id) {
+					if (cmd.generic_type == 'POWER' && service.infos.power && cmd.id == service.infos.power.id) {
 						returnValue = cmd.currentValue;
 						if(service.infos.power && service.infos.power.unite && service.infos.power.unite.toLowerCase() == 'kw') {
 							returnValue = Math.round(cmd.currentValue*1000);
 						}
-						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging) {
+						if(this.fakegato && service.eqLogic && service.eqLogic.hasLogging && typeof service.eqLogic.loggingService.addEntry === 'function') {
 							service.eqLogic.loggingService.addEntry({
 								time: Math.round(new Date().valueOf() / 1000),
 								power: returnValue,
@@ -5873,20 +5974,51 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				subCharact.updateValue(new Error('no_response'), undefined, 'fromJeedom');
 			} else if(returnValue !== undefined) {
 				returnValue = sanitizeValue(returnValue,subCharact);
-				const logMessage = 'Cause de modif: "' + (infoFound && infoFound.name ? infoFound.name + '" (' + updateID + ')' : '') + (statusFound && statusFound.name ? statusFound.name + '" (' + updateID + ')' : '') + ' Envoi valeur:' + returnValue + ' dans ' + subCharact.displayName;
+				const logMessage = 'Cause de modif: "' + (infoFound && infoFound.name ? infoFound.name + '" (' + updateID + ')' : '') + (statusFound && statusFound.name ? statusFound.name + '" (' + updateID + ')' : '') + ' Envoi valeur:' + returnValue;
 				if(infoFound !== -1 && infoFound.generic_type=="LIGHT_STATE") { // if it's a LIGHT_STATE
 					if(!this.settingLight) { // and it's not currently being modified
-						this.log('info','[Commande envoyée à HomeKit]',logMessage);
+						this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 					} else if(DEV_DEBUG) {this.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else if(infoFound !== -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
 					if(!this.settingFan) { // and it's not currently being modified
-						this.log('info','[Commande envoyée à HomeKit]',logMessage);
+						this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
 					} else if(DEV_DEBUG) {this.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else {
-					this.log('info','[Commande envoyée à HomeKit]',logMessage);
+					this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
+					if(this.useMatter) {
+						if(subCharact.UUID == Characteristic.On.UUID) {
+							this.matter.pushOnOffState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
+							this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
+							this.matter.pushEnergyState(subService.eqLogic.matterServ, logMessage);
+						} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
+							this.matter.pushMotionState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
+							this.matter.pushOccupancyState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
+							this.matter.pushContactState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentTemperature.UUID) {
+							this.matter.pushTemperatureState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
+							this.matter.pushHumidityState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
+							this.matter.pushBrightnessState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.SmokeDetected.UUID) {
+							this.matter.pushSmokeState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.LeakDetected.UUID) {
+							this.matter.pushLeakState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.BatteryLevel.UUID) {
+							this.matter.pushBatteryPercentState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.StatusLowBattery.UUID) {
+							this.matter.pushBatteryChargeLevelState(subService, returnValue, logMessage);
+						} else if(subCharact.UUID == Characteristic.ChargingState.UUID) {
+							this.matter.pushBatteryChargeState(subService, returnValue, logMessage);
+						}
+					}
 				}
 			} else {continue;}
 		}
