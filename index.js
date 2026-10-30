@@ -3111,6 +3111,7 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 		}
 		HBAccessory.on('identify', (paired, callback) => {
 			this.log(HBAccessory.displayName, "->Identifié!!! (HomeKit)");
+			this.jeedomClient.notifyIdentify(HBAccessory.displayName, 'HomeKit');
 			if(typeof callback === 'function') {callback();}
 		});
 		HBAccessory.reviewed = true;
