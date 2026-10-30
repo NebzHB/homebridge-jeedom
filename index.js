@@ -5983,7 +5983,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					if(!this.settingLight) { // and it's not currently being modified
 						this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-						if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage);}
+						if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage, infoFound);}
 					} else if(DEV_DEBUG) {this.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else if(infoFound !== -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
 					if(!this.settingFan) { // and it's not currently being modified
@@ -5993,7 +5993,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				} else {
 					this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage);}
+					if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage, infoFound);}
 				}
 			} else {continue;}
 		}
@@ -6007,12 +6007,16 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 // -- subService : its service
 // -- returnValue : the sanitized value sent to HomeKit
 // -- logMessage : the "cause" text of the HomeKit log
+// -- infoFound : the Jeedom info that changed (-1 for a status info). Every characteristic of a service is sent again when one of its infos changes :
+// --             color pushes, which also set the Matter color mode, are only done when it's their own info that changed
 // -- Return : nothing
-JeedomPlatform.prototype.pushToMatter = function(subCharact, subService, returnValue, logMessage) {
+JeedomPlatform.prototype.pushToMatter = function(subCharact, subService, returnValue, logMessage, infoFound) {
 	if(subCharact.UUID == Characteristic.On.UUID) {
 		this.matter.pushOnOffState(subService, returnValue, logMessage);
 	} else if(subCharact.UUID == Characteristic.Brightness.UUID) {
 		this.matter.pushLightLevelState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.ColorTemperature.UUID) {
+		if(infoFound && infoFound.generic_type == 'LIGHT_COLOR_TEMP') {this.matter.pushLightCtState(subService, returnValue, logMessage);}
 	} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
 		this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
 	} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
