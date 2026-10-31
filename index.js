@@ -2583,6 +2583,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 						const splitted = eqLogic.thermoModes.Off.split('|');
 						Serv.thermo.off.mode_label = splitted[1];
 						Serv.thermo.off.mode_id = splitted[0];
+					} else {
+						this.log('|warning','Pas de config du mode Arrêt : "Éteint" dans Maison ne fera rien');
 					}
 				} else if(this.myPlugin == "homebridge") {
 					this.log('|warning','Pas de config des modes du thermostat');
@@ -2696,6 +2698,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 						const splitted = eqLogic.thermoModes.Off.split('|');
 						Serv.thermoHC.off.mode_label = splitted[1];
 						Serv.thermoHC.off.mode_id = splitted[0];
+					} else {
+						this.log('|warning','Pas de config du mode Arrêt : "Éteint" dans Maison ne fera rien');
 					}
 				}
 				else if(this.myPlugin == "homebridge") {
@@ -5382,7 +5386,11 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					id_OFF_HC = 	service.thermoHC.off.mode_id;
 				}
 			}
-		}		
+		}
+		if((action == 'TargetHeatingCoolingState' && value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF == undefined) || (action == 'TargetHeaterCoolerState' && value == 3 && id_OFF_HC == undefined)) {
+			this.log('warning','Arrêt du thermostat demandé mais pas de commande d\'arrêt configurée (personnalisation des modes du thermostat dans le plugin) : rien n\'est envoyé');
+			return; // sinon la valeur partirait vers la commande par défaut du service (l'info consigne), sans effet
+		}
 		// /THERMOSTAT
 		var needToTemporize=0;
 		var needToTemporizeSec=0;
