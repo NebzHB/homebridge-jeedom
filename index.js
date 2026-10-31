@@ -3321,7 +3321,12 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 			break;	
 			case Characteristic.Active.UUID :
-				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+				if(service.thermoHC) {
+					// thermostat HC : no ON/OFF command, turning it off is its Off mode, turning it on is its current target mode (heat / cool / auto)
+					this.command('TargetHeaterCoolerState', value == 0 ? 3 : service.getCharacteristic(Characteristic.TargetHeaterCoolerState).value, service);
+				} else {
+					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+				}
 			break;
 			case Characteristic.LockPhysicalControls.UUID :				
 				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
@@ -5816,15 +5821,15 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_HC_SET_MODE' :
 						if(action == 'TargetHeaterCoolerState') {
-							if(value == 3 && id_OFF != undefined) {
+							if(value == 3 && id_OFF_HC != undefined) { // 3 : not a TargetHeaterCoolerState value, sent by the Active characteristic to turn off (see setAccessoryValue)
 								cmdId = id_OFF_HC;
 								this.log('debug',"set OFF");
 								found = true;
-							} else if(value == Characteristic.TargetHeaterCoolerState.HEAT && id_CHAUF != undefined) {
+							} else if(value == Characteristic.TargetHeaterCoolerState.HEAT && id_CHAUF_HC != undefined) {
 								cmdId = id_CHAUF_HC;
 								this.log('debug',"set CHAUF");
 								found = true;
-							} else if(value == Characteristic.TargetHeaterCoolerState.COOL && id_CLIM != undefined) {
+							} else if(value == Characteristic.TargetHeaterCoolerState.COOL && id_CLIM_HC != undefined) {
 								cmdId = id_CLIM_HC;
 								this.log('debug',"set CLIM");
 								found = true;
