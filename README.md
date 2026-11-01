@@ -32,6 +32,7 @@ Ces restrictions viennent de l'app Apple Maison et de sa gestion de Matter, pas 
 - température et humidité
 - luminosité (illumination, éclairement)
 - fumée (smoke)
+- Lumières (on/off, dimmable, température couleur, couleur)
 - innondation, fuite d'eau (leak/flood)
 - Batterie : le cluster Matter `powerSource` (niveau en % + alerte de niveau bas, et état de charge si l'équipement a une commande `BATTERY_CHARGING`, sinon il reste "inconnu" ; en charge avec un niveau > 95 % est publié comme "pleine charge") est ajouté à chaque accessoire Matter dont l'équipement Jeedom a une commande batterie (type générique `BATTERY`). Chaque accessoire d'un même équipement est une tuile distincte dans Maison, la batterie apparaît donc sur chacune d'elles.
 
@@ -42,8 +43,7 @@ Ces restrictions viennent de l'app Apple Maison et de sa gestion de Matter, pas 
 - Serrures
 - Qualité d'air (PM2.5 PM10)
 - Capteur CO
-- Lumières (on/off, dimmable, température couleur, couleur)
 - Robot Aspirateurs
 - Interrupteurs programmables (Multi-Valeur et Binaire)
 - Bouton Push
-- Batterie (peut-etre uniquement sur smoke, pas vu autre part)
+
