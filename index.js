@@ -6938,11 +6938,6 @@ function RGBtoHSV(r, g, b) {
 	};
 }
 
-// -- findMyID
-// -- Desc : search an id in an object
-// -- Params --
-// -- id : id to find
-// -- Return : Object found
 // names of an "off" mode, lowercase and without accents (same list as the plugin's modal, desktop/modal/object.homebridge.php)
 const THERMO_OFF_NAMES = ['off','stop','stopped','arret','arrete','arreter','eteint','eteindre','detenido','apagado','verhaftet','aus','preso','fora'];
 
@@ -6973,6 +6968,11 @@ function thermoModeOf(value, modes) {
 	return null;
 }
 
+// -- findMyID
+// -- Desc : search an id in an object
+// -- Params --
+// -- id : id to find
+// -- Return : Object found
 function findMyID(obj,id) {
 	if (!obj) {return -1;}
 	for(const key in obj) {
