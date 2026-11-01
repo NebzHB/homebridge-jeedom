@@ -3732,7 +3732,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 		let HRreturnValue;
 		const cmdList = this.jeedomClient.getDeviceCmdFromCache(service.eqID);
 		let targetValueToTest,currentValueToTest;
-		let hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
+		let hsv,mode_PRESENT,mode_AWAY,mode_NIGHT;
 		
 		// masterSwitch :
 		switch (characteristic.UUID) {
@@ -4660,89 +4660,31 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
-						
-						if(service.thermo.clim && service.thermo.clim.mode_label !== undefined) {
-							mode_CLIM=service.thermo.clim.mode_label.toString().toLowerCase();
-						}
-						if(service.thermo.chauf && service.thermo.chauf.mode_label !== undefined) {
-							mode_CHAUF=service.thermo.chauf.mode_label.toString().toLowerCase();
-						}
-						this.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
-						switch(cmd.currentValue.toString().toLowerCase()) {
-							case 'off' : // EN
-							case 'stopped' : // EN
-							case 'arrêté' : // FR
-							case 'arret' : // FR
-							case 'detenido' : // ES
-							case 'apagado' : // ES
-							case 'verhaftet' : // DE
-							case 'aus' : // DE
-							case 'preso' : // PT
-							case 'fora' : // PT
-							case undefined:
-								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
-							break;							
-							case mode_CLIM:
-								returnValue = Characteristic.TargetHeatingCoolingState.COOL;
-							break;
-							case mode_CHAUF:
-								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
-							break;
-							case 'none': // EN
-							case 'aucun': // FR
-							case 'thermostat':
-							case 'ninguna': // ES
-							case 'ohne': // DE
-							case 'nemhum': // PT
-							case 'manuel': // Plugin Boiler
-							case 'manual': // Plugin Boiler
-								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
-							break;
+						const mode = thermoModeOf(cmd.currentValue, service.thermo);
+						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
+						if (mode == 'off') {
+							returnValue = Characteristic.TargetHeatingCoolingState.OFF;
+						} else if (mode == 'cool') {
+							returnValue = Characteristic.TargetHeatingCoolingState.COOL;
+						} else if (mode == 'heat') {
+							returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
 						}
 						break;
-					} 
+					}
 				}
 			break;
 			case Characteristic.TargetHeaterCoolerState.UUID :
 				returnValue = Characteristic.TargetHeaterCoolerState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_HC_MODE') {
-						
-						if(service.thermoHC.clim && service.thermoHC.clim.mode_label !== undefined) {
-							mode_CLIM=service.thermoHC.clim.mode_label.toString().toLowerCase();
-						}
-						if(service.thermoHC.chauf && service.thermoHC.chauf.mode_label !== undefined) {
-							mode_CHAUF=service.thermoHC.chauf.mode_label.toString().toLowerCase();
-						}
-						this.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
-						switch(cmd.currentValue.toString().toLowerCase()) {
-							case 'off' : // EN
-							case 'stopped' : // EN
-							case 'arrêté' : // FR
-							case 'arret' : // FR
-							case 'detenido' : // ES
-							case 'apagado' : // ES
-							case 'verhaftet' : // DE
-							case 'aus' : // DE
-							case 'preso' : // PT
-							case 'fora' : // PT
-							case undefined:
-								returnValue = 3;
-							break;							
-							case mode_CLIM:
-								returnValue = Characteristic.TargetHeaterCoolerState.COOL;
-							break;
-							case mode_CHAUF:
-								returnValue = Characteristic.TargetHeaterCoolerState.HEAT;
-							break;
-							case 'none': // EN
-							case 'aucun': // FR
-							case 'thermostat':
-							case 'ninguna': // ES
-							case 'ohne': // DE
-							case 'nemhum': // PT
-								returnValue = Characteristic.TargetHeaterCoolerState.AUTO;
-							break;
+						const mode = thermoModeOf(cmd.currentValue, service.thermoHC);
+						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
+						if (mode == 'off') {
+							returnValue = 3;
+						} else if (mode == 'cool') {
+							returnValue = Characteristic.TargetHeaterCoolerState.COOL;
+						} else if (mode == 'heat') {
+							returnValue = Characteristic.TargetHeaterCoolerState.HEAT;
 						}
 						break;
 					}
@@ -6994,6 +6936,36 @@ function RGBtoHSV(r, g, b) {
 		s : s * 100.0,
 		v : v * 100.0,
 	};
+}
+
+// names of an "off" mode, lowercase and without accents (same list as the plugin's modal, desktop/modal/object.homebridge.php)
+const THERMO_OFF_NAMES = ['off','stop','stopped','arret','arrete','arreter','eteint','eteindre','detenido','apagado','verhaftet','aus','preso','fora'];
+
+// -- normalizeModeName
+// -- Desc : name of a mode, lowercase, without accents nor spaces around ("Éteint " -> "eteint")
+function normalizeModeName(name) {
+	return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+// -- thermoModeOf
+// -- Desc : mode of a thermostat from the value of its mode info (Info/Thermostat Mode or Info/Thermostat HC Mode) :
+// --        the names of the mode commands configured in the plugin first (Éteint / Chauffer / Refroidir), then the usual names of an "off" mode,
+// --        all compared without case, accents nor spaces around
+// -- Params --
+// -- value : the value of the mode info
+// -- modes : service.thermo or service.thermoHC ({off, chauf, clim}, each with its mode_label)
+// -- Return : 'off', 'heat', 'cool', or null for any other mode (auto)
+function thermoModeOf(value, modes) {
+	if (value === undefined || value === null) {return 'off';}
+	const name = normalizeModeName(value);
+	const label = (mode) => ((mode && mode.mode_label !== undefined) ? normalizeModeName(mode.mode_label) : null);
+	if (modes) {
+		if (name === label(modes.off)) {return 'off';}
+		if (name === label(modes.clim)) {return 'cool';}
+		if (name === label(modes.chauf)) {return 'heat';}
+	}
+	if (THERMO_OFF_NAMES.includes(name)) {return 'off';}
+	return null;
 }
 
 // -- findMyID
