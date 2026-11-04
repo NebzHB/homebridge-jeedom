@@ -2596,6 +2596,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) { // TEST : the two Matter variants of the thermostat, to compare in Apple Home
+					matterAccessories.push(this.matter.buildThermostatAccessory(eqLogic, Serv, eqLogic.name + ' chauffage', 'heat'));
+					matterAccessories.push(this.matter.buildThermostatAccessory(eqLogic, Serv, eqLogic.name + ' auto', 'auto'));
+				}
 				if(this.fakegato && !eqLogic.hasLogging) {
 					eqLogic.loggingService ={type:"thermo", options:{storage:'fs',path:this.pathHomebridgeConf},subtype:Serv.eqID+'-history',cmd_id:Serv.eqID};
 					eqLogic.hasLogging=true;
@@ -5985,6 +5989,8 @@ JeedomPlatform.prototype.pushToMatter = function(subCharact, subService, returnV
 		this.matter.pushOccupancyState(subService, returnValue, logMessage);
 	} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
 		this.matter.pushContactState(subService, returnValue, logMessage);
+	} else if(subService.matterThermo && (subCharact.UUID == Characteristic.CurrentTemperature.UUID || subCharact.UUID == Characteristic.TargetTemperature.UUID || subCharact.UUID == Characteristic.TargetHeatingCoolingState.UUID)) {
+		this.matter.pushThermostatState(subService, logMessage); // TEST : thermostat variants
 	} else if(subCharact.UUID == Characteristic.CurrentTemperature.UUID) {
 		this.matter.pushTemperatureState(subService, returnValue, logMessage);
 	} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
