@@ -3326,8 +3326,16 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;	
 			case Characteristic.Active.UUID :
 				if(service.thermoHC) {
-					// thermostat HC : no ON/OFF command, turning it off is its Off mode, turning it on is its current target mode (heat / cool / auto)
-					this.command('TargetHeaterCoolerState', value == 0 ? 3 : service.getCharacteristic(Characteristic.TargetHeaterCoolerState).value, service);
+					// thermostat HC : no ON/OFF command, turning it off is its Off mode, turning it on is its last target mode (heat / cool / auto).
+					// Apple Home sends Active and the chosen mode together (in any order) : turning on waits, and does nothing if a mode was just sent.
+					if (value == Characteristic.Active.INACTIVE) {
+						this.command('TargetHeaterCoolerState', HC_TARGET_OFF, service);
+					} else {
+						setTimeout(() => {
+							if (Date.now() - (service.hcTargetSetAt || 0) < 2000) {return;}
+							this.command('TargetHeaterCoolerState', hcLastTarget(service), service);
+						}, 500);
+					}
 				} else {
 					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
 				}
@@ -3380,6 +3388,8 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 			break;
 			case Characteristic.TargetHeaterCoolerState.UUID :
 				this.log('debug','set target mode:',value);
+				service.hcTargetSetAt = Date.now();
+				service.hcLastTarget = value;
 				this.command('TargetHeaterCoolerState', value, service);
 			break;
 			case Characteristic.TargetDoorState.UUID :
@@ -3841,7 +3851,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.Active.UUID :
 				if (service.thermoHC) {
-					returnValue = thermoHCActive(service, cmdList) ? 1 : 0;
+					returnValue = thermoHCActive(service, cmdList) ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
 					break;
 				}
 				for (const cmd of cmdList) {
@@ -4649,12 +4659,14 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						const mode = thermoModeOf(cmd.currentValue, service.thermoHC);
 						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
 						if (mode == 'off') {
-							returnValue = 3;
+							// off is shown by Active : keep the last target mode (HC_TARGET_OFF isn't a valid target, it became COOL)
+							returnValue = hcLastTarget(service);
 						} else if (mode == 'cool') {
 							returnValue = Characteristic.TargetHeaterCoolerState.COOL;
 						} else if (mode == 'heat') {
 							returnValue = Characteristic.TargetHeaterCoolerState.HEAT;
 						}
+						if (mode != 'off') {service.hcLastTarget = returnValue;}
 						break;
 					}
 				}
@@ -5303,7 +5315,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				}
 			}
 		}
-		if((action == 'TargetHeatingCoolingState' && value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF == undefined) || (action == 'TargetHeaterCoolerState' && value == 3 && id_OFF_HC == undefined)) {
+		if((action == 'TargetHeatingCoolingState' && value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF == undefined) || (action == 'TargetHeaterCoolerState' && value == HC_TARGET_OFF && id_OFF_HC == undefined)) {
 			this.log('warning','Arrêt du thermostat demandé mais pas de commande d\'arrêt configurée (personnalisation des modes du thermostat dans le plugin) : rien n\'est envoyé');
 			return; // sinon la valeur partirait vers la commande par défaut du service (l'info consigne), sans effet
 		}
@@ -5740,7 +5752,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_HC_SET_MODE' :
 						if(action == 'TargetHeaterCoolerState') {
-							if(value == 3 && id_OFF_HC != undefined) { // 3 : not a TargetHeaterCoolerState value, sent by the Active characteristic to turn off (see setAccessoryValue)
+							if(value == HC_TARGET_OFF && id_OFF_HC != undefined) {
 								cmdId = id_OFF_HC;
 								this.log('debug',"set OFF");
 								found = true;
@@ -6913,6 +6925,18 @@ const THERMO_OFF_NAMES = ['off','stop','stopped','arret','arrete','arreter','ete
 // names of a heating / cooling state (Info/Thermostat HC Etat (nom)), lowercase and without accents
 const THERMO_HEATING_NAMES = ['heat','heating','chauffage','chauffe','chaud','calefaccion','heizung','heizen','aquecimento'];
 const THERMO_COOLING_NAMES = ['cool','cooling','climatisation','refroidissement','froid','clim','climatizacion','klimaanlage','kuhlen','ar condicionado','arrefecimento'];
+
+// off for a thermostat HC : not a TargetHeaterCoolerState value (0 auto / 1 heat / 2 cool), sent to command() by the Active characteristic to turn it off (see setAccessoryValue)
+const HC_TARGET_OFF = 3;
+
+// -- hcLastTarget
+// -- Desc : target mode of a thermostat HC to turn it on with : its last one (set from Apple Home or read from Jeedom), else Chauffer if configured, else Refroidir, else Auto
+function hcLastTarget(service) {
+	if (service.hcLastTarget !== undefined && service.hcLastTarget !== null && service.hcLastTarget !== HC_TARGET_OFF) {return service.hcLastTarget;}
+	if (service.thermoHC && service.thermoHC.chauf) {return Characteristic.TargetHeaterCoolerState.HEAT;}
+	if (service.thermoHC && service.thermoHC.clim) {return Characteristic.TargetHeaterCoolerState.COOL;}
+	return Characteristic.TargetHeaterCoolerState.AUTO;
+}
 
 // -- thermoHCActive
 // -- Desc : whether a thermostat HC is on : its Info/Thermostat HC Etat (binary) if any, else its mode (Info/Thermostat HC Mode) isn't the off one
