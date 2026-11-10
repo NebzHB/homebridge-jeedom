@@ -2586,11 +2586,12 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 					} else {
 						this.log('|warning','Pas de config du mode Arrêt : "Éteint" dans Maison ne fera rien');
 					}
+					thermoAutoConfig(eqLogic.thermoModes.Auto, Serv.thermo);
 				} else if(this.myPlugin == "homebridge") {
 					this.log('|warning','Pas de config des modes du thermostat');
 				}
 				// Serv.getCharacteristic(Characteristic.CurrentHeatingCoolingState).setProps(props);
-				props.validValues.push(3);
+				if (!Serv.thermo.hideAuto) {props.validValues.push(Characteristic.TargetHeatingCoolingState.AUTO);}
 				Serv.getCharacteristic(Characteristic.TargetHeatingCoolingState).setProps(props);
 				Serv.cmd_id = cmd.setpoint.id;
 				Serv.eqID = eqLogic.id;
@@ -2700,6 +2701,15 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 						Serv.thermoHC.off.mode_id = splitted[0];
 					} else {
 						this.log('|warning','Pas de config du mode Arrêt : "Éteint" dans Maison ne fera rien');
+					}
+					thermoAutoConfig(eqLogic.thermoModes.Auto, Serv.thermoHC);
+					if (Serv.thermoHC.hideAuto) {
+						if (props.validValues.length > 1) {
+							props.validValues = props.validValues.filter((v) => v != Characteristic.TargetHeaterCoolerState.AUTO);
+						} else { // a thermostat HC needs one target mode
+							Serv.thermoHC.hideAuto = false;
+							this.log('|warning','Mode Auto masqué mais ni Chauffage ni Climatisation configurés : Auto reste proposé');
+						}
 					}
 				}
 				else if(this.myPlugin == "homebridge") {
@@ -4556,62 +4566,45 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			// Thermostats
-			case Characteristic.CurrentHeatingCoolingState.UUID :
-				// var stateNameFound=false;
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME') {
-						if(cmd.currentValue != undefined && cmd.currentValue != null) {
-							this.log('debug','----Current State Thermo :',cmd.currentValue.toString().toLowerCase());
-							switch(cmd.currentValue.toString().toLowerCase()) {
-								default:
-								case 'off' : // EN
-								case 'stopped' : // EN
-								case 'arrêté' : // FR
-								case 'arret' : // FR
-								case 'detenido' : // ES
-								case 'apagado' : // ES
-								case 'verhaftet' : // DE
-								case 'aus' : // DE
-								case 'preso' : // PT
-								case 'fora' : // PT
-									returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
-								break;
-								case 'heat': // EN
-								case 'chauffage' : // FR
-								case 'calefacción' : // ES
-								case 'heizung' : // DE
-								case 'aquecimento' : // PT
-									returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
-								break;
-								case 'cool': // EN
-								case 'climatisation' : // FR
-								case 'climatización' : // ES
-								case 'klimaanlage' : // DE
-								case 'ar condicionado' : // PT
-									returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
-								break;
-							}
-							break;
-							
-						} else {
-							returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
-						}
-						// stateNameFound=true;
-					}
+			case Characteristic.CurrentHeatingCoolingState.UUID : {
+				// from Info/Thermostat Etat (nom) if any (heating / cooling / else off), else Info/Thermostat Etat (binary) + the mode, else the mode alone
+				const C = Characteristic.CurrentHeatingCoolingState;
+				const find = (info) => (info ? cmdList.find((cmd) => cmd.id == info.id) : null);
+				const stateName = find(service.infos.state_name);
+				if (stateName) {
+					const name = normalizeModeName(stateName.currentValue === undefined || stateName.currentValue === null ? '' : stateName.currentValue);
+					this.log('debug','----Current State Thermo :',name);
+					if (THERMO_HEATING_NAMES.includes(name)) {returnValue = C.HEAT;}
+					else if (THERMO_COOLING_NAMES.includes(name)) {returnValue = C.COOL;}
+					else {returnValue = C.OFF;}
+					break;
 				}
-				// idea for managing only setpoint + temperature generic types, display Heat if the setpoint > temperature+1 and display cool if setpoint < temperature-1 : to test
-				/* if(!stateNameFound) {
-					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
-							if(cmd.currentValue > service.infos.temperature.currentValue+1)
-								returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
-							else if (cmd.currentValue < service.infos.temperature.currentValue-1)
-								returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
-							else
-								returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
-						}
-					}
-				} */
+				const state = find(service.infos.state);
+				const modeCmd = find(service.infos.mode);
+				let mode = null;
+				if (modeCmd && isEmptyMode(modeCmd.currentValue)) { // empty value before the new mode : from the mode shown
+					const target = service.getCharacteristic(Characteristic.TargetHeatingCoolingState).value;
+					if (target == Characteristic.TargetHeatingCoolingState.OFF) {mode = 'off';}
+					else if (target == Characteristic.TargetHeatingCoolingState.HEAT) {mode = 'heat';}
+					else if (target == Characteristic.TargetHeatingCoolingState.COOL) {mode = 'cool';}
+				} else if (modeCmd) {
+					mode = thermoModeOf(modeCmd.currentValue, service.thermo);
+				}
+				if (state) {
+					const on = state.currentValue == 1 || state.currentValue === true || String(state.currentValue).toLowerCase() === 'true';
+					this.log('debug','----Current State Thermo (binaire) :',state.currentValue,'mode :',mode || 'auto');
+					if (!on || mode == 'off') {returnValue = C.OFF;}
+					else if (mode == 'cool' || (mode != 'heat' && service.thermo && service.thermo.clim && !service.thermo.chauf)) {returnValue = C.COOL;}
+					else {returnValue = C.HEAT;}
+				} else if (modeCmd) {
+					this.log('debug','----Current State Thermo (mode) :',mode || 'auto');
+					if (mode == 'heat') {returnValue = C.HEAT;}
+					else if (mode == 'cool') {returnValue = C.COOL;}
+					else {returnValue = C.OFF;}
+				} else {
+					returnValue = C.OFF;
+				}
+			}
 			break;
 			case Characteristic.CurrentHeaterCoolerState.UUID : {
 				// INACTIVE when off; else from Info/Thermostat HC Etat (nom) if any (heating / cooling / idle), else from the target mode
@@ -4629,9 +4622,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					else if (THERMO_COOLING_NAMES.includes(name)) {returnValue = C.COOLING;}
 				} else {
 					const modeCmd = service.infos.mode ? cmdList.find((cmd) => cmd.id == service.infos.mode.id) : null;
-					const mode = modeCmd ? thermoModeOf(modeCmd.currentValue, service.thermoHC) : null;
-					if (mode == 'heat') {returnValue = C.HEATING;}
-					else if (mode == 'cool') {returnValue = C.COOLING;}
+					if (modeCmd && isEmptyMode(modeCmd.currentValue)) { // empty value before the new mode : from the last target
+						const last = hcLastTarget(service);
+						if (last == Characteristic.TargetHeaterCoolerState.HEAT) {returnValue = C.HEATING;}
+						else if (last == Characteristic.TargetHeaterCoolerState.COOL) {returnValue = C.COOLING;}
+					} else {
+						const mode = modeCmd ? thermoModeOf(modeCmd.currentValue, service.thermoHC) : null;
+						if (mode == 'heat') {returnValue = C.HEATING;}
+						else if (mode == 'cool') {returnValue = C.COOLING;}
+					}
 				}
 			}
 			break;
@@ -4639,9 +4638,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
+						if (isEmptyMode(cmd.currentValue)) { // a virtual sends an empty value before the new mode : keep the one shown
+							returnValue = service.getCharacteristic(Characteristic.TargetHeatingCoolingState).value;
+							this.log('debug','TargetThermo : (vide) -> inchangé');
+							break;
+						}
 						const mode = thermoModeOf(cmd.currentValue, service.thermo);
 						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
-						if (mode == 'off') {
+						if ((!mode || mode == 'auto') && service.thermo && service.thermo.hideAuto) { // Auto hidden in Apple Home : keep the mode shown
+							returnValue = service.getCharacteristic(Characteristic.TargetHeatingCoolingState).value;
+						} else if (mode == 'off') {
 							returnValue = Characteristic.TargetHeatingCoolingState.OFF;
 						} else if (mode == 'cool') {
 							returnValue = Characteristic.TargetHeatingCoolingState.COOL;
@@ -4656,9 +4662,16 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				returnValue = Characteristic.TargetHeaterCoolerState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_HC_MODE') {
+						if (isEmptyMode(cmd.currentValue)) { // a virtual sends an empty value before the new mode : keep the last one
+							returnValue = hcLastTarget(service);
+							this.log('debug','TargetThermo : (vide) -> inchangé');
+							break;
+						}
 						const mode = thermoModeOf(cmd.currentValue, service.thermoHC);
 						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
-						if (mode == 'off') {
+						if ((!mode || mode == 'auto') && service.thermoHC && service.thermoHC.hideAuto) { // Auto hidden in Apple Home : keep the last mode
+							returnValue = hcLastTarget(service);
+						} else if (mode == 'off') {
 							// off is shown by Active : keep the last target mode (HC_TARGET_OFF isn't a valid target, it became COOL)
 							returnValue = hcLastTarget(service);
 						} else if (mode == 'cool') {
@@ -5289,7 +5302,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 		}
 		// /ALARM	
 		// THERMOSTAT
-		var id_CHAUF,id_CLIM,id_OFF,id_CHAUF_HC,id_CLIM_HC,id_OFF_HC;
+		var id_CHAUF,id_CLIM,id_OFF,id_AUTO,id_CHAUF_HC,id_CLIM_HC,id_OFF_HC,id_AUTO_HC;
 		if(action == 'TargetHeatingCoolingState') {
 			if(service.thermo) {
 				if(service.thermo.chauf && service.thermo.chauf.mode_id != undefined) {
@@ -5300,6 +5313,9 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				}
 				if(service.thermo.off && service.thermo.off.mode_id != undefined) {
 					id_OFF = 	service.thermo.off.mode_id;
+				}
+				if(service.thermo.auto && service.thermo.auto.mode_id != undefined) {
+					id_AUTO = 	service.thermo.auto.mode_id;
 				}
 			}
 		} else if(action == 'TargetHeaterCoolerState') {
@@ -5312,6 +5328,9 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				}
 				if(service.thermoHC.off && service.thermoHC.off.mode_id != undefined) {
 					id_OFF_HC = 	service.thermoHC.off.mode_id;
+				}
+				if(service.thermoHC.auto && service.thermoHC.auto.mode_id != undefined) {
+					id_AUTO_HC = 	service.thermoHC.auto.mode_id;
 				}
 			}
 		}
@@ -5742,6 +5761,10 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 								cmdId = id_CLIM;
 								this.log('debug',"set CLIM");
 								found = true;
+							} else if(value == Characteristic.TargetHeatingCoolingState.AUTO && id_AUTO != undefined) {
+								cmdId = id_AUTO;
+								this.log('debug',"set AUTO (commande)");
+								found = true;
 							} else if(value == Characteristic.TargetHeatingCoolingState.AUTO) {
 								cmdId = service.actions.set_setpoint.id;
 								value = service.infos.setpoint.currentValue;
@@ -5763,6 +5786,10 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 							} else if(value == Characteristic.TargetHeaterCoolerState.COOL && id_CLIM_HC != undefined) {
 								cmdId = id_CLIM_HC;
 								this.log('debug',"set CLIM");
+								found = true;
+							} else if(value == Characteristic.TargetHeaterCoolerState.AUTO && id_AUTO_HC != undefined) {
+								cmdId = id_AUTO_HC;
+								this.log('debug',"set AUTO (commande)");
 								found = true;
 							} else if(value == Characteristic.TargetHeaterCoolerState.AUTO) {
 								cmdId = service.actions.set_setpointH.id;
@@ -6922,7 +6949,7 @@ function RGBtoHSV(r, g, b) {
 // names of an "off" mode, lowercase and without accents (same list as the plugin's modal, desktop/modal/object.homebridge.php)
 const THERMO_OFF_NAMES = ['off','stop','stopped','arret','arrete','arreter','eteint','eteindre','detenido','apagado','verhaftet','aus','preso','fora'];
 
-// names of a heating / cooling state (Info/Thermostat HC Etat (nom)), lowercase and without accents
+// names of a heating / cooling state (Info/Thermostat Etat (nom) or Info/Thermostat HC Etat (nom)), lowercase and without accents
 const THERMO_HEATING_NAMES = ['heat','heating','chauffage','chauffe','chaud','calefaccion','heizung','heizen','aquecimento'];
 const THERMO_COOLING_NAMES = ['cool','cooling','climatisation','refroidissement','froid','clim','climatizacion','klimaanlage','kuhlen','ar condicionado','arrefecimento'];
 
@@ -6932,7 +6959,7 @@ const HC_TARGET_OFF = 3;
 // -- hcLastTarget
 // -- Desc : target mode of a thermostat HC to turn it on with : its last one (set from Apple Home or read from Jeedom), else Chauffer if configured, else Refroidir, else Auto
 function hcLastTarget(service) {
-	if (service.hcLastTarget !== undefined && service.hcLastTarget !== null && service.hcLastTarget !== HC_TARGET_OFF) {return service.hcLastTarget;}
+	if (service.hcLastTarget !== undefined && service.hcLastTarget !== null && service.hcLastTarget !== HC_TARGET_OFF && !(service.thermoHC && service.thermoHC.hideAuto && service.hcLastTarget == Characteristic.TargetHeaterCoolerState.AUTO)) {return service.hcLastTarget;}
 	if (service.thermoHC && service.thermoHC.chauf) {return Characteristic.TargetHeaterCoolerState.HEAT;}
 	if (service.thermoHC && service.thermoHC.clim) {return Characteristic.TargetHeaterCoolerState.COOL;}
 	return Characteristic.TargetHeaterCoolerState.AUTO;
@@ -6949,6 +6976,7 @@ function thermoHCActive(service, cmdList) {
 	const state = find(service.infos.state);
 	if (state) {return state.currentValue == 1 || state.currentValue === true || String(state.currentValue).toLowerCase() === 'true';}
 	const mode = find(service.infos.mode);
+	if (mode && isEmptyMode(mode.currentValue)) {return service.getCharacteristic(Characteristic.Active).value == Characteristic.Active.ACTIVE;} // empty value before the new mode : unchanged
 	if (mode) {return thermoModeOf(mode.currentValue, service.thermoHC) !== 'off';}
 	return true;
 }
@@ -6959,6 +6987,28 @@ function normalizeModeName(name) {
 	return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
+// -- isEmptyMode
+// -- Desc : whether a mode info holds an empty value (a virtual action first sets its info to '' then to the new mode, about 1 s later) : the shown mode is then kept
+function isEmptyMode(value) {
+	return typeof value === 'string' && value.trim() === '';
+}
+
+// -- thermoAutoConfig
+// -- Desc : the Auto line of a thermostat's modes customisation (HBThermoModes.Auto) : 'id|name' = a mode command run by Auto (modes.auto),
+// --        'HIDE' = Auto not offered in Apple Home (modes.hideAuto), anything else ('SETPOINT', 'NOT', none) = Auto sends the setpoint again (as before)
+// -- Params --
+// -- auto : HBThermoModes.Auto
+// -- modes : service.thermo or service.thermoHC
+function thermoAutoConfig(auto, modes) {
+	if (!auto || !modes) {return;}
+	if (auto === 'HIDE') {
+		modes.hideAuto = true;
+	} else if (auto !== 'SETPOINT' && auto !== 'NOT' && auto.indexOf('|') !== -1) {
+		const splitted = auto.split('|');
+		modes.auto = {mode_id: splitted[0], mode_label: splitted.slice(1).join('|')};
+	}
+}
+
 // -- thermoModeOf
 // -- Desc : mode of a thermostat from the value of its mode info (Info/Thermostat Mode or Info/Thermostat HC Mode) :
 // --        the names of the mode commands configured in the plugin first (Éteint / Chauffer / Refroidir), then the usual names of an "off" mode,
@@ -6966,7 +7016,7 @@ function normalizeModeName(name) {
 // -- Params --
 // -- value : the value of the mode info
 // -- modes : service.thermo or service.thermoHC ({off, chauf, clim}, each with its mode_label)
-// -- Return : 'off', 'heat', 'cool', or null for any other mode (auto)
+// -- Return : 'off', 'heat', 'cool', 'auto' (the Auto command configured), or null for any other mode (shown as auto)
 function thermoModeOf(value, modes) {
 	if (value === undefined || value === null) {return 'off';}
 	const name = normalizeModeName(value);
@@ -6975,6 +7025,7 @@ function thermoModeOf(value, modes) {
 		if (name === label(modes.off)) {return 'off';}
 		if (name === label(modes.clim)) {return 'cool';}
 		if (name === label(modes.chauf)) {return 'heat';}
+		if (name === label(modes.auto)) {return 'auto';}
 	}
 	if (THERMO_OFF_NAMES.includes(name)) {return 'off';}
 	return null;
