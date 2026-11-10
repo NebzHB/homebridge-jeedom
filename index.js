@@ -3328,8 +3328,8 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				if(service.thermoHC) {
 					// thermostat HC : no ON/OFF command, turning it off is its Off mode, turning it on is its last target mode (heat / cool / auto).
 					// Apple Home sends Active and the chosen mode together (in any order) : turning on waits, and does nothing if a mode was just sent.
-					if (value == 0) {
-						this.command('TargetHeaterCoolerState', 3, service);
+					if (value == Characteristic.Active.INACTIVE) {
+						this.command('TargetHeaterCoolerState', HC_TARGET_OFF, service);
 					} else {
 						setTimeout(() => {
 							if (Date.now() - (service.hcTargetSetAt || 0) < 2000) {return;}
@@ -3851,7 +3851,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 			break;
 			case Characteristic.Active.UUID :
 				if (service.thermoHC) {
-					returnValue = thermoHCActive(service, cmdList) ? 1 : 0;
+					returnValue = thermoHCActive(service, cmdList) ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
 					break;
 				}
 				for (const cmd of cmdList) {
@@ -4659,7 +4659,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 						const mode = thermoModeOf(cmd.currentValue, service.thermoHC);
 						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
 						if (mode == 'off') {
-							// off is shown by Active : keep the last target mode (3 isn't a valid target, it became COOL)
+							// off is shown by Active : keep the last target mode (HC_TARGET_OFF isn't a valid target, it became COOL)
 							returnValue = hcLastTarget(service);
 						} else if (mode == 'cool') {
 							returnValue = Characteristic.TargetHeaterCoolerState.COOL;
@@ -5315,7 +5315,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 				}
 			}
 		}
-		if((action == 'TargetHeatingCoolingState' && value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF == undefined) || (action == 'TargetHeaterCoolerState' && value == 3 && id_OFF_HC == undefined)) {
+		if((action == 'TargetHeatingCoolingState' && value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF == undefined) || (action == 'TargetHeaterCoolerState' && value == HC_TARGET_OFF && id_OFF_HC == undefined)) {
 			this.log('warning','Arrêt du thermostat demandé mais pas de commande d\'arrêt configurée (personnalisation des modes du thermostat dans le plugin) : rien n\'est envoyé');
 			return; // sinon la valeur partirait vers la commande par défaut du service (l'info consigne), sans effet
 		}
@@ -5752,7 +5752,7 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_HC_SET_MODE' :
 						if(action == 'TargetHeaterCoolerState') {
-							if(value == 3 && id_OFF_HC != undefined) { // 3 : not a TargetHeaterCoolerState value, sent by the Active characteristic to turn off (see setAccessoryValue)
+							if(value == HC_TARGET_OFF && id_OFF_HC != undefined) {
 								cmdId = id_OFF_HC;
 								this.log('debug',"set OFF");
 								found = true;
@@ -6926,13 +6926,16 @@ const THERMO_OFF_NAMES = ['off','stop','stopped','arret','arrete','arreter','ete
 const THERMO_HEATING_NAMES = ['heat','heating','chauffage','chauffe','chaud','calefaccion','heizung','heizen','aquecimento'];
 const THERMO_COOLING_NAMES = ['cool','cooling','climatisation','refroidissement','froid','clim','climatizacion','klimaanlage','kuhlen','ar condicionado','arrefecimento'];
 
+// off for a thermostat HC : not a TargetHeaterCoolerState value (0 auto / 1 heat / 2 cool), sent to command() by the Active characteristic to turn it off (see setAccessoryValue)
+const HC_TARGET_OFF = 3;
+
 // -- hcLastTarget
 // -- Desc : target mode of a thermostat HC to turn it on with : its last one (set from Apple Home or read from Jeedom), else Chauffer if configured, else Refroidir, else Auto
 function hcLastTarget(service) {
-	if (service.hcLastTarget !== undefined && service.hcLastTarget !== null && service.hcLastTarget !== 3) {return service.hcLastTarget;}
-	if (service.thermoHC && service.thermoHC.chauf) {return 1;}
-	if (service.thermoHC && service.thermoHC.clim) {return 2;}
-	return 0;
+	if (service.hcLastTarget !== undefined && service.hcLastTarget !== null && service.hcLastTarget !== HC_TARGET_OFF) {return service.hcLastTarget;}
+	if (service.thermoHC && service.thermoHC.chauf) {return Characteristic.TargetHeaterCoolerState.HEAT;}
+	if (service.thermoHC && service.thermoHC.clim) {return Characteristic.TargetHeaterCoolerState.COOL;}
+	return Characteristic.TargetHeaterCoolerState.AUTO;
 }
 
 // -- thermoHCActive
