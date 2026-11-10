@@ -4566,62 +4566,45 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				}
 			break;
 			// Thermostats
-			case Characteristic.CurrentHeatingCoolingState.UUID :
-				// var stateNameFound=false;
-				for (const cmd of cmdList) {
-					if (cmd.generic_type == 'THERMOSTAT_STATE_NAME') {
-						if(cmd.currentValue != undefined && cmd.currentValue != null) {
-							this.log('debug','----Current State Thermo :',cmd.currentValue.toString().toLowerCase());
-							switch(cmd.currentValue.toString().toLowerCase()) {
-								default:
-								case 'off' : // EN
-								case 'stopped' : // EN
-								case 'arrêté' : // FR
-								case 'arret' : // FR
-								case 'detenido' : // ES
-								case 'apagado' : // ES
-								case 'verhaftet' : // DE
-								case 'aus' : // DE
-								case 'preso' : // PT
-								case 'fora' : // PT
-									returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
-								break;
-								case 'heat': // EN
-								case 'chauffage' : // FR
-								case 'calefacción' : // ES
-								case 'heizung' : // DE
-								case 'aquecimento' : // PT
-									returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
-								break;
-								case 'cool': // EN
-								case 'climatisation' : // FR
-								case 'climatización' : // ES
-								case 'klimaanlage' : // DE
-								case 'ar condicionado' : // PT
-									returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
-								break;
-							}
-							break;
-							
-						} else {
-							returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
-						}
-						// stateNameFound=true;
-					}
+			case Characteristic.CurrentHeatingCoolingState.UUID : {
+				// from Info/Thermostat Etat (nom) if any (heating / cooling / else off), else Info/Thermostat Etat (binary) + the mode, else the mode alone
+				const C = Characteristic.CurrentHeatingCoolingState;
+				const find = (info) => (info ? cmdList.find((cmd) => cmd.id == info.id) : null);
+				const stateName = find(service.infos.state_name);
+				if (stateName) {
+					const name = normalizeModeName(stateName.currentValue === undefined || stateName.currentValue === null ? '' : stateName.currentValue);
+					this.log('debug','----Current State Thermo :',name);
+					if (THERMO_HEATING_NAMES.includes(name)) {returnValue = C.HEAT;}
+					else if (THERMO_COOLING_NAMES.includes(name)) {returnValue = C.COOL;}
+					else {returnValue = C.OFF;}
+					break;
 				}
-				// idea for managing only setpoint + temperature generic types, display Heat if the setpoint > temperature+1 and display cool if setpoint < temperature-1 : to test
-				/* if(!stateNameFound) {
-					for (const cmd of cmdList) {
-						if (cmd.generic_type == 'THERMOSTAT_SETPOINT') {
-							if(cmd.currentValue > service.infos.temperature.currentValue+1)
-								returnValue = Characteristic.CurrentHeatingCoolingState.HEAT;
-							else if (cmd.currentValue < service.infos.temperature.currentValue-1)
-								returnValue = Characteristic.CurrentHeatingCoolingState.COOL;
-							else
-								returnValue = Characteristic.CurrentHeatingCoolingState.OFF;
-						}
-					}
-				} */
+				const state = find(service.infos.state);
+				const modeCmd = find(service.infos.mode);
+				let mode = null;
+				if (modeCmd && isEmptyMode(modeCmd.currentValue)) { // empty value before the new mode : from the mode shown
+					const target = service.getCharacteristic(Characteristic.TargetHeatingCoolingState).value;
+					if (target == Characteristic.TargetHeatingCoolingState.OFF) {mode = 'off';}
+					else if (target == Characteristic.TargetHeatingCoolingState.HEAT) {mode = 'heat';}
+					else if (target == Characteristic.TargetHeatingCoolingState.COOL) {mode = 'cool';}
+				} else if (modeCmd) {
+					mode = thermoModeOf(modeCmd.currentValue, service.thermo);
+				}
+				if (state) {
+					const on = state.currentValue == 1 || state.currentValue === true || String(state.currentValue).toLowerCase() === 'true';
+					this.log('debug','----Current State Thermo (binaire) :',state.currentValue,'mode :',mode || 'auto');
+					if (!on || mode == 'off') {returnValue = C.OFF;}
+					else if (mode == 'cool' || (mode != 'heat' && service.thermo && service.thermo.clim && !service.thermo.chauf)) {returnValue = C.COOL;}
+					else {returnValue = C.HEAT;}
+				} else if (modeCmd) {
+					this.log('debug','----Current State Thermo (mode) :',mode || 'auto');
+					if (mode == 'heat') {returnValue = C.HEAT;}
+					else if (mode == 'cool') {returnValue = C.COOL;}
+					else {returnValue = C.OFF;}
+				} else {
+					returnValue = C.OFF;
+				}
+			}
 			break;
 			case Characteristic.CurrentHeaterCoolerState.UUID : {
 				// INACTIVE when off; else from Info/Thermostat HC Etat (nom) if any (heating / cooling / idle), else from the target mode
@@ -6966,7 +6949,7 @@ function RGBtoHSV(r, g, b) {
 // names of an "off" mode, lowercase and without accents (same list as the plugin's modal, desktop/modal/object.homebridge.php)
 const THERMO_OFF_NAMES = ['off','stop','stopped','arret','arrete','arreter','eteint','eteindre','detenido','apagado','verhaftet','aus','preso','fora'];
 
-// names of a heating / cooling state (Info/Thermostat HC Etat (nom)), lowercase and without accents
+// names of a heating / cooling state (Info/Thermostat Etat (nom) or Info/Thermostat HC Etat (nom)), lowercase and without accents
 const THERMO_HEATING_NAMES = ['heat','heating','chauffage','chauffe','chaud','calefaccion','heizung','heizen','aquecimento'];
 const THERMO_COOLING_NAMES = ['cool','cooling','climatisation','refroidissement','froid','clim','climatizacion','klimaanlage','kuhlen','ar condicionado','arrefecimento'];
 
