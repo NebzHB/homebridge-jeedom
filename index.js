@@ -544,6 +544,10 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 				Serv.eqID = eqLogic.id;
 				Serv.subtype = Serv.subtype || '';
 				Serv.subtype = eqLogic.id + '-' + Serv.cmd_id + '-' + Serv.subtype;
+				if(this.useMatter) {
+					const matterLight = this.matter.buildLightAccessory(eqLogic, Serv, eqLogic.name);
+					if(matterLight) {matterAccessories.push(matterLight);}
+				}
 				HBservices.push(HBservice);
 			});
 			if(!HBservice) {
@@ -2579,6 +2583,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 						const splitted = eqLogic.thermoModes.Off.split('|');
 						Serv.thermo.off.mode_label = splitted[1];
 						Serv.thermo.off.mode_id = splitted[0];
+					} else {
+						this.log('|warning','Pas de config du mode Arrêt : "Éteint" dans Maison ne fera rien');
 					}
 				} else if(this.myPlugin == "homebridge") {
 					this.log('|warning','Pas de config des modes du thermostat');
@@ -2692,6 +2698,8 @@ JeedomPlatform.prototype.AccessoireCreateHomebridge = function(device) {
 						const splitted = eqLogic.thermoModes.Off.split('|');
 						Serv.thermoHC.off.mode_label = splitted[1];
 						Serv.thermoHC.off.mode_id = splitted[0];
+					} else {
+						this.log('|warning','Pas de config du mode Arrêt : "Éteint" dans Maison ne fera rien');
 					}
 				}
 				else if(this.myPlugin == "homebridge") {
@@ -3106,7 +3114,8 @@ JeedomPlatform.prototype.addAccessory = function(jeedomAccessory) {
 			this.api.updatePlatformAccessories([HBAccessory]);
 		}
 		HBAccessory.on('identify', (paired, callback) => {
-			this.log(HBAccessory.displayName, "->Identifié!!!");
+			this.log(HBAccessory.displayName, "->Identifié!!! (HomeKit)");
+			this.jeedomClient.notifyIdentify(HBAccessory.displayName, 'HomeKit');
 			if(typeof callback === 'function') {callback();}
 		});
 		HBAccessory.reviewed = true;
@@ -3316,7 +3325,12 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 				}
 			break;	
 			case Characteristic.Active.UUID :
-				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+				if(service.thermoHC) {
+					// thermostat HC : no ON/OFF command, turning it off is its Off mode, turning it on is its current target mode (heat / cool / auto)
+					this.command('TargetHeaterCoolerState', value == 0 ? 3 : service.getCharacteristic(Characteristic.TargetHeaterCoolerState).value, service);
+				} else {
+					this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
+				}
 			break;
 			case Characteristic.LockPhysicalControls.UUID :				
 				this.command(value == 0 ? 'turnOff' : 'turnOn', null, service);
@@ -3718,7 +3732,7 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 		let HRreturnValue;
 		const cmdList = this.jeedomClient.getDeviceCmdFromCache(service.eqID);
 		let targetValueToTest,currentValueToTest;
-		let hsv,mode_PRESENT,mode_AWAY,mode_NIGHT,mode_CLIM,mode_CHAUF;
+		let hsv,mode_PRESENT,mode_AWAY,mode_NIGHT;
 		
 		// masterSwitch :
 		switch (characteristic.UUID) {
@@ -4646,89 +4660,31 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
-						
-						if(service.thermo.clim && service.thermo.clim.mode_label !== undefined) {
-							mode_CLIM=service.thermo.clim.mode_label.toString().toLowerCase();
-						}
-						if(service.thermo.chauf && service.thermo.chauf.mode_label !== undefined) {
-							mode_CHAUF=service.thermo.chauf.mode_label.toString().toLowerCase();
-						}
-						this.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
-						switch(cmd.currentValue.toString().toLowerCase()) {
-							case 'off' : // EN
-							case 'stopped' : // EN
-							case 'arrêté' : // FR
-							case 'arret' : // FR
-							case 'detenido' : // ES
-							case 'apagado' : // ES
-							case 'verhaftet' : // DE
-							case 'aus' : // DE
-							case 'preso' : // PT
-							case 'fora' : // PT
-							case undefined:
-								returnValue = Characteristic.TargetHeatingCoolingState.OFF;
-							break;							
-							case mode_CLIM:
-								returnValue = Characteristic.TargetHeatingCoolingState.COOL;
-							break;
-							case mode_CHAUF:
-								returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
-							break;
-							case 'none': // EN
-							case 'aucun': // FR
-							case 'thermostat':
-							case 'ninguna': // ES
-							case 'ohne': // DE
-							case 'nemhum': // PT
-							case 'manuel': // Plugin Boiler
-							case 'manual': // Plugin Boiler
-								returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
-							break;
+						const mode = thermoModeOf(cmd.currentValue, service.thermo);
+						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
+						if (mode == 'off') {
+							returnValue = Characteristic.TargetHeatingCoolingState.OFF;
+						} else if (mode == 'cool') {
+							returnValue = Characteristic.TargetHeatingCoolingState.COOL;
+						} else if (mode == 'heat') {
+							returnValue = Characteristic.TargetHeatingCoolingState.HEAT;
 						}
 						break;
-					} 
+					}
 				}
 			break;
 			case Characteristic.TargetHeaterCoolerState.UUID :
 				returnValue = Characteristic.TargetHeaterCoolerState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_HC_MODE') {
-						
-						if(service.thermoHC.clim && service.thermoHC.clim.mode_label !== undefined) {
-							mode_CLIM=service.thermoHC.clim.mode_label.toString().toLowerCase();
-						}
-						if(service.thermoHC.chauf && service.thermoHC.chauf.mode_label !== undefined) {
-							mode_CHAUF=service.thermoHC.chauf.mode_label.toString().toLowerCase();
-						}
-						this.log('debug','TargetThermo :',mode_CLIM,mode_CHAUF,':',cmd.currentValue.toString().toLowerCase());
-						switch(cmd.currentValue.toString().toLowerCase()) {
-							case 'off' : // EN
-							case 'stopped' : // EN
-							case 'arrêté' : // FR
-							case 'arret' : // FR
-							case 'detenido' : // ES
-							case 'apagado' : // ES
-							case 'verhaftet' : // DE
-							case 'aus' : // DE
-							case 'preso' : // PT
-							case 'fora' : // PT
-							case undefined:
-								returnValue = 3;
-							break;							
-							case mode_CLIM:
-								returnValue = Characteristic.TargetHeaterCoolerState.COOL;
-							break;
-							case mode_CHAUF:
-								returnValue = Characteristic.TargetHeaterCoolerState.HEAT;
-							break;
-							case 'none': // EN
-							case 'aucun': // FR
-							case 'thermostat':
-							case 'ninguna': // ES
-							case 'ohne': // DE
-							case 'nemhum': // PT
-								returnValue = Characteristic.TargetHeaterCoolerState.AUTO;
-							break;
+						const mode = thermoModeOf(cmd.currentValue, service.thermoHC);
+						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
+						if (mode == 'off') {
+							returnValue = 3;
+						} else if (mode == 'cool') {
+							returnValue = Characteristic.TargetHeaterCoolerState.COOL;
+						} else if (mode == 'heat') {
+							returnValue = Characteristic.TargetHeaterCoolerState.HEAT;
 						}
 						break;
 					}
@@ -5377,7 +5333,11 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					id_OFF_HC = 	service.thermoHC.off.mode_id;
 				}
 			}
-		}		
+		}
+		if((action == 'TargetHeatingCoolingState' && value == Characteristic.TargetHeatingCoolingState.OFF && id_OFF == undefined) || (action == 'TargetHeaterCoolerState' && value == 3 && id_OFF_HC == undefined)) {
+			this.log('warning','Arrêt du thermostat demandé mais pas de commande d\'arrêt configurée (personnalisation des modes du thermostat dans le plugin) : rien n\'est envoyé');
+			return; // sinon la valeur partirait vers la commande par défaut du service (l'info consigne), sans effet
+		}
 		// /THERMOSTAT
 		var needToTemporize=0;
 		var needToTemporizeSec=0;
@@ -5811,15 +5771,15 @@ JeedomPlatform.prototype.command = function(action, value, service) {
 					break;
 					case 'THERMOSTAT_HC_SET_MODE' :
 						if(action == 'TargetHeaterCoolerState') {
-							if(value == 3 && id_OFF != undefined) {
+							if(value == 3 && id_OFF_HC != undefined) { // 3 : not a TargetHeaterCoolerState value, sent by the Active characteristic to turn off (see setAccessoryValue)
 								cmdId = id_OFF_HC;
 								this.log('debug',"set OFF");
 								found = true;
-							} else if(value == Characteristic.TargetHeaterCoolerState.HEAT && id_CHAUF != undefined) {
+							} else if(value == Characteristic.TargetHeaterCoolerState.HEAT && id_CHAUF_HC != undefined) {
 								cmdId = id_CHAUF_HC;
 								this.log('debug',"set CHAUF");
 								found = true;
-							} else if(value == Characteristic.TargetHeaterCoolerState.COOL && id_CLIM != undefined) {
+							} else if(value == Characteristic.TargetHeaterCoolerState.COOL && id_CLIM_HC != undefined) {
 								cmdId = id_CLIM_HC;
 								this.log('debug',"set CLIM");
 								found = true;
@@ -5979,6 +5939,7 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 					if(!this.settingLight) { // and it's not currently being modified
 						this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 						subCharact.updateValue(returnValue, undefined, 'fromJeedom');
+						if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage, infoFound);}
 					} else if(DEV_DEBUG) {this.log('debug','//Commande NON envoyée à HomeKit',logMessage);}
 				} else if(infoFound !== -1 && (infoFound.generic_type=="FAN_STATE" || infoFound.generic_type=="FAN_SPEED_STATE")) { // if it's a FAN_STATE
 					if(!this.settingFan) { // and it's not currently being modified
@@ -5988,40 +5949,58 @@ JeedomPlatform.prototype.updateSubscribers = function(update) {
 				} else {
 					this.log('info','[Commande envoyée à HomeKit]',logMessage+' dans '+subCharact.displayName);
 					subCharact.updateValue(returnValue, undefined, 'fromJeedom');
-					if(this.useMatter) {
-						if(subCharact.UUID == Characteristic.On.UUID) {
-							this.matter.pushOnOffState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
-							this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
-							this.matter.pushEnergyState(subService.eqLogic.matterServ, logMessage);
-						} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
-							this.matter.pushMotionState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
-							this.matter.pushOccupancyState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
-							this.matter.pushContactState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentTemperature.UUID) {
-							this.matter.pushTemperatureState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
-							this.matter.pushHumidityState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
-							this.matter.pushBrightnessState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.SmokeDetected.UUID) {
-							this.matter.pushSmokeState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.LeakDetected.UUID) {
-							this.matter.pushLeakState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.BatteryLevel.UUID) {
-							this.matter.pushBatteryPercentState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.StatusLowBattery.UUID) {
-							this.matter.pushBatteryChargeLevelState(subService, returnValue, logMessage);
-						} else if(subCharact.UUID == Characteristic.ChargingState.UUID) {
-							this.matter.pushBatteryChargeState(subService, returnValue, logMessage);
-						}
-					}
+					if(this.useMatter) {this.pushToMatter(subCharact, subService, returnValue, logMessage, infoFound);}
 				}
 			} else {continue;}
 		}
+	}
+};
+
+// -- pushToMatter
+// -- Desc : forward to Matter a value just sent to HomeKit; each push is a no-op when the service has no Matter accessory
+// -- Params --
+// -- subCharact : the HomeKit characteristic updated
+// -- subService : its service
+// -- returnValue : the sanitized value sent to HomeKit
+// -- logMessage : the "cause" text of the HomeKit log
+// -- infoFound : the Jeedom info that changed (-1 for a status info). Every characteristic of a service is sent again when one of its infos changes :
+// --             color pushes, which also set the Matter color mode, are only done when it's their own info that changed
+// -- Return : nothing
+JeedomPlatform.prototype.pushToMatter = function(subCharact, subService, returnValue, logMessage, infoFound) {
+	if(subCharact.UUID == Characteristic.On.UUID) {
+		this.matter.pushOnOffState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.Brightness.UUID) {
+		this.matter.pushLightLevelState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.ColorTemperature.UUID) {
+		if(infoFound && infoFound.generic_type == 'LIGHT_COLOR_TEMP') {this.matter.pushLightCtState(subService, returnValue, logMessage);}
+	} else if(subCharact.UUID == Characteristic.Hue.UUID) { // a color change updates Hue and Saturation : pushed once, from Hue (both are read again)
+		if(infoFound && infoFound.generic_type == 'LIGHT_COLOR') {this.matter.pushLightColorState(subService, logMessage);}
+	} else if(subCharact.UUID == Characteristic.CurrentPowerConsumption.UUID && subService.eqLogic.matterServ) {
+		this.matter.pushPowerState(subService.eqLogic.matterServ, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.TotalPowerConsumption.UUID && subService.eqLogic.matterServ) {
+		this.matter.pushEnergyState(subService.eqLogic.matterServ, logMessage);
+	} else if(subCharact.UUID == Characteristic.MotionDetected.UUID) {
+		this.matter.pushMotionState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.OccupancyDetected.UUID) {
+		this.matter.pushOccupancyState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.ContactSensorState.UUID) {
+		this.matter.pushContactState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.CurrentTemperature.UUID) {
+		this.matter.pushTemperatureState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.CurrentRelativeHumidity.UUID) {
+		this.matter.pushHumidityState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.CurrentAmbientLightLevel.UUID) {
+		this.matter.pushBrightnessState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.SmokeDetected.UUID) {
+		this.matter.pushSmokeState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.LeakDetected.UUID) {
+		this.matter.pushLeakState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.BatteryLevel.UUID) {
+		this.matter.pushBatteryPercentState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.StatusLowBattery.UUID) {
+		this.matter.pushBatteryChargeLevelState(subService, returnValue, logMessage);
+	} else if(subCharact.UUID == Characteristic.ChargingState.UUID) {
+		this.matter.pushBatteryChargeState(subService, returnValue, logMessage);
 	}
 };
 
@@ -6957,6 +6936,36 @@ function RGBtoHSV(r, g, b) {
 		s : s * 100.0,
 		v : v * 100.0,
 	};
+}
+
+// names of an "off" mode, lowercase and without accents (same list as the plugin's modal, desktop/modal/object.homebridge.php)
+const THERMO_OFF_NAMES = ['off','stop','stopped','arret','arrete','arreter','eteint','eteindre','detenido','apagado','verhaftet','aus','preso','fora'];
+
+// -- normalizeModeName
+// -- Desc : name of a mode, lowercase, without accents nor spaces around ("Éteint " -> "eteint")
+function normalizeModeName(name) {
+	return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+// -- thermoModeOf
+// -- Desc : mode of a thermostat from the value of its mode info (Info/Thermostat Mode or Info/Thermostat HC Mode) :
+// --        the names of the mode commands configured in the plugin first (Éteint / Chauffer / Refroidir), then the usual names of an "off" mode,
+// --        all compared without case, accents nor spaces around
+// -- Params --
+// -- value : the value of the mode info
+// -- modes : service.thermo or service.thermoHC ({off, chauf, clim}, each with its mode_label)
+// -- Return : 'off', 'heat', 'cool', or null for any other mode (auto)
+function thermoModeOf(value, modes) {
+	if (value === undefined || value === null) {return 'off';}
+	const name = normalizeModeName(value);
+	const label = (mode) => ((mode && mode.mode_label !== undefined) ? normalizeModeName(mode.mode_label) : null);
+	if (modes) {
+		if (name === label(modes.off)) {return 'off';}
+		if (name === label(modes.clim)) {return 'cool';}
+		if (name === label(modes.chauf)) {return 'heat';}
+	}
+	if (THERMO_OFF_NAMES.includes(name)) {return 'off';}
+	return null;
 }
 
 // -- findMyID
