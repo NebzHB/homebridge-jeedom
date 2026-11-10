@@ -4629,9 +4629,15 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 					else if (THERMO_COOLING_NAMES.includes(name)) {returnValue = C.COOLING;}
 				} else {
 					const modeCmd = service.infos.mode ? cmdList.find((cmd) => cmd.id == service.infos.mode.id) : null;
-					const mode = modeCmd ? thermoModeOf(modeCmd.currentValue, service.thermoHC) : null;
-					if (mode == 'heat') {returnValue = C.HEATING;}
-					else if (mode == 'cool') {returnValue = C.COOLING;}
+					if (modeCmd && isEmptyMode(modeCmd.currentValue)) { // empty value before the new mode : from the last target
+						const last = hcLastTarget(service);
+						if (last == Characteristic.TargetHeaterCoolerState.HEAT) {returnValue = C.HEATING;}
+						else if (last == Characteristic.TargetHeaterCoolerState.COOL) {returnValue = C.COOLING;}
+					} else {
+						const mode = modeCmd ? thermoModeOf(modeCmd.currentValue, service.thermoHC) : null;
+						if (mode == 'heat') {returnValue = C.HEATING;}
+						else if (mode == 'cool') {returnValue = C.COOLING;}
+					}
 				}
 			}
 			break;
@@ -4639,6 +4645,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				returnValue = Characteristic.TargetHeatingCoolingState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_MODE') {
+						if (isEmptyMode(cmd.currentValue)) { // a virtual sends an empty value before the new mode : keep the one shown
+							returnValue = service.getCharacteristic(Characteristic.TargetHeatingCoolingState).value;
+							this.log('debug','TargetThermo : (vide) -> inchangé');
+							break;
+						}
 						const mode = thermoModeOf(cmd.currentValue, service.thermo);
 						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
 						if (mode == 'off') {
@@ -4656,6 +4667,11 @@ JeedomPlatform.prototype.getAccessoryValue = function(characteristic, service, i
 				returnValue = Characteristic.TargetHeaterCoolerState.AUTO;
 				for (const cmd of cmdList) {
 					if (cmd.generic_type == 'THERMOSTAT_HC_MODE') {
+						if (isEmptyMode(cmd.currentValue)) { // a virtual sends an empty value before the new mode : keep the last one
+							returnValue = hcLastTarget(service);
+							this.log('debug','TargetThermo : (vide) -> inchangé');
+							break;
+						}
 						const mode = thermoModeOf(cmd.currentValue, service.thermoHC);
 						this.log('debug','TargetThermo :',cmd.currentValue,'->',mode || 'auto');
 						if (mode == 'off') {
@@ -6949,6 +6965,7 @@ function thermoHCActive(service, cmdList) {
 	const state = find(service.infos.state);
 	if (state) {return state.currentValue == 1 || state.currentValue === true || String(state.currentValue).toLowerCase() === 'true';}
 	const mode = find(service.infos.mode);
+	if (mode && isEmptyMode(mode.currentValue)) {return service.getCharacteristic(Characteristic.Active).value == Characteristic.Active.ACTIVE;} // empty value before the new mode : unchanged
 	if (mode) {return thermoModeOf(mode.currentValue, service.thermoHC) !== 'off';}
 	return true;
 }
@@ -6957,6 +6974,12 @@ function thermoHCActive(service, cmdList) {
 // -- Desc : name of a mode, lowercase, without accents nor spaces around ("Éteint " -> "eteint")
 function normalizeModeName(name) {
 	return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+// -- isEmptyMode
+// -- Desc : whether a mode info holds an empty value (a virtual action first sets its info to '' then to the new mode, about 1 s later) : the shown mode is then kept
+function isEmptyMode(value) {
+	return typeof value === 'string' && value.trim() === '';
 }
 
 // -- thermoModeOf
