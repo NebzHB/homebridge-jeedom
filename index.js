@@ -3411,6 +3411,8 @@ JeedomPlatform.prototype.setAccessoryValue = function(value, characteristic, ser
 						} else { // value === 1
 							this.command('GBtoggleSelect', parseInt(value), service);
 						}						
+					} else if (garageAlreadyThere(this.getAccessoryValue(Characteristic.CurrentDoorState, service), value)) { // a toggle would reverse it (ex. "close all the gates" with one already closed)
+						this.log('info','[Portail/Garage]',service.eqLogic.name,'déjà',(parseInt(value) === Characteristic.TargetDoorState.OPEN ? 'ouvert (ou en ouverture)' : 'fermé (ou en fermeture)'),': impulsion non envoyée');
 					} else {
 						this.command('GBtoggle', 0, service);
 					}
@@ -6979,6 +6981,19 @@ function thermoHCActive(service, cmdList) {
 	if (mode && isEmptyMode(mode.currentValue)) {return service.getCharacteristic(Characteristic.Active).value == Characteristic.Active.ACTIVE;} // empty value before the new mode : unchanged
 	if (mode) {return thermoModeOf(mode.currentValue, service.thermoHC) !== 'off';}
 	return true;
+}
+
+// -- garageAlreadyThere
+// -- Desc : whether a garage door / gate is already in (or moving to) the state asked by HomeKit, to not send its toggle (which would reverse it)
+// -- Params --
+// -- current : its CurrentDoorState (from its Info/Garage état ouvrant or Info/Portail état ouvrant)
+// -- target : the TargetDoorState asked
+// -- Return : true if open or opening and open is asked, or closed or closing and close is asked (stopped or unknown : false, the toggle is sent as before)
+function garageAlreadyThere(current, target) {
+	const D = Characteristic.CurrentDoorState;
+	if (parseInt(target) === Characteristic.TargetDoorState.OPEN) {return current === D.OPEN || current === D.OPENING;}
+	if (parseInt(target) === Characteristic.TargetDoorState.CLOSED) {return current === D.CLOSED || current === D.CLOSING;}
+	return false;
 }
 
 // -- normalizeModeName
